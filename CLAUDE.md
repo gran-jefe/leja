@@ -12,7 +12,7 @@
 - **Shared types (packages/shared):** @leja/shared
 - **Payments:** Paystack (all amounts in kobo when calling Paystack API; stored in Naira in DB)
 - **Auth:** JWT stored in httpOnly cookies (frontend uses js-cookie)
-- **Deployment:** Vercel (web), Railway (api)
+- **Deployment:** Vercel (web), Render (api)
 
 ## Design Tokens
 
@@ -196,3 +196,31 @@ See `apps/api/src/db/seed.sql` for sample data:
 - Tenants: `tenant1@example.com`, `tenant2@example.com`
 - Properties: 2 in Lagos (2BR & 3BR)
 - Agreement: 1 ACTIVE agreement between landlord and tenant1
+
+## Deployment
+
+- **Frontend:** Vercel — deploys from apps/web on push to main
+- **Backend:** Render — deploys from apps/api on push to main
+  - Service name: leja-api
+  - Health check: GET /health
+  - Cold start prevention: ping /health every 10 minutes via UptimeRobot
+  - Production URL: https://leja-api.onrender.com (update when service is live)
+- **Database:** Supabase (PostgreSQL)
+- **File storage:** Supabase Storage (bucket: agreements — for PDF storage)
+
+## Environment Files
+
+- **Root .env.example** — template only, commit this
+- **apps/api/.env** — never commit, copy from .env.example and fill values
+- **apps/web/.env.local** — never commit, set NEXT_PUBLIC_API_URL and NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
+
+## Production Environment Variables
+
+**Set on Render dashboard (apps/api):**
+- DATABASE_URL, SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+- JWT_SECRET, PAYSTACK_SECRET_KEY, PAYSTACK_PUBLIC_KEY, PAYSTACK_WEBHOOK_SECRET
+- NODE_ENV=production, PORT=5000
+
+**Set on Vercel dashboard (apps/web):**
+- NEXT_PUBLIC_API_URL=https://leja-api.onrender.com/api/v1
+- NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_live_xxxx

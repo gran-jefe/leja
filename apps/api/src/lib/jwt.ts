@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { UserRole } from '@leja/shared';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+import { config } from '../config';
 
 export interface TokenPayload {
   id: string;
@@ -10,11 +9,11 @@ export interface TokenPayload {
 }
 
 export const signToken = (payload: TokenPayload): string => {
-  return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: '7d',
+  return jwt.sign(payload, config.auth.jwtSecret, {
+    expiresIn: config.auth.jwtExpiresIn,
   });
 };
 
 export const verifyToken = (token: string): TokenPayload => {
-  return jwt.verify(token, JWT_SECRET) as TokenPayload;
+  return jwt.verify(token, config.auth.jwtSecret) as TokenPayload;
 };

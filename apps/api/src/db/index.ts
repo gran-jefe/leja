@@ -1,14 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import { Pool } from 'pg';
+import { config } from '../config';
 
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const databaseUrl = process.env.DATABASE_URL || '';
-
-export const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+export const supabase = createClient(
+  config.db.supabaseUrl,
+  config.db.supabaseServiceRoleKey
+);
 
 export const pool = new Pool({
-  connectionString: databaseUrl,
+  connectionString: config.db.url,
 });
 
 export const testConnection = async () => {

@@ -1,6 +1,5 @@
 import https from 'https';
-
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || '';
+import { config } from '../config';
 
 interface InitializePaymentParams {
   email: string;
@@ -28,7 +27,7 @@ const paystackRequest = (
       path: endpoint,
       method,
       headers: {
-        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        Authorization: `Bearer ${config.paystack.secretKey}`,
         'Content-Type': 'application/json',
       },
     };
