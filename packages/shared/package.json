@@ -1,0 +1,16 @@
+{
+  "name": "@leja/shared",
+  "version": "0.1.0",
+  "description": "Shared types and utilities for Leja",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

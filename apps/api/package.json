@@ -1,0 +1,39 @@
+{
+  "name": "api",
+  "version": "0.1.0",
+  "description": "Leja API server",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint src",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "dotenv": "^16.3.1",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "pg": "^8.11.3",
+    "zod": "^3.22.4",
+    "express-rate-limit": "^7.0.0",
+    "@supabase/supabase-js": "^2.38.4",
+    "morgan": "^1.10.0",
+    "@leja/shared": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "ts-node-dev": "^2.0.0",
+    "@types/express": "^4.17.20",
+    "@types/cors": "^2.8.16",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/bcryptjs": "^2.4.4",
+    "@types/pg": "^8.10.8",
+    "@types/morgan": "^1.9.8",
+    "@types/node": "^20.8.10"
+  }
+}
