@@ -35,8 +35,12 @@ export const validateConfig = () => {
     ['db.supabaseUrl', config.db.supabaseUrl],
     ['db.supabaseServiceRoleKey', config.db.supabaseServiceRoleKey],
     ['auth.jwtSecret', config.auth.jwtSecret],
-    ['paystack.secretKey', config.paystack.secretKey],
   ];
+
+  // Paystack is required only in production
+  if (config.isProduction) {
+    requiredFields.push(['paystack.secretKey', config.paystack.secretKey]);
+  }
 
   const missing = requiredFields
     .filter(([_, value]) => !value)
