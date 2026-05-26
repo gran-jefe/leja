@@ -1,10 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import { Pool } from 'pg';
+import ws from 'ws';
 import { config } from '../config';
 
 export const supabase = createClient(
   config.db.supabaseUrl,
-  config.db.supabaseServiceRoleKey
+  config.db.supabaseServiceRoleKey,
+  { global: { headers: { 'User-Agent': 'leja-api' } }, realtime: { transport: ws as any } }
 );
 
 export const pool = new Pool({
