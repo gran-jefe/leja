@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticateToken } from '../middleware/auth';
 import { agreementRateLimit } from '../middleware/rateLimit';
+import { initializePayment, generateReference } from '../lib/flutterwave';
 
 const router = Router();
 
@@ -8,40 +9,61 @@ router.post(
   '/',
   authenticateToken,
   agreementRateLimit,
-  (req: Request, res: Response) => {
-    const {
-      propertyId,
-      tenantId,
-      startDate,
-      endDate,
-      monthlyRent,
-      annualRent,
-    } = req.body;
-
-    console.log('Create agreement - placeholder', {
-      propertyId,
-      tenantId,
-      startDate,
-      endDate,
-    });
-
-    return res.status(201).json({
-      success: true,
-      data: {
-        id: 'agreement-id-placeholder',
+  async (req: Request, res: Response) => {
+    try {
+      const {
         propertyId,
-        landlordId: req.user?.id,
         tenantId,
         startDate,
         endDate,
         monthlyRent,
         annualRent,
-        status: 'DRAFT',
-        lawyerReviewStatus: 'NOT_REQUESTED',
-        paymentLink: 'https://paystack.co/pay/placeholder',
-      },
-      message: 'Agreement created',
-    });
+        withLawyerReview,
+      } = req.body;
+
+      console.log('Create agreement - placeholder', {
+        propertyId,
+        tenantId,
+        startDate,
+        endDate,
+      });
+
+      const agreementId = 'agreement-id-placeholder';
+      const amount = withLawyerReview ? 12000 : 3500;
+
+      const { paymentLink } = await initializePayment({
+        email: req.user!.email,
+        amount,
+        reference: generateReference('AGR'),
+        name: req.user!.email,
+        redirectUrl: `https://leja.ng/agreement/${agreementId}/callback`,
+        meta: { propertyId, tenantId, agreementId },
+      });
+
+      return res.status(201).json({
+        success: true,
+        data: {
+          id: agreementId,
+          propertyId,
+          landlordId: req.user?.id,
+          tenantId,
+          startDate,
+          endDate,
+          monthlyRent,
+          annualRent,
+          status: 'DRAFT',
+          lawyerReviewStatus: 'NOT_REQUESTED',
+          paymentLink,
+        },
+        message: 'Agreement created',
+      });
+    } catch (error) {
+      console.error('Create agreement error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create agreement',
+      });
+    }
   }
 );
 
@@ -79,20 +101,37 @@ router.get('/:id', authenticateToken, (req: Request, res: Response) => {
 router.post(
   '/:id/request-lawyer-review',
   authenticateToken,
-  (req: Request, res: Response) => {
-    const { id } = req.params;
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
 
-    console.log('Request lawyer review - placeholder', { id });
+      console.log('Request lawyer review - placeholder', { id });
 
-    return res.json({
-      success: true,
-      data: {
-        id,
-        lawyerReviewStatus: 'PENDING',
-        paymentLink: 'https://paystack.co/pay/placeholder',
-      },
-      message: 'Lawyer review requested',
-    });
+      const { paymentLink } = await initializePayment({
+        email: req.user!.email,
+        amount: 12000,
+        reference: generateReference('REV'),
+        name: req.user!.email,
+        redirectUrl: `https://leja.ng/agreement/${id}/callback`,
+        meta: { agreementId: id },
+      });
+
+      return res.json({
+        success: true,
+        data: {
+          id,
+          lawyerReviewStatus: 'PENDING',
+          paymentLink,
+        },
+        message: 'Lawyer review requested',
+      });
+    } catch (error) {
+      console.error('Request lawyer review error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to request lawyer review',
+      });
+    }
   }
 );
 

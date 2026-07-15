@@ -1,38 +1,49 @@
-import { Router, Request, Response } from 'express';
-import { authenticateToken, requireRole } from '../middleware/auth';
-import { UserRole } from '@leja/shared';
+import { Router, Request, Response, NextFunction } from 'express';
+import { authenticateToken } from '../middleware/auth';
+import { findUserById, updateUser } from '../db/queries/users';
+import { updateProfileSchema } from '../lib/schemas';
 
 const router = Router();
 
-router.get('/profile', authenticateToken, (req: Request, res: Response) => {
-  console.log('Get profile - placeholder');
-  return res.json({
-    success: true,
-    data: {
-      id: req.user?.id,
-      email: req.user?.email,
-      name: 'John Doe',
-      phone: '+2348012345678',
-      role: req.user?.role,
-    },
-    message: 'Profile retrieved',
-  });
+router.get('/profile', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await findUserById(req.user!.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: { user },
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
-router.patch('/profile', authenticateToken, (req: Request, res: Response) => {
-  const { name, phone } = req.body;
-  console.log('Update profile - placeholder', { name, phone });
+router.patch('/profile', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const parsed = updateProfileSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        errors: parsed.error.errors.map((e) => e.message),
+      });
+    }
 
-  return res.json({
-    success: true,
-    data: {
-      id: req.user?.id,
-      email: req.user?.email,
-      name: name || 'John Doe',
-      phone: phone || '+2348012345678',
-    },
-    message: 'Profile updated',
-  });
+    const updated = await updateUser(req.user!.id, parsed.data);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Profile updated',
+      data: { user: updated },
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.get(

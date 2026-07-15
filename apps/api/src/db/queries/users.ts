@@ -1,133 +1,68 @@
 import { supabase } from '../index';
 import { IUser, UserRole } from '@leja/shared';
 
-interface CreateUserInput {
+type SafeUser = Omit<IUser, 'password_hash'> & { id: string };
+
+export async function createUser(data: {
   email: string;
   passwordHash: string;
   name: string;
   phone?: string;
   role: UserRole;
-}
-
-export const createUser = async (data: CreateUserInput): Promise<Omit<IUser, 'password'>> => {
+}): Promise<SafeUser> {
   const { data: user, error } = await supabase
     .from('users')
-    .insert([
-      {
-        email: data.email,
-        password_hash: data.passwordHash,
-        name: data.name,
-        phone: data.phone || null,
-        role: data.role,
-        is_verified: false,
-      },
-    ])
+    .insert({
+      email: data.email,
+      password_hash: data.passwordHash,
+      name: data.name,
+      phone: data.phone || null,
+      role: data.role,
+    })
     .select('id, email, name, phone, role, is_verified, created_at, updated_at')
     .single();
 
-  if (error) {
-    throw new Error(`Failed to create user: ${error.message}`);
-  }
+  if (error) throw new Error(`Failed to create user: ${error.message}`);
+  return user as unknown as SafeUser;
+}
 
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    phone: user.phone,
-    role: user.role,
-    isVerified: user.is_verified,
-    createdAt: new Date(user.created_at),
-    updatedAt: new Date(user.updated_at),
-  };
-};
-
-export const findUserByEmail = async (
+export async function findUserByEmail(
   email: string
-): Promise<(IUser & { passwordHash: string }) | null> => {
+): Promise<(SafeUser & { password_hash: string }) | null> {
   const { data: user, error } = await supabase
     .from('users')
-    .select('id, email, password_hash, name, phone, role, is_verified, created_at, updated_at')
-    .eq('email', email)
+    .select('id, email, name, phone, role, is_verified, password_hash, created_at, updated_at')
+    .eq('email', email.toLowerCase().trim())
     .single();
 
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return null; // No user found
-    }
-    throw new Error(`Failed to find user: ${error.message}`);
-  }
-
-  return {
-    id: user.id,
-    email: user.email,
-    passwordHash: user.password_hash,
-    name: user.name,
-    phone: user.phone,
-    role: user.role,
-    isVerified: user.is_verified,
-    createdAt: new Date(user.created_at),
-    updatedAt: new Date(user.updated_at),
-  };
-};
-
-export const findUserById = async (id: string): Promise<Omit<IUser, 'password'> | null> => {
-  const { data: user, error } = await supabase
-    .from('users')
-    .select('id, email, name, phone, role, is_verified, created_at, updated_at')
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return null; // No user found
-    }
-    throw new Error(`Failed to find user: ${error.message}`);
-  }
-
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    phone: user.phone,
-    role: user.role,
-    isVerified: user.is_verified,
-    createdAt: new Date(user.created_at),
-    updatedAt: new Date(user.updated_at),
-  };
-};
-
-interface UpdateUserInput {
-  name?: string;
-  phone?: string;
+  if (error?.code === 'PGRST116') return null; // not found
+  if (error) throw new Error(`Database error: ${error.message}`);
+  return user as unknown as SafeUser & { password_hash: string };
 }
 
-export const updateUser = async (
-  id: string,
-  data: UpdateUserInput
-): Promise<Omit<IUser, 'password'>> => {
-  const updateData: any = {};
-  if (data.name) updateData.name = data.name;
-  if (data.phone !== undefined) updateData.phone = data.phone;
-
+export async function findUserById(id: string): Promise<SafeUser | null> {
   const { data: user, error } = await supabase
     .from('users')
-    .update(updateData)
+    .select('id, email, name, phone, role, is_verified, created_at, updated_at')
+    .eq('id', id)
+    .single();
+
+  if (error?.code === 'PGRST116') return null;
+  if (error) throw new Error(`Database error: ${error.message}`);
+  return user as unknown as SafeUser;
+}
+
+export async function updateUser(
+  id: string,
+  data: { name?: string; phone?: string }
+): Promise<SafeUser> {
+  const { data: user, error } = await supabase
+    .from('users')
+    .update({ ...data, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select('id, email, name, phone, role, is_verified, created_at, updated_at')
     .single();
 
-  if (error) {
-    throw new Error(`Failed to update user: ${error.message}`);
-  }
-
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    phone: user.phone,
-    role: user.role,
-    isVerified: user.is_verified,
-    createdAt: new Date(user.created_at),
-    updatedAt: new Date(user.updated_at),
-  };
-};
+  if (error) throw new Error(`Failed to update user: ${error.message}`);
+  return user as unknown as SafeUser;
+}

@@ -1,10 +1,11 @@
 import 'dotenv/config';
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
 
 import { config, validateConfig } from './config';
+import { errorHandler } from './middleware/error';
 import authRoutes from './routes/auth';
 import usersRoutes from './routes/users';
 import propertiesRoutes from './routes/properties';
@@ -60,13 +61,14 @@ app.use('/api/v1/agreements', agreementsRoutes);
 app.use('/api/v1/payments', paymentsRoutes);
 app.use('/api/v1/rental-history', rentalHistoryRoutes);
 
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error(err);
-  res.status(err.status || 500).json({
+app.use((req, res) => {
+  res.status(404).json({
     success: false,
-    message: err.message || 'Internal server error',
+    message: `Route ${req.method} ${req.path} not found`,
   });
 });
+
+app.use(errorHandler);
 
 app.listen(config.port, () => {
   console.log(`Leja API running on port ${config.port} (${config.env})`);

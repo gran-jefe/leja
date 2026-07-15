@@ -13,14 +13,14 @@ export const config = {
 
   auth: {
     jwtSecret: process.env.JWT_SECRET || '',
-    jwtExpiresIn: '7d',
+    jwtExpiresIn: '7d' as const,
   },
 
-  paystack: {
-    secretKey: process.env.PAYSTACK_SECRET_KEY || '',
-    publicKey: process.env.PAYSTACK_PUBLIC_KEY || '',
-    webhookSecret: process.env.PAYSTACK_WEBHOOK_SECRET || '',
-    baseUrl: 'https://api.paystack.co',
+  flutterwave: {
+    secretKey: process.env.FLW_SECRET_KEY || '',
+    publicKey: process.env.FLW_PUBLIC_KEY || '',
+    webhookHash: process.env.FLW_WEBHOOK_HASH || '',
+    baseUrl: 'https://api.flutterwave.com/v3',
   },
 
   cors: {
@@ -37,9 +37,10 @@ export const validateConfig = () => {
     ['auth.jwtSecret', config.auth.jwtSecret],
   ];
 
-  // Paystack is required only in production
+  // Flutterwave is required only in production
   if (config.isProduction) {
-    requiredFields.push(['paystack.secretKey', config.paystack.secretKey]);
+    requiredFields.push(['flutterwave.secretKey', config.flutterwave.secretKey]);
+    requiredFields.push(['flutterwave.webhookHash', config.flutterwave.webhookHash]);
   }
 
   const missing = requiredFields

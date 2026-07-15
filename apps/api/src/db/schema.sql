@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS payments (
   type TEXT NOT NULL CHECK (type IN ('AGREEMENT_BASIC','AGREEMENT_REVIEWED','SUBSCRIPTION','RENTAL_HISTORY')),
   amount NUMERIC(12,2) NOT NULL,
   status TEXT DEFAULT 'PENDING' CHECK (status IN ('PENDING','SUCCESS','FAILED')),
-  paystack_reference TEXT UNIQUE NOT NULL,
+  paystack_reference TEXT UNIQUE NOT NULL, -- legacy column name, now stores the Flutterwave tx_ref
   metadata JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

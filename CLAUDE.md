@@ -10,7 +10,7 @@
 - **Frontend (apps/web):** Next.js 14, TypeScript, Tailwind CSS, App Router, react-hook-form, axios, zod
 - **Backend (apps/api):** Node.js, Express, TypeScript, PostgreSQL (Supabase), Zod validation
 - **Shared types (packages/shared):** @leja/shared
-- **Payments:** Paystack (all amounts in kobo when calling Paystack API; stored in Naira in DB)
+- **Payments:** Flutterwave (all amounts in Naira — never convert to kobo; stored in Naira in DB)
 - **Auth:** JWT stored in httpOnly cookies (frontend uses js-cookie)
 - **Deployment:** Vercel (web), Render (api)
 
@@ -40,11 +40,17 @@
 
 - **Agreement pricing:** ₦3,500 basic, ₦12,000 with lawyer review
 - **Rental history export:** ₦5,000
-- **Payment confirmation:** Payment must be confirmed via Paystack webhook before agreement status changes to ACTIVE
+- **Payment confirmation:** Payment must be confirmed via Flutterwave webhook before agreement status changes to ACTIVE
 - **Agreement visibility:** Only visible to the two parties involved (landlord + tenant)
 - **Property deletion:** Soft delete only (is_deleted flag, never hard delete)
-- **Monetary storage:** All values stored in **Naira** (2 decimal places) in DB; convert to kobo only when calling Paystack API
-- **Paystack conversion:** `naira * 100 = kobo` when sending to Paystack; `kobo / 100 = naira` when receiving
+- **Monetary storage:** All values stored in **Naira** (2 decimal places) in DB; Flutterwave amounts are in Naira — never convert to kobo
+
+## Flutterwave Integration Notes
+
+- Flutterwave amounts are in Naira — never convert to kobo
+- Webhook verification uses `verif-hash` header, not HMAC body signature
+- Successful payment status string is `'successful'` not `'success'`
+- `verifyPayment()` takes a transaction ID (integer), not a `tx_ref` string
 
 ## API Base URL
 
@@ -62,9 +68,10 @@
    - `SUPABASE_ANON_KEY` — Supabase anonymous key
    - `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key
    - `JWT_SECRET` — Secret for JWT signing
-   - `PAYSTACK_SECRET_KEY` — Paystack secret key
-   - `PAYSTACK_PUBLIC_KEY` — Paystack public key
-   - `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` — Frontend Paystack key
+   - `FLW_SECRET_KEY` — Flutterwave secret key
+   - `FLW_PUBLIC_KEY` — Flutterwave public key
+   - `FLW_WEBHOOK_HASH` — Flutterwave webhook verification hash
+   - `NEXT_PUBLIC_FLW_PUBLIC_KEY` — Frontend Flutterwave key
    - `NEXT_PUBLIC_API_URL` — Frontend API URL (e.g., `http://localhost:5000/api/v1`)
    - `NODE_ENV` — development/production
    - `PORT` — API port (default 5000)
@@ -94,7 +101,7 @@ leja/
 │   │   │   │   └── seed.sql
 │   │   │   ├── lib/
 │   │   │   │   ├── jwt.ts
-│   │   │   │   └── paystack.ts
+│   │   │   │   └── flutterwave.ts
 │   │   │   └── services/
 │   │   └── package.json
 │   │
@@ -212,15 +219,15 @@ See `apps/api/src/db/seed.sql` for sample data:
 
 - **Root .env.example** — template only, commit this
 - **apps/api/.env** — never commit, copy from .env.example and fill values
-- **apps/web/.env.local** — never commit, set NEXT_PUBLIC_API_URL and NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
+- **apps/web/.env.local** — never commit, set NEXT_PUBLIC_API_URL and NEXT_PUBLIC_FLW_PUBLIC_KEY
 
 ## Production Environment Variables
 
 **Set on Render dashboard (apps/api):**
 - DATABASE_URL, SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
-- JWT_SECRET, PAYSTACK_SECRET_KEY, PAYSTACK_PUBLIC_KEY, PAYSTACK_WEBHOOK_SECRET
+- JWT_SECRET, FLW_SECRET_KEY, FLW_PUBLIC_KEY, FLW_WEBHOOK_HASH
 - NODE_ENV=production, PORT=5000
 
 **Set on Vercel dashboard (apps/web):**
 - NEXT_PUBLIC_API_URL=https://leja-api.onrender.com/api/v1
-- NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_live_xxxx
+- NEXT_PUBLIC_FLW_PUBLIC_KEY=pk_live_xxxx

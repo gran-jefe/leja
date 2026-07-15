@@ -29,8 +29,8 @@ router.get(
     return res.json({
       success: true,
       data: {
-        paymentLink: 'https://paystack.co/pay/placeholder',
-        amount: 500000,
+        paymentLink: 'https://flutterwave.com/pay/placeholder',
+        amount: 5000,
       },
       message: 'Rental history export initiated',
     });

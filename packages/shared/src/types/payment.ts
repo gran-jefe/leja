@@ -17,7 +17,7 @@ export interface IPayment {
   type: PaymentType;
   amount: number;
   status: PaymentStatus;
-  paystackReference: string;
+  paystackReference: string; // legacy name, now stores the Flutterwave tx_ref
   metadata?: Record<string, any>;
   createdAt: Date;
 }

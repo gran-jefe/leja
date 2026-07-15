@@ -21,7 +21,9 @@ services:
         sync: false
       - key: JWT_SECRET
         sync: false
-      - key: PAYSTACK_SECRET_KEY
+      - key: FLW_SECRET_KEY
         sync: false
-      - key: PAYSTACK_PUBLIC_KEY
+      - key: FLW_PUBLIC_KEY
+        sync: false
+      - key: FLW_WEBHOOK_HASH
         sync: false

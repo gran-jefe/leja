@@ -1,8 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Cookie from 'js-cookie';
-import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
 
 interface User {
   id: string;
@@ -11,38 +9,35 @@ interface User {
   role: 'LANDLORD' | 'TENANT';
 }
 
-export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    const token = Cookie.get('token');
-    if (!token) {
-      setIsLoading(false);
-      return;
-    }
-
+export function useAuth() {
+  const getUser = (): User | null => {
+    if (typeof window === 'undefined') return null;
     try {
+      const stored = localStorage.getItem('leja_user');
+      if (stored) return JSON.parse(stored);
+      // fallback: decode JWT from cookie
+      const token = Cookies.get('leja_token');
+      if (!token) return null;
       const payload = JSON.parse(atob(token.split('.')[1]));
-      setUser(payload);
-    } catch (err) {
-      console.error('Failed to decode token', err);
-      Cookie.remove('token');
+      return payload;
+    } catch {
+      return null;
     }
-    setIsLoading(false);
-  }, []);
+  };
+
+  const user = getUser();
 
   const logout = () => {
-    Cookie.remove('token');
-    setUser(null);
-    router.push('/login');
+    Cookies.remove('leja_token');
+    localStorage.removeItem('leja_user');
+    window.location.href = '/login';
   };
 
   return {
     user,
     isAuthenticated: !!user,
-    isLoading,
+    isLandlord: user?.role === 'LANDLORD',
+    isTenant: user?.role === 'TENANT',
     logout,
   };
-};
+}

@@ -39,12 +39,13 @@ const propertyTypeLabel = {
 export default function NewPropertyPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const monthlyRent = parseInt(watch('monthlyRent') || '0', 10);
-  const annualRent = calculateAnnualRent(monthlyRent);
 
   const { register, handleSubmit, formState: { errors }, watch } = useForm<PropertyFormData>({
     resolver: zodResolver(propertySchema),
   });
+
+  const monthlyRent = watch('monthlyRent') || 0;
+  const annualRent = calculateAnnualRent(monthlyRent);
 
   const onSubmit = async (data: PropertyFormData) => {
     setLoading(true);

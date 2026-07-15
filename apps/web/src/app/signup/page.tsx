@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
-import Cookie from 'js-cookie';
+import Cookies from 'js-cookie';
 import api from '@/lib/api';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/Button';
@@ -44,10 +44,19 @@ export default function SignupPage() {
     setError('');
     try {
       const response = await api.post('/auth/register', data);
-      Cookie.set('token', response.data.data.token, { expires: 7 });
+      const { token, user } = response.data.data;
+      Cookies.set('leja_token', token, { expires: 7 });
+      localStorage.setItem('leja_user', JSON.stringify(user));
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Signup failed');
+      if (!err.response) {
+        setError('Unable to connect. Please try again.');
+      } else {
+        const errors = err.response.data?.errors;
+        setError(
+          Array.isArray(errors) ? errors.join(' ') : err.response.data?.message || 'Signup failed'
+        );
+      }
     } finally {
       setLoading(false);
     }

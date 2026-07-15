@@ -5,6 +5,7 @@ import { config } from '../config';
 export interface TokenPayload {
   id: string;
   email: string;
+  name: string;
   role: UserRole;
 }
 

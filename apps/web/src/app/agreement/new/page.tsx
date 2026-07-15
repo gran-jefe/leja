@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { PropertyType } from '@leja/shared';
+import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { StepIndicator } from '@/components/layout/StepIndicator';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
@@ -12,6 +13,9 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { PayButton } from '@/components/shared/PayButton';
+import { useAuth } from '@/hooks/useAuth';
+import api from '@/lib/api';
 import { formatNaira, calculateAnnualRent } from '@/lib/utils';
 
 const propertySchema = z.object({
@@ -39,9 +43,12 @@ interface FormState extends PropertyFormData, TenancyFormData {
 }
 
 export default function NewAgreementPage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [withLawyerReview, setWithLawyerReview] = useState(false);
   const [formData, setFormData] = useState<Partial<FormState>>({});
+  const [paymentError, setPaymentError] = useState('');
 
   const propertyForm = useForm<PropertyFormData>({
     resolver: zodResolver(propertySchema),
@@ -57,6 +64,7 @@ export default function NewAgreementPage() {
   const annualRent = calculateAnnualRent(monthlyRent);
   const basePrice = 3500;
   const totalPrice = withLawyerReview ? 12000 : basePrice;
+  const paymentReference = useMemo(() => `LEJA_AGR_${Date.now()}`, [step]);
 
   const handlePropertyNext = async (data: PropertyFormData) => {
     setFormData((prev) => ({ ...prev, ...data }));
@@ -70,6 +78,34 @@ export default function NewAgreementPage() {
 
   const handleBack = () => {
     setStep((prev) => Math.max(1, prev - 1));
+  };
+
+  const handlePaymentSuccess = async (response: any) => {
+    setPaymentError('');
+    try {
+      const { data } = await api.post('/agreements', {
+        propertyId: formData.address,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        propertyType: formData.propertyType,
+        bedrooms: formData.bedrooms,
+        bathrooms: formData.bathrooms,
+        tenantName: formData.tenantName,
+        tenantEmail: formData.tenantEmail,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        monthlyRent: formData.monthlyRent,
+        annualRent,
+        withLawyerReview,
+        flutterwaveReference: response.tx_ref,
+        transactionId: response.transaction_id,
+      });
+
+      router.push(`/agreement/${data.data.id}`);
+    } catch (err) {
+      setPaymentError('Payment succeeded but we could not create the agreement. Please contact support.');
+    }
   };
 
   const propertyTypeLabel = {
@@ -251,18 +287,26 @@ export default function NewAgreementPage() {
                   <p className="font-display text-2xl font-bold text-forest">{formatNaira(totalPrice)}</p>
                 </Card>
 
+                {paymentError && (
+                  <Card className="bg-ember bg-opacity-10 border border-ember">
+                    <p className="font-body text-sm text-ember">{paymentError}</p>
+                  </Card>
+                )}
+
                 <div className="flex gap-4">
                   <Button variant="secondary" className="flex-1" onClick={handleBack}>
                     Back
                   </Button>
-                  <Button
-                    variant="primary"
+                  <PayButton
                     className="flex-1"
-                    disabled
-                    title="Paystack integration coming soon"
-                  >
-                    Pay with Paystack (Coming soon)
-                  </Button>
+                    amount={totalPrice}
+                    email={user?.email || formData.tenantEmail || ''}
+                    name={user?.name || formData.tenantName || ''}
+                    reference={paymentReference}
+                    description={withLawyerReview ? 'Agreement + Lawyer Review' : 'Tenancy Agreement'}
+                    onSuccess={handlePaymentSuccess}
+                    onClose={() => console.log('Payment closed')}
+                  />
                 </div>
               </div>
             )}
