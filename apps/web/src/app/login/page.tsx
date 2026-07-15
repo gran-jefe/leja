@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
 import Cookies from 'js-cookie';
+import NProgress from 'nprogress';
 import api from '@/lib/api';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/Button';
@@ -33,6 +34,7 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
+    NProgress.start();
     setLoading(true);
     setError('');
     try {
@@ -42,6 +44,7 @@ export default function LoginPage() {
       localStorage.setItem('leja_user', JSON.stringify(user));
       router.push('/dashboard');
     } catch (err: any) {
+      NProgress.done();
       if (!err.response) {
         setError('Unable to connect. Please try again.');
       } else if (err.response.status === 401) {
