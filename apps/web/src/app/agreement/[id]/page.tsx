@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
@@ -9,12 +9,14 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { FileDown, CheckCircle2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/Spinner';
+import { FileDown, CheckCircle2, CheckCircle } from 'lucide-react';
 import { useAgreement } from '@/hooks/useAgreements';
 import api from '@/lib/api';
 import {
   formatDate,
   formatNaira,
+  getAgreementStatusLabel,
   getAgreementStatusVariant,
   getErrorMessage,
   getLawyerReviewStatusVariant,
@@ -26,6 +28,18 @@ export default function AgreementPage() {
   const { agreement, loading, error, refetch } = useAgreement(id);
   const [requestingReview, setRequestingReview] = useState(false);
   const [reviewError, setReviewError] = useState('');
+
+  const isGeneratingPdf = agreement?.status === 'ACTIVE' && !agreement?.pdf_url;
+
+  useEffect(() => {
+    if (!isGeneratingPdf) return;
+
+    const interval = setInterval(() => {
+      refetch();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isGeneratingPdf, refetch]);
 
   const handleRequestLawyerReview = async () => {
     setRequestingReview(true);
@@ -39,6 +53,12 @@ export default function AgreementPage() {
       setRequestingReview(false);
     }
   };
+
+  const downloadLabel = agreement?.pdf_url
+    ? 'Download Agreement PDF'
+    : agreement?.status === 'ACTIVE'
+      ? 'Generating your PDF...'
+      : 'PDF available after payment';
 
   return (
     <ProtectedPageWrapper>
@@ -65,7 +85,7 @@ export default function AgreementPage() {
                   </h1>
                   <div className="flex gap-2">
                     <Badge variant={getAgreementStatusVariant(agreement.status)}>
-                      {agreement.status}
+                      {getAgreementStatusLabel(agreement.status)}
                     </Badge>
                     <Badge variant={getLawyerReviewStatusVariant(agreement.lawyer_review_status)}>
                       Lawyer Review: {agreement.lawyer_review_status}
@@ -120,7 +140,7 @@ export default function AgreementPage() {
                   </div>
                 )}
 
-                <div className="flex gap-4 mt-6">
+                <div className="flex items-center gap-4 mt-6">
                   <Button
                     variant="secondary"
                     className="flex items-center gap-2"
@@ -128,8 +148,12 @@ export default function AgreementPage() {
                     onClick={() => window.open(agreement.pdf_url, '_blank')}
                   >
                     <FileDown size={18} />
-                    Download PDF
+                    {downloadLabel}
                   </Button>
+                  {isGeneratingPdf && <Spinner size="sm" />}
+                  {agreement.pdf_url && (
+                    <CheckCircle size={20} className="text-forest" />
+                  )}
                   {agreement.lawyer_review_status === 'NOT_REQUESTED' && (
                     <Button
                       variant="primary"

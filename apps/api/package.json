@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@leja/shared": "*",
+    "@sparticuz/chromium": "^147.0.0",
     "@supabase/supabase-js": "^2.106.2",
     "axios": "^1.18.1",
     "bcryptjs": "^2.4.3",
@@ -24,6 +25,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "pg": "^8.11.3",
+    "puppeteer-core": "^24.43.1",
     "zod": "^3.22.4"
   },
   "devDependencies": {

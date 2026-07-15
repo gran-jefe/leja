@@ -61,6 +61,24 @@ export const createAgreementWithProperty = async (input: CreateAgreementInput) =
     .single();
 
   if (error) throw new Error(`Failed to create agreement: ${error.message}`);
+
+  // The Flutterwave webhook confirms payment by looking up a `payments` row
+  // by reference, then flips the linked agreement to ACTIVE — without this
+  // row the webhook has nothing to match against and the agreement would
+  // never activate.
+  const { error: paymentError } = await supabase.from('payments').insert({
+    user_id: input.landlordId,
+    agreement_id: agreement.id,
+    type: input.withLawyerReview ? 'AGREEMENT_REVIEWED' : 'AGREEMENT_BASIC',
+    amount: input.withLawyerReview ? 12000 : 3500,
+    status: 'PENDING',
+    paystack_reference: input.paymentReference,
+  });
+
+  if (paymentError) {
+    throw new Error(`Failed to record agreement payment: ${paymentError.message}`);
+  }
+
   return agreement;
 };
 

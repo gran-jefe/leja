@@ -28,13 +28,32 @@ export const getAgreementStatusVariant = (status: string): BadgeVariant => {
     case 'ACTIVE':
       return 'success';
     case 'PENDING_PAYMENT':
-    case 'EXPIRED':
       return 'warning';
+    case 'EXPIRED':
     case 'DISPUTED':
     case 'TERMINATED':
       return 'danger';
     default:
       return 'default';
+  }
+};
+
+export const getAgreementStatusLabel = (status: string): string => {
+  switch (status) {
+    case 'ACTIVE':
+      return 'Agreement Active';
+    case 'PENDING_PAYMENT':
+      return 'Awaiting Payment';
+    case 'DRAFT':
+      return 'Draft';
+    case 'EXPIRED':
+      return 'Expired';
+    case 'DISPUTED':
+      return 'Disputed';
+    case 'TERMINATED':
+      return 'Terminated';
+    default:
+      return status;
   }
 };
 
