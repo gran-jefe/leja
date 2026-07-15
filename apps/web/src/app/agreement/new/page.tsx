@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,7 +15,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { PayButton } from '@/components/shared/PayButton';
 import { useAuth } from '@/hooks/useAuth';
-import api from '@/lib/api';
+import { useCreateAgreement } from '@/hooks/useAgreements';
 import { formatNaira, calculateAnnualRent } from '@/lib/utils';
 
 const propertySchema = z.object({
@@ -45,10 +45,10 @@ interface FormState extends PropertyFormData, TenancyFormData {
 export default function NewAgreementPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { createAgreement, error: agreementError } = useCreateAgreement();
   const [step, setStep] = useState(1);
   const [withLawyerReview, setWithLawyerReview] = useState(false);
   const [formData, setFormData] = useState<Partial<FormState>>({});
-  const [paymentError, setPaymentError] = useState('');
 
   const propertyForm = useForm<PropertyFormData>({
     resolver: zodResolver(propertySchema),
@@ -59,6 +59,15 @@ export default function NewAgreementPage() {
     resolver: zodResolver(tenancySchema),
     defaultValues: formData,
   });
+
+  useEffect(() => {
+    const draftAddress = sessionStorage.getItem('leja_draft_property');
+    if (draftAddress) {
+      propertyForm.setValue('address', draftAddress);
+      sessionStorage.removeItem('leja_draft_property');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const monthlyRent = formData.monthlyRent || 0;
   const annualRent = calculateAnnualRent(monthlyRent);
@@ -81,30 +90,26 @@ export default function NewAgreementPage() {
   };
 
   const handlePaymentSuccess = async (response: any) => {
-    setPaymentError('');
-    try {
-      const { data } = await api.post('/agreements', {
-        propertyId: formData.address,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        propertyType: formData.propertyType,
-        bedrooms: formData.bedrooms,
-        bathrooms: formData.bathrooms,
-        tenantName: formData.tenantName,
-        tenantEmail: formData.tenantEmail,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        monthlyRent: formData.monthlyRent,
-        annualRent,
-        withLawyerReview,
-        flutterwaveReference: response.tx_ref,
-        transactionId: response.transaction_id,
-      });
+    const agreement = await createAgreement({
+      address: formData.address,
+      city: formData.city,
+      state: formData.state,
+      propertyType: formData.propertyType,
+      bedrooms: formData.bedrooms,
+      bathrooms: formData.bathrooms,
+      tenantName: formData.tenantName,
+      tenantEmail: formData.tenantEmail,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      monthlyRent: formData.monthlyRent,
+      annualRent,
+      withLawyerReview,
+      flutterwaveReference: response.tx_ref,
+      transactionId: response.transaction_id,
+    });
 
-      router.push(`/agreement/${data.data.id}`);
-    } catch (err) {
-      setPaymentError('Payment succeeded but we could not create the agreement. Please contact support.');
+    if (agreement) {
+      router.push(`/agreement/${agreement.id}`);
     }
   };
 
@@ -287,9 +292,9 @@ export default function NewAgreementPage() {
                   <p className="font-display text-2xl font-bold text-forest">{formatNaira(totalPrice)}</p>
                 </Card>
 
-                {paymentError && (
+                {agreementError && (
                   <Card className="bg-ember bg-opacity-10 border border-ember">
-                    <p className="font-body text-sm text-ember">{paymentError}</p>
+                    <p className="font-body text-sm text-ember">{agreementError}</p>
                   </Card>
                 )}
 

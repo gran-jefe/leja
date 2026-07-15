@@ -1,6 +1,7 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { UserRole } from '@leja/shared';
+import { findRentalHistoryByTenant } from '../db/queries/rentalHistory';
 
 const router = Router();
 
@@ -8,14 +9,18 @@ router.get(
   '/mine',
   authenticateToken,
   requireRole(UserRole.TENANT),
-  (req: Request, res: Response) => {
-    console.log('Get own rental history - placeholder', { userId: req.user?.id });
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const history = await findRentalHistoryByTenant(req.user!.id);
 
-    return res.json({
-      success: true,
-      data: [],
-      message: 'Rental history retrieved',
-    });
+      return res.json({
+        success: true,
+        data: history,
+        message: 'Rental history retrieved',
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 );
 

@@ -1,6 +1,13 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { UserRole } from '@leja/shared';
+import {
+  createProperty,
+  findPropertiesByLandlord,
+  findPropertyById,
+  updateProperty,
+  softDeleteProperty,
+} from '../db/queries/properties';
 
 const router = Router();
 
@@ -8,113 +15,99 @@ router.post(
   '/',
   authenticateToken,
   requireRole(UserRole.LANDLORD),
-  (req: Request, res: Response) => {
-    const {
-      address,
-      city,
-      state,
-      propertyType,
-      bedrooms,
-      bathrooms,
-      monthlyRent,
-      annualRent,
-    } = req.body;
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { address, city, state, propertyType, bedrooms, bathrooms, monthlyRent } = req.body;
+      const annualRent = Number(monthlyRent) * 12;
 
-    console.log('Create property - placeholder', {
-      address,
-      city,
-      state,
-      propertyType,
-    });
-
-    return res.status(201).json({
-      success: true,
-      data: {
-        id: 'property-id-placeholder',
-        landlordId: req.user?.id,
+      const property = await createProperty({
+        landlordId: req.user!.id,
         address,
         city,
         state,
         propertyType,
-        bedrooms,
-        bathrooms,
-        monthlyRent,
+        bedrooms: Number(bedrooms),
+        bathrooms: Number(bathrooms),
+        monthlyRent: Number(monthlyRent),
         annualRent,
-        isAvailable: true,
-      },
-      message: 'Property created',
-    });
+      });
+
+      return res.status(201).json({
+        success: true,
+        data: property,
+        message: 'Property created',
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 );
 
-router.get('/', (req: Request, res: Response) => {
-  const { city, state, type, page = 1, limit = 10 } = req.query;
+router.get('/', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const properties = await findPropertiesByLandlord(req.user!.id);
 
-  console.log('List properties - placeholder', { city, state, type, page, limit });
-
-  return res.json({
-    success: true,
-    data: [],
-    pagination: {
-      page: parseInt(page as string),
-      limit: parseInt(limit as string),
-      total: 0,
-      totalPages: 0,
-    },
-    message: 'Properties retrieved',
-  });
+    return res.json({
+      success: true,
+      data: properties,
+      message: 'Properties retrieved',
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
-router.get('/:id', (req: Request, res: Response) => {
-  const { id } = req.params;
+router.get('/:id', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const property = await findPropertyById(id);
 
-  console.log('Get property - placeholder', { id });
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        message: 'Property not found',
+      });
+    }
 
-  return res.json({
-    success: true,
-    data: {
-      id,
-      landlordId: 'landlord-id',
-      address: '123 Main St',
-      city: 'Lagos',
-      state: 'Lagos',
-      propertyType: 'TWO_BEDROOM',
-      bedrooms: 2,
-      bathrooms: 2,
-      monthlyRent: 500000,
-      annualRent: 6000000,
-      isAvailable: true,
-    },
-    message: 'Property retrieved',
-  });
+    return res.json({
+      success: true,
+      data: property,
+      message: 'Property retrieved',
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.patch(
   '/:id',
   authenticateToken,
   requireRole(UserRole.LANDLORD),
-  (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { address, city, state, bedrooms, bathrooms, monthlyRent, annualRent } =
-      req.body;
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const { address, city, state, bedrooms, bathrooms, monthlyRent, annualRent, isAvailable } =
+        req.body;
 
-    console.log('Update property - placeholder', { id, address });
-
-    return res.json({
-      success: true,
-      data: {
-        id,
-        landlordId: req.user?.id,
+      const property = await updateProperty(id, {
         address,
         city,
         state,
-        bedrooms,
-        bathrooms,
-        monthlyRent,
-        annualRent,
-      },
-      message: 'Property updated',
-    });
+        bedrooms: bedrooms !== undefined ? Number(bedrooms) : undefined,
+        bathrooms: bathrooms !== undefined ? Number(bathrooms) : undefined,
+        monthlyRent: monthlyRent !== undefined ? Number(monthlyRent) : undefined,
+        annualRent: annualRent !== undefined ? Number(annualRent) : undefined,
+        isAvailable,
+      });
+
+      return res.json({
+        success: true,
+        data: property,
+        message: 'Property updated',
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 );
 
@@ -122,15 +115,18 @@ router.delete(
   '/:id',
   authenticateToken,
   requireRole(UserRole.LANDLORD),
-  (req: Request, res: Response) => {
-    const { id } = req.params;
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      await softDeleteProperty(id);
 
-    console.log('Delete property - placeholder', { id });
-
-    return res.json({
-      success: true,
-      message: 'Property deleted',
-    });
+      return res.json({
+        success: true,
+        message: 'Property deleted',
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 );
 

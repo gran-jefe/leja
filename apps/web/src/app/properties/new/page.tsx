@@ -1,17 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { PropertyType } from '@leja/shared';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
+import { useCreateProperty } from '@/hooks/useProperties';
 import { calculateAnnualRent } from '@/lib/utils';
+import { PROPERTY_TYPE_LABELS } from '@/lib/constants';
 import { UserRole } from '@leja/shared';
 
 const propertySchema = z.object({
@@ -26,19 +25,10 @@ const propertySchema = z.object({
 
 type PropertyFormData = z.infer<typeof propertySchema>;
 
-const propertyTypeLabel = {
-  SELF_CONTAIN: 'Self Contain',
-  ONE_BEDROOM: '1 Bedroom',
-  TWO_BEDROOM: '2 Bedrooms',
-  THREE_BEDROOM: '3 Bedrooms',
-  DUPLEX: 'Duplex',
-  BUNGALOW: 'Bungalow',
-  FLAT: 'Flat',
-};
+const propertyTypeLabel = PROPERTY_TYPE_LABELS;
 
 export default function NewPropertyPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const { createProperty, loading, error } = useCreateProperty();
 
   const { register, handleSubmit, formState: { errors }, watch } = useForm<PropertyFormData>({
     resolver: zodResolver(propertySchema),
@@ -48,16 +38,7 @@ export default function NewPropertyPage() {
   const annualRent = calculateAnnualRent(monthlyRent);
 
   const onSubmit = async (data: PropertyFormData) => {
-    setLoading(true);
-    try {
-      // Placeholder: actual API call would go here
-      console.log('Creating property:', data);
-      router.push('/properties');
-    } catch (error) {
-      console.error('Error creating property:', error);
-    } finally {
-      setLoading(false);
-    }
+    await createProperty(data);
   };
 
   return (
@@ -67,6 +48,12 @@ export default function NewPropertyPage() {
         <main className="flex-1 p-8">
           <div className="max-w-2xl mx-auto">
             <h1 className="font-display text-3xl font-bold text-navy mb-8">Add Property</h1>
+
+            {error && (
+              <div className="mb-4 p-3 bg-ember bg-opacity-10 text-ember rounded-button text-sm font-body">
+                {error}
+              </div>
+            )}
 
             <Card>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

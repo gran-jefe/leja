@@ -7,11 +7,18 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/layout/EmptyState';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { useAuth } from '@/hooks/useAuth';
+import { useAgreements } from '@/hooks/useAgreements';
 import { UserRole } from '@leja/shared';
+import { formatDate, getAgreementStatusVariant } from '@/lib/utils';
 
 export default function AgreementsPage() {
   const { user } = useAuth();
+  const { agreements, loading, error, refetch } = useAgreements();
   const isLandlord = user?.role === UserRole.LANDLORD;
 
   return (
@@ -31,22 +38,61 @@ export default function AgreementsPage() {
               }
             />
 
-            <EmptyState
-              icon={FileText}
-              title="No agreements yet"
-              description={
-                isLandlord
-                  ? 'Create your first rental agreement to get started'
-                  : 'Your rental agreements will appear here'
-              }
-              action={
-                isLandlord ? (
-                  <Link href="/agreement/new">
-                    <Button variant="primary">New Agreement</Button>
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i}>
+                    <Skeleton height="1.25rem" className="mb-2" width="50%" />
+                    <Skeleton height="1rem" width="30%" />
+                  </Card>
+                ))}
+              </div>
+            ) : error ? (
+              <ErrorState message={error} onRetry={refetch} />
+            ) : agreements.length === 0 ? (
+              <EmptyState
+                icon={FileText}
+                title="No agreements yet"
+                description={
+                  isLandlord
+                    ? 'Create your first rental agreement to get started'
+                    : 'Your rental agreements will appear here'
+                }
+                action={
+                  isLandlord ? (
+                    <Link href="/agreement/new">
+                      <Button variant="primary">New Agreement</Button>
+                    </Link>
+                  ) : undefined
+                }
+              />
+            ) : (
+              <div className="space-y-4">
+                {agreements.map((agreement) => (
+                  <Link key={agreement.id} href={`/agreement/${agreement.id}`}>
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-display text-lg font-semibold text-navy mb-1">
+                            {agreement.property?.address || 'Unknown property'}
+                          </h3>
+                          <p className="font-body text-sm text-muted">
+                            {isLandlord
+                              ? agreement.tenant?.name || 'Unknown tenant'
+                              : agreement.landlord?.name || 'Unknown landlord'}
+                            {' · '}
+                            {formatDate(agreement.start_date)} – {formatDate(agreement.end_date)}
+                          </p>
+                        </div>
+                        <Badge variant={getAgreementStatusVariant(agreement.status)}>
+                          {agreement.status}
+                        </Badge>
+                      </div>
+                    </Card>
                   </Link>
-                ) : undefined
-              }
-            />
+                ))}
+              </div>
+            )}
           </div>
         </main>
       </div>
