@@ -24,9 +24,14 @@ export const config = {
   },
 
   cors: {
-    allowedOrigins: process.env.NODE_ENV === 'production'
-      ? ['https://leja.ng', 'https://www.leja.ng', 'https://leja.vercel.app']
-      : ['http://localhost:3000', 'http://localhost:3001'],
+    allowedOrigins:
+      process.env.NODE_ENV === 'production'
+        ? [
+            'https://leja.ng',
+            'https://leja-web.vercel.app',
+            'https://www.leja.ng',
+          ]
+        : ['http://localhost:3000', 'http://localhost:3001'],
   },
 };
 
