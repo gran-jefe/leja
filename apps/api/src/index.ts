@@ -12,6 +12,7 @@ import propertiesRoutes from './routes/properties';
 import agreementsRoutes from './routes/agreements';
 import paymentsRoutes from './routes/payments';
 import rentalHistoryRoutes from './routes/rentalHistory';
+import contactRoutes from './routes/contact';
 
 // Validate config before starting
 validateConfig();
@@ -60,6 +61,7 @@ app.use('/api/v1/properties', propertiesRoutes);
 app.use('/api/v1/agreements', agreementsRoutes);
 app.use('/api/v1/payments', paymentsRoutes);
 app.use('/api/v1/rental-history', rentalHistoryRoutes);
+app.use('/api/v1/contact', contactRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
