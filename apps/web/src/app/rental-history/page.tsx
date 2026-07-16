@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { FileText, Star } from 'lucide-react';
+import { FileText, History, Star } from 'lucide-react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/layout/EmptyState';
@@ -64,6 +64,8 @@ export default function RentalHistoryPage() {
           <div className="max-w-4xl mx-auto">
             <PageHeader
               title="My Rental History"
+              subtitle="Your verified tenancy record"
+              icon={History}
               action={
                 <PayButton
                   amount={5000}
@@ -106,31 +108,36 @@ export default function RentalHistoryPage() {
                 {history.map((record) => (
                   <Card key={record.id}>
                     <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-display text-lg font-semibold text-navy mb-1">
-                          {record.property_address}
-                        </h3>
-                        <p className="font-body text-sm text-muted mb-2">
-                          {formatDate(record.start_date)} —{' '}
-                          {record.status === 'ACTIVE' ? 'Current' : formatDate(record.end_date)}
-                        </p>
-                        {record.landlord_rating ? (
-                          <div className="flex items-center gap-1">
-                            {[1, 2, 3, 4, 5].map((i) => (
-                              <Star
-                                key={i}
-                                size={16}
-                                className={
-                                  i <= record.landlord_rating
-                                    ? 'fill-ember text-ember'
-                                    : 'text-border'
-                                }
-                              />
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="font-body text-xs text-muted">Not yet rated</p>
-                        )}
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-button bg-forest bg-opacity-10 flex items-center justify-center flex-shrink-0">
+                          <FileText className="text-forest" size={18} />
+                        </div>
+                        <div>
+                          <h3 className="font-display text-lg font-semibold text-navy mb-1">
+                            {record.property_address}
+                          </h3>
+                          <p className="font-body text-sm text-muted mb-2">
+                            {formatDate(record.start_date)} —{' '}
+                            {record.status === 'ACTIVE' ? 'Current' : formatDate(record.end_date)}
+                          </p>
+                          {record.landlord_rating ? (
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map((i) => (
+                                <Star
+                                  key={i}
+                                  size={16}
+                                  className={
+                                    i <= record.landlord_rating
+                                      ? 'fill-ember text-ember'
+                                      : 'text-border'
+                                  }
+                                />
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="font-body text-xs text-muted">Not yet rated</p>
+                          )}
+                        </div>
                       </div>
                       <Badge variant={historyStatusVariant(record.status)}>{record.status}</Badge>
                     </div>

@@ -3,6 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Building2 } from 'lucide-react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
 import { Button } from '@/components/ui/Button';
@@ -47,7 +48,12 @@ export default function NewPropertyPage() {
         <Sidebar />
         <main className="flex-1 p-8">
           <div className="max-w-2xl mx-auto">
-            <h1 className="font-display text-3xl font-bold text-navy mb-8">Add Property</h1>
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 rounded-button bg-navy bg-opacity-5 flex items-center justify-center flex-shrink-0">
+                <Building2 className="text-navy" size={24} />
+              </div>
+              <h1 className="font-display text-3xl font-bold text-navy">Add Property</h1>
+            </div>
 
             {error && (
               <div className="mb-4 p-3 bg-ember bg-opacity-10 text-ember rounded-button text-sm font-body">

@@ -8,6 +8,7 @@ import { z } from 'zod';
 import Link from 'next/link';
 import Cookies from 'js-cookie';
 import NProgress from 'nprogress';
+import { Shield, FileCheck, Users } from 'lucide-react';
 import api from '@/lib/api';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/Button';
@@ -68,9 +69,12 @@ export default function SignupPage() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <h1 className="font-display text-2xl font-bold text-navy mb-6">Create Account</h1>
+      <div className="min-h-screen bg-navy flex flex-col items-center justify-center p-4 py-20">
+        <p className="font-body text-xs uppercase tracking-wider text-forest font-semibold mb-3">
+          Get started free
+        </p>
+        <Card className="w-full max-w-md shadow-2xl">
+          <h1 className="font-display text-2xl font-bold text-navy mb-6">Create your account</h1>
 
           {error && (
             <div className="mb-4 p-3 bg-ember bg-opacity-10 text-ember rounded-button text-sm">
@@ -144,6 +148,21 @@ export default function SignupPage() {
             </Link>
           </p>
         </Card>
+
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 text-sm text-[#A0AEC0] font-body mt-8">
+          <div className="flex items-center gap-2">
+            <Shield size={16} />
+            Bank-grade security
+          </div>
+          <div className="flex items-center gap-2">
+            <FileCheck size={16} />
+            State-compliant agreements
+          </div>
+          <div className="flex items-center gap-2">
+            <Users size={16} />
+            No agent fees
+          </div>
+        </div>
       </div>
     </>
   );

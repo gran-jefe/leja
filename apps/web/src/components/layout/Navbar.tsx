@@ -32,31 +32,36 @@ export const Navbar = () => {
 
   if (!isLanding) {
     return (
-      <nav className="bg-white border-b border-border shadow-sm">
+      <nav className="bg-navy border-b border-white border-opacity-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="font-display text-2xl font-bold text-navy">
+          <Link href="/" className="font-display text-2xl font-bold text-white">
             Leja
           </Link>
 
-          <div className="flex gap-8 items-center">
+          <div className="flex gap-3 items-center">
             {isAuthenticated ? (
               <>
-                <span className="font-body text-sm text-charcoal">
+                <span className="font-body text-sm text-white text-opacity-70 hidden sm:inline">
                   Welcome, {user?.name}
                 </span>
-                <Button variant="secondary" size="sm" onClick={logout}>
+                <Link href="/dashboard">
+                  <Button variant="ghost" size="sm" className="text-white">
+                    Dashboard
+                  </Button>
+                </Link>
+                <Button variant="danger" size="sm" onClick={logout}>
                   Logout
                 </Button>
               </>
             ) : (
               <>
                 <Link href="/login">
-                  <Button variant="secondary" size="sm">
-                    Login
+                  <Button variant="ghost" size="sm" className="text-white">
+                    Log in
                   </Button>
                 </Link>
                 <Link href="/signup">
-                  <Button variant="primary" size="sm">
+                  <Button variant="primary" size="sm" className="bg-ember hover:bg-opacity-90">
                     Sign Up
                   </Button>
                 </Link>

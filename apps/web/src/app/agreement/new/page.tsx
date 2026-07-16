@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { PropertyType } from '@leja/shared';
+import { FilePlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { StepIndicator } from '@/components/layout/StepIndicator';
@@ -129,7 +130,12 @@ export default function NewAgreementPage() {
         <Sidebar />
         <main className="flex-1 p-8">
           <div className="max-w-2xl mx-auto">
-            <h1 className="font-display text-3xl font-bold text-navy mb-8">New Agreement</h1>
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 rounded-button bg-navy bg-opacity-5 flex items-center justify-center flex-shrink-0">
+                <FilePlus className="text-navy" size={24} />
+              </div>
+              <h1 className="font-display text-3xl font-bold text-navy">New Agreement</h1>
+            </div>
 
             <StepIndicator
               currentStep={step}
@@ -285,11 +291,11 @@ export default function NewAgreementPage() {
                   </label>
                 </Card>
 
-                <Card className="bg-forest bg-opacity-10">
-                  <p className="font-body text-sm text-charcoal mb-2">
-                    <span className="font-semibold">Total Price:</span>
+                <Card className="bg-navy">
+                  <p className="font-body text-sm text-white text-opacity-70 mb-2">
+                    Total Price
                   </p>
-                  <p className="font-display text-2xl font-bold text-forest">{formatNaira(totalPrice)}</p>
+                  <p className="font-display text-3xl font-bold text-ember">{formatNaira(totalPrice)}</p>
                 </Card>
 
                 {agreementError && (

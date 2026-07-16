@@ -29,6 +29,8 @@ export default function AgreementsPage() {
           <div className="max-w-4xl mx-auto">
             <PageHeader
               title="My Agreements"
+              subtitle="Track every tenancy agreement in one place"
+              icon={FileText}
               action={
                 isLandlord ? (
                   <Link href="/agreement/new">
@@ -70,19 +72,24 @@ export default function AgreementsPage() {
               <div className="space-y-4">
                 {agreements.map((agreement) => (
                   <Link key={agreement.id} href={`/agreement/${agreement.id}`}>
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <Card className="hover:shadow-md hover:border-forest transition-all cursor-pointer">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-display text-lg font-semibold text-navy mb-1">
-                            {agreement.property?.address || 'Unknown property'}
-                          </h3>
-                          <p className="font-body text-sm text-muted">
-                            {isLandlord
-                              ? agreement.tenant?.name || 'Unknown tenant'
-                              : agreement.landlord?.name || 'Unknown landlord'}
-                            {' · '}
-                            {formatDate(agreement.start_date)} – {formatDate(agreement.end_date)}
-                          </p>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-button bg-navy bg-opacity-5 flex items-center justify-center flex-shrink-0">
+                            <FileText className="text-navy" size={18} />
+                          </div>
+                          <div>
+                            <h3 className="font-display text-lg font-semibold text-navy mb-1">
+                              {agreement.property?.address || 'Unknown property'}
+                            </h3>
+                            <p className="font-body text-sm text-muted">
+                              {isLandlord
+                                ? agreement.tenant?.name || 'Unknown tenant'
+                                : agreement.landlord?.name || 'Unknown landlord'}
+                              {' · '}
+                              {formatDate(agreement.start_date)} – {formatDate(agreement.end_date)}
+                            </p>
+                          </div>
                         </div>
                         <Badge variant={getAgreementStatusVariant(agreement.status)}>
                           {agreement.status}

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Home } from 'lucide-react';
+import { Home, Building2, Bed, Bath } from 'lucide-react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/layout/EmptyState';
@@ -27,6 +27,8 @@ export default function PropertiesPage() {
           <div className="max-w-4xl mx-auto">
             <PageHeader
               title="My Properties"
+              subtitle="Manage your listings and track availability"
+              icon={Building2}
               action={
                 <Link href="/properties/new">
                   <Button variant="primary">Add Property</Button>
@@ -61,7 +63,7 @@ export default function PropertiesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {properties.map((property) => (
                   <Link key={property.id} href={`/properties/${property.id}`}>
-                    <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
+                    <Card className="h-full hover:shadow-md hover:border-forest transition-all cursor-pointer">
                       <div className="flex items-start justify-between mb-3">
                         <h3 className="font-display text-lg font-semibold text-navy">
                           {property.address}
@@ -73,11 +75,19 @@ export default function PropertiesPage() {
                       <p className="font-body text-sm text-muted mb-3">
                         {property.city}, {property.state}
                       </p>
-                      <p className="font-body text-sm text-charcoal mb-1">
-                        {PROPERTY_TYPE_LABELS[property.property_type] || property.property_type}
-                        {' · '}
-                        {property.bedrooms} bed · {property.bathrooms} bath
-                      </p>
+                      <div className="flex items-center gap-4 font-body text-sm text-charcoal mb-3">
+                        <span>
+                          {PROPERTY_TYPE_LABELS[property.property_type] || property.property_type}
+                        </span>
+                        <span className="flex items-center gap-1 text-muted">
+                          <Bed size={14} />
+                          {property.bedrooms}
+                        </span>
+                        <span className="flex items-center gap-1 text-muted">
+                          <Bath size={14} />
+                          {property.bathrooms}
+                        </span>
+                      </div>
                       <p className="font-display text-lg font-bold text-forest">
                         {formatNaira(property.monthly_rent)}
                         <span className="text-sm font-body text-muted">/month</span>

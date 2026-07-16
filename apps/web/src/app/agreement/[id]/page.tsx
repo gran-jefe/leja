@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Spinner } from '@/components/ui/Spinner';
-import { FileDown, CheckCircle2, CheckCircle } from 'lucide-react';
+import { FileDown, CheckCircle2, CheckCircle, FileText } from 'lucide-react';
 import { useAgreement } from '@/hooks/useAgreements';
 import api from '@/lib/api';
 import {
@@ -80,9 +80,14 @@ export default function AgreementPage() {
             ) : (
               <>
                 <div className="mb-6">
-                  <h1 className="font-display text-3xl font-bold text-navy mb-2">
-                    {agreement.property?.address || 'Agreement'}
-                  </h1>
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="w-12 h-12 rounded-button bg-navy bg-opacity-5 flex items-center justify-center flex-shrink-0">
+                      <FileText className="text-navy" size={24} />
+                    </div>
+                    <h1 className="font-display text-3xl font-bold text-navy">
+                      {agreement.property?.address || 'Agreement'}
+                    </h1>
+                  </div>
                   <div className="flex gap-2">
                     <Badge variant={getAgreementStatusVariant(agreement.status)}>
                       {getAgreementStatusLabel(agreement.status)}

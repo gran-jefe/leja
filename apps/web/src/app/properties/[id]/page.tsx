@@ -1,6 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
+import { Building2, FilePlus, Pencil } from 'lucide-react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
 import { Button } from '@/components/ui/Button';
@@ -31,7 +32,12 @@ export default function PropertyDetailPage() {
         <Sidebar />
         <main className="flex-1 p-8">
           <div className="max-w-2xl mx-auto">
-            <h1 className="font-display text-3xl font-bold text-navy mb-8">Property Details</h1>
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 rounded-button bg-navy bg-opacity-5 flex items-center justify-center flex-shrink-0">
+                <Building2 className="text-navy" size={24} />
+              </div>
+              <h1 className="font-display text-3xl font-bold text-navy">Property Details</h1>
+            </div>
 
             {loading ? (
               <Card>
@@ -101,13 +107,20 @@ export default function PropertyDetailPage() {
                 </Card>
 
                 <div className="flex gap-4 mt-6">
-                  <Button variant="primary" onClick={handleCreateAgreement}>
+                  <Button
+                    variant="primary"
+                    className="flex items-center gap-2"
+                    onClick={handleCreateAgreement}
+                  >
+                    <FilePlus size={18} />
                     Create Agreement
                   </Button>
                   <Button
                     variant="secondary"
+                    className="flex items-center gap-2"
                     onClick={() => router.push(`/properties/${id}/edit`)}
                   >
+                    <Pencil size={18} />
                     Edit Property
                   </Button>
                 </div>

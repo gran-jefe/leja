@@ -1,17 +1,26 @@
 import React from 'react';
+import { LucideIcon } from 'lucide-react';
 
 interface PageHeaderProps {
   title: string;
   subtitle?: string;
+  icon?: LucideIcon;
   action?: React.ReactNode;
 }
 
-export const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, action }) => {
+export const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, icon: Icon, action }) => {
   return (
     <div className="flex items-start justify-between mb-8">
-      <div>
-        <h1 className="font-display text-3xl font-bold text-navy mb-2">{title}</h1>
-        {subtitle && <p className="text-muted font-body">{subtitle}</p>}
+      <div className="flex items-start gap-4">
+        {Icon && (
+          <div className="w-12 h-12 rounded-button bg-navy bg-opacity-5 flex items-center justify-center flex-shrink-0">
+            <Icon className="text-navy" size={24} />
+          </div>
+        )}
+        <div>
+          <h1 className="font-display text-3xl font-bold text-navy mb-2">{title}</h1>
+          {subtitle && <p className="text-muted font-body">{subtitle}</p>}
+        </div>
       </div>
       {action && <div>{action}</div>}
     </div>
