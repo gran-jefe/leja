@@ -38,7 +38,13 @@
 
 ## Key Business Rules
 
-- **Agreement pricing:** ₦3,500 basic, ₦12,000 with lawyer review
+- **Landlord:** lists properties FREE, generates agreements FREE
+- **Tenant:** pays ₦15,000 move-in fee at agreement acceptance (replaces the agent fee they'd otherwise pay)
+- **Tenant:** optional ₦8,000 lawyer review add-on (paid together with the move-in fee)
+- **Tenant:** ₦5,000 rental history export
+- **Landlord:** optional ₦20,000/month subscription for 5+ properties
+- **Pricing constants:** all prices live in `LEJA_PRICING` (`packages/shared/src/constants/pricing.ts`) — never hardcode a Naira amount in a route handler or component
+- **Payment timing:** payment is collected when the **TENANT** accepts/signs the agreement, not when the landlord creates it. Agreement flow: landlord creates DRAFT (free) → tenant reviews via preview → tenant accepts + pays → webhook confirms → agreement ACTIVE
 - **Rental history export:** ₦5,000
 - **Payment confirmation:** Payment must be confirmed via Flutterwave webhook before agreement status changes to ACTIVE
 - **Agreement visibility:** Only visible to the two parties involved (landlord + tenant)
@@ -73,6 +79,7 @@
    - `FLW_WEBHOOK_HASH` — Flutterwave webhook verification hash
    - `NEXT_PUBLIC_FLW_PUBLIC_KEY` — Frontend Flutterwave key
    - `NEXT_PUBLIC_API_URL` — Frontend API URL (e.g., `http://localhost:5000/api/v1`)
+   - `FRONTEND_URL` — Web app base URL, used by the API to build tenant invite/redirect links (e.g., `http://localhost:3000`)
    - `NODE_ENV` — development/production
    - `PORT` — API port (default 5000)
 
@@ -226,6 +233,7 @@ See `apps/api/src/db/seed.sql` for sample data:
 **Set on Render dashboard (apps/api):**
 - DATABASE_URL, SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
 - JWT_SECRET, FLW_SECRET_KEY, FLW_PUBLIC_KEY, FLW_WEBHOOK_HASH
+- FRONTEND_URL=https://leja.ng (or the Vercel URL, used for tenant invite/redirect links)
 - NODE_ENV=production, PORT=5000
 
 **Set on Vercel dashboard (apps/web):**

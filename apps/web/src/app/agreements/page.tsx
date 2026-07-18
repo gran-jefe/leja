@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { FileText } from 'lucide-react';
-import { Sidebar } from '@/components/layout/Sidebar';
+import { DashboardShell } from '@/components/layout/DashboardShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/layout/EmptyState';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
@@ -23,10 +23,8 @@ export default function AgreementsPage() {
 
   return (
     <ProtectedPageWrapper>
-      <div className="flex">
-        <Sidebar />
-        <main className="flex-1 p-8">
-          <div className="max-w-4xl mx-auto">
+      <DashboardShell>
+        <div className="max-w-4xl mx-auto">
             <PageHeader
               title="My Agreements"
               subtitle="Track every tenancy agreement in one place"
@@ -100,9 +98,8 @@ export default function AgreementsPage() {
                 ))}
               </div>
             )}
-          </div>
-        </main>
-      </div>
+        </div>
+      </DashboardShell>
     </ProtectedPageWrapper>
   );
 }

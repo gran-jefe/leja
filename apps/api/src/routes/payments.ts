@@ -36,6 +36,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
         const payment = await markPaymentSuccessful(data.tx_ref);
 
         if (payment?.agreement_id) {
+          console.log(`[WEBHOOK] Tenant move-in fee confirmed for agreement ${payment.agreement_id}`);
           triggerAgreementPDF(payment.agreement_id);
         }
       }

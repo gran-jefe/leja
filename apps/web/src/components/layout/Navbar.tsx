@@ -12,7 +12,22 @@ const navLinks = [
   { href: '/#how-it-works', label: 'How it works' },
   { href: '/#for-landlords', label: 'For Landlords' },
   { href: '/#for-tenants', label: 'For Tenants' },
-  { href: '/#footer', label: 'About' },
+  { href: '/#pricing', label: 'Pricing' },
+];
+
+const landlordLinks = [
+  { href: '/dashboard', label: 'Dashboard' },
+  { href: '/properties', label: 'My Properties' },
+  { href: '/agreements', label: 'Agreements' },
+  { href: '/profile', label: 'Profile' },
+];
+
+const tenantLinks = [
+  { href: '/dashboard', label: 'Dashboard' },
+  { href: '/properties/browse', label: 'Browse Properties' },
+  { href: '/agreements', label: 'My Agreements' },
+  { href: '/rental-history', label: 'Rental History' },
+  { href: '/profile', label: 'Profile' },
 ];
 
 export const Navbar = () => {
@@ -21,6 +36,7 @@ export const Navbar = () => {
   const isLanding = pathname === '/';
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const roleLinks = user?.role === 'LANDLORD' ? landlordLinks : user?.role === 'TENANT' ? tenantLinks : [];
 
   useEffect(() => {
     if (!isLanding) return;
@@ -38,17 +54,26 @@ export const Navbar = () => {
             Leja
           </Link>
 
+          {isAuthenticated && (
+            <div className="hidden md:flex gap-6 items-center">
+              {roleLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="font-body text-sm text-white text-opacity-80 hover:text-opacity-100 transition-opacity"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          )}
+
           <div className="flex gap-3 items-center">
             {isAuthenticated ? (
               <>
-                <span className="font-body text-sm text-white text-opacity-70 hidden sm:inline">
+                <span className="font-body text-sm text-white text-opacity-70 hidden lg:inline">
                   Welcome, {user?.name}
                 </span>
-                <Link href="/dashboard">
-                  <Button variant="ghost" size="sm" className="text-white">
-                    Dashboard
-                  </Button>
-                </Link>
                 <Button variant="danger" size="sm" onClick={logout}>
                   Logout
                 </Button>
@@ -86,7 +111,7 @@ export const Navbar = () => {
         </Link>
 
         <div className="hidden md:flex gap-8 items-center">
-          {navLinks.map((link) => (
+          {(isAuthenticated ? roleLinks : navLinks).map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -99,16 +124,9 @@ export const Navbar = () => {
 
         <div className="hidden md:flex gap-3 items-center">
           {isAuthenticated ? (
-            <>
-              <Link href="/dashboard">
-                <Button variant="ghost" size="sm" className="text-white">
-                  Dashboard
-                </Button>
-              </Link>
-              <Button variant="danger" size="sm" onClick={logout}>
-                Logout
-              </Button>
-            </>
+            <Button variant="danger" size="sm" onClick={logout}>
+              Logout
+            </Button>
           ) : (
             <>
               <Link href="/login">
@@ -136,7 +154,7 @@ export const Navbar = () => {
 
       {mobileOpen && (
         <div className="md:hidden bg-navy/98 backdrop-blur-sm px-4 pb-6 flex flex-col gap-4">
-          {navLinks.map((link) => (
+          {(isAuthenticated ? roleLinks : navLinks).map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -147,16 +165,9 @@ export const Navbar = () => {
             </Link>
           ))}
           {isAuthenticated ? (
-            <>
-              <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
-                <Button variant="secondary" className="w-full text-white border-white">
-                  Dashboard
-                </Button>
-              </Link>
-              <Button variant="danger" className="w-full" onClick={logout}>
-                Logout
-              </Button>
-            </>
+            <Button variant="danger" className="w-full" onClick={logout}>
+              Logout
+            </Button>
           ) : (
             <>
               <Link href="/login" onClick={() => setMobileOpen(false)}>

@@ -28,7 +28,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import api from '@/lib/api';
-import { cn, getErrorMessage } from '@/lib/utils';
+import { cn, getErrorMessage, formatNaira } from '@/lib/utils';
+import { LEJA_PRICING } from '@leja/shared';
 
 const landlordBenefits = [
   'Verified tenant profiles before you sign anything',
@@ -70,27 +71,28 @@ const stats = [
   { value: '65%', label: 'of Lagos tenant complaints involve landlord misconduct' },
   { value: '22M', label: 'unit housing deficit across Nigeria' },
   { value: '48hrs', label: 'average time to get a lawyer-reviewed agreement on Leja' },
+  { value: '₦105,000', label: 'saved per tenant vs using an agent' },
 ];
 
-const basicFeatures = [
-  'State-compliant tenancy agreement',
-  'Instant PDF generation',
-  'Digital acceptance by both parties',
-  'Rental history record created',
+const landlordPricingFeatures = [
+  'List unlimited properties',
+  'Generate tenancy agreements',
+  'Verified tenant matching',
+  'Agreement tracking dashboard',
 ];
 
-const reviewedFeatures = [
-  'Everything in Basic',
-  'Lawyer review within 48 hours',
-  'Lawyer stamp on the document',
+const tenantPricingFeatures = [
+  'Proper state-compliant agreement',
+  'No agent involved',
+  'Verified rental history record',
+  'Legal protection if things go wrong',
+];
+
+const lawyerReviewFeatures = [
+  'Lawyer reviews your agreement',
+  'Stamped within 48 hours',
+  'Legal practitioner certified',
   'Priority dispute support',
-];
-
-const monthlyFeatures = [
-  '10 agreements per month',
-  'Priority lawyer review',
-  'Renewal tracking dashboard',
-  'Tenant screening tools',
 ];
 
 const contactSchema = z.object({
@@ -193,8 +195,8 @@ export default function Home() {
               No agents. No weak agreements. No excuses.
             </p>
             <p className="font-body text-[#A0AEC0] text-base mb-8 max-w-xl">
-              Leja connects landlords and tenants directly — with a legally sound tenancy
-              agreement generated in minutes, and a lawyer available when you need one.
+              Landlords list free. Tenants pay ₦15,000 — not ₦100,000 to an agent who
+              disappears after handing over a key.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
               <Link href="/#book-demo">
@@ -338,7 +340,7 @@ export default function Home() {
           <div className="border-t border-border mt-16 pt-8 flex flex-col sm:flex-row items-center justify-center gap-2 text-center">
             <Scale className="text-muted flex-shrink-0" size={18} />
             <p className="font-body text-muted text-sm">
-              Need a lawyer to review the agreement? Add one for ₦12,000 — reviewed within 48
+              Need a lawyer to review the agreement? Add one for ₦8,000 — reviewed within 48
               hours.
             </p>
           </div>
@@ -348,7 +350,7 @@ export default function Home() {
       {/* Social proof / stats */}
       <section className="bg-navy py-16">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
             {stats.map((stat, i) => (
               <div
                 key={stat.label}
@@ -372,14 +374,18 @@ export default function Home() {
             Transparent pricing. No surprises.
           </h2>
           <p className="text-center font-body text-muted mb-16">
-            Pay only when you close a deal.
+            One clear fee, paid once — no negotiating with an agent.
           </p>
           <div className="grid md:grid-cols-3 gap-8 md:items-center">
-            <div className="bg-white border border-border rounded-card p-8">
-              <p className="font-display text-navy font-bold text-4xl mb-1">₦3,500</p>
-              <p className="font-body text-muted text-sm mb-6">per agreement</p>
+            {/* For Landlords — free */}
+            <div className="bg-forest bg-opacity-5 border-2 border-forest rounded-card p-8">
+              <p className="font-body text-xs uppercase tracking-wider text-forest font-semibold mb-4">
+                For Landlords
+              </p>
+              <p className="font-display text-forest font-bold text-4xl mb-1">FREE</p>
+              <p className="font-body text-muted text-sm mb-6">Always. No hidden fees.</p>
               <ul className="space-y-3 mb-8">
-                {basicFeatures.map((feature) => (
+                {landlordPricingFeatures.map((feature) => (
                   <li key={feature} className="flex items-start gap-2">
                     <CheckCircle className="text-forest flex-shrink-0 mt-0.5" size={18} />
                     <span className="font-body text-charcoal text-sm">{feature}</span>
@@ -388,19 +394,54 @@ export default function Home() {
               </ul>
               <Link href="/signup" className="block">
                 <Button variant="secondary" className="w-full">
-                  Get started
+                  List your property free
                 </Button>
               </Link>
             </div>
 
+            {/* For Tenants — highlighted */}
             <div className="relative bg-navy text-white rounded-card p-8 shadow-xl md:scale-105">
               <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-ember text-white text-xs font-semibold px-4 py-1 rounded-full font-body whitespace-nowrap">
-                MOST POPULAR
+                Replaces your agency fee
               </span>
-              <p className="font-display text-ember font-bold text-4xl mb-1">₦12,000</p>
-              <p className="font-body text-white text-opacity-70 text-sm mb-6">per agreement</p>
+              <p className="font-body text-xs uppercase tracking-wider text-white text-opacity-70 font-semibold mb-4">
+                For Tenants
+              </p>
+              <p className="font-display text-white font-bold text-4xl mb-1">
+                {formatNaira(LEJA_PRICING.TENANT_MOVE_IN_FEE)}
+              </p>
+              <p className="font-body text-white text-opacity-70 text-sm mb-6">
+                One-time move-in fee per tenancy
+              </p>
+
+              <div className="bg-white bg-opacity-5 rounded-button p-4 mb-6 font-body text-sm">
+                <p className="text-white text-opacity-70 mb-2">vs going through an agent:</p>
+                <div className="flex justify-between text-white text-opacity-60">
+                  <span>Agent fee</span>
+                  <span className="line-through">{formatNaira(LEJA_PRICING.TYPICAL_AGENT_FEE)}</span>
+                </div>
+                <div className="flex justify-between text-white text-opacity-60">
+                  <span>Legal fee</span>
+                  <span className="line-through">{formatNaira(LEJA_PRICING.TYPICAL_LEGAL_FEE)}</span>
+                </div>
+                <div className="flex justify-between text-white">
+                  <span>Leja fee</span>
+                  <span>{formatNaira(LEJA_PRICING.TENANT_MOVE_IN_FEE)} ✓</span>
+                </div>
+                <div className="border-t border-white border-opacity-20 mt-2 pt-2 flex justify-between font-semibold text-ember">
+                  <span>You save</span>
+                  <span>
+                    {formatNaira(
+                      LEJA_PRICING.TYPICAL_AGENT_FEE +
+                        LEJA_PRICING.TYPICAL_LEGAL_FEE -
+                        LEJA_PRICING.TENANT_MOVE_IN_FEE
+                    )}
+                  </span>
+                </div>
+              </div>
+
               <ul className="space-y-3 mb-8">
-                {reviewedFeatures.map((feature) => (
+                {tenantPricingFeatures.map((feature) => (
                   <li key={feature} className="flex items-start gap-2">
                     <CheckCircle className="text-forest flex-shrink-0 mt-0.5" size={18} />
                     <span className="font-body text-white text-sm">{feature}</span>
@@ -409,29 +450,40 @@ export default function Home() {
               </ul>
               <Link href="/signup" className="block">
                 <Button variant="primary" className="w-full bg-ember hover:bg-opacity-90">
-                  Get started
+                  Find a property
                 </Button>
               </Link>
             </div>
 
-            <div className="bg-white border border-border rounded-card p-8">
-              <p className="font-display text-navy font-bold text-4xl mb-1">₦25,000</p>
-              <p className="font-body text-muted text-sm mb-6">per month</p>
+            {/* Lawyer review add-on */}
+            <div className="bg-white border-2 border-ember rounded-card p-8">
+              <p className="font-body text-xs uppercase tracking-wider text-ember font-semibold mb-4">
+                Lawyer Review
+              </p>
+              <p className="font-display text-ember font-bold text-4xl mb-1">
+                +{formatNaira(LEJA_PRICING.TENANT_LAWYER_REVIEW)}
+              </p>
+              <p className="font-body text-muted text-sm mb-6">
+                Optional add-on to your move-in fee
+              </p>
               <ul className="space-y-3 mb-8">
-                {monthlyFeatures.map((feature) => (
+                {lawyerReviewFeatures.map((feature) => (
                   <li key={feature} className="flex items-start gap-2">
                     <CheckCircle className="text-forest flex-shrink-0 mt-0.5" size={18} />
                     <span className="font-body text-charcoal text-sm">{feature}</span>
                   </li>
                 ))}
               </ul>
-              <a href="#book-demo" className="block">
-                <Button variant="secondary" className="w-full">
-                  Contact us
-                </Button>
-              </a>
+              <Button variant="secondary" className="w-full" disabled>
+                Add when accepting agreement
+              </Button>
             </div>
           </div>
+
+          <p className="text-center font-body text-muted text-lg mt-16">
+            Landlords pay nothing. Tenants pay a fraction of what agents charge. That&apos;s the
+            deal.
+          </p>
         </div>
       </section>
 

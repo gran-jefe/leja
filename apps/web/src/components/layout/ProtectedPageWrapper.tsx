@@ -9,11 +9,13 @@ import { UserRole } from '@leja/shared';
 interface ProtectedPageWrapperProps {
   children: React.ReactNode;
   requiredRole?: UserRole;
+  redirectTo?: string;
 }
 
 export const ProtectedPageWrapper: React.FC<ProtectedPageWrapperProps> = ({
   children,
   requiredRole,
+  redirectTo = '/dashboard',
 }) => {
   const router = useRouter();
   const { isAuthenticated, user } = useAuth();
@@ -31,9 +33,9 @@ export const ProtectedPageWrapper: React.FC<ProtectedPageWrapperProps> = ({
     if (!isAuthenticated) {
       router.push('/login');
     } else if (requiredRole && user?.role !== requiredRole) {
-      router.push('/dashboard');
+      router.push(redirectTo);
     }
-  }, [mounted, isAuthenticated, requiredRole, user?.role, router]);
+  }, [mounted, isAuthenticated, requiredRole, user?.role, router, redirectTo]);
 
   if (!mounted) {
     return (

@@ -26,3 +26,5 @@ services:
         sync: false
       - key: FLW_WEBHOOK_HASH
         sync: false
+      - key: FRONTEND_URL
+        sync: false

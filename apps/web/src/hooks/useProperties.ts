@@ -5,29 +5,43 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { getErrorMessage } from '@/lib/utils';
 
-export function useProperties() {
+export interface PropertyPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export function useProperties(filters?: Record<string, unknown>) {
   const [properties, setProperties] = useState<any[]>([]);
+  const [pagination, setPagination] = useState<PropertyPagination | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Re-fetch whenever the filter *values* change, not the object identity
+  // (callers often build a fresh filters object on every render).
+  const filtersKey = JSON.stringify(filters || {});
 
   const fetchProperties = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const { data } = await api.get('/properties');
+      const { data } = await api.get('/properties', { params: filters });
       setProperties(data.data || []);
+      setPagination(data.pagination || null);
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to load properties'));
     } finally {
       setLoading(false);
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtersKey]);
 
   useEffect(() => {
     fetchProperties();
   }, [fetchProperties]);
 
-  return { properties, loading, error, refetch: fetchProperties };
+  return { properties, pagination, loading, error, refetch: fetchProperties };
 }
 
 export function useProperty(id: string) {

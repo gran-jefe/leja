@@ -1,9 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticateToken, requireRole } from '../middleware/auth';
+import { authenticateToken, optionalAuth, requireRole } from '../middleware/auth';
 import { UserRole } from '@leja/shared';
 import {
   createProperty,
   findPropertiesByLandlord,
+  findAvailableProperties,
   findPropertyById,
   updateProperty,
   softDeleteProperty,
@@ -43,13 +44,49 @@ router.post(
   }
 );
 
-router.get('/', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', optionalAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const properties = await findPropertiesByLandlord(req.user!.id);
+    if (req.user?.role === UserRole.LANDLORD) {
+      const properties = await findPropertiesByLandlord(req.user.id);
+
+      return res.json({
+        success: true,
+        data: properties,
+        message: 'Properties retrieved',
+      });
+    }
+
+    // Tenants and unauthenticated visitors browse the available listings.
+    const {
+      city,
+      state,
+      property_type,
+      min_rent,
+      max_rent,
+      bedrooms,
+      min_bedrooms,
+      search,
+      page,
+      limit,
+    } = req.query;
+
+    const { properties, pagination } = await findAvailableProperties({
+      city: city as string | undefined,
+      state: state as string | undefined,
+      propertyType: property_type as string | undefined,
+      minRent: min_rent !== undefined ? Number(min_rent) : undefined,
+      maxRent: max_rent !== undefined ? Number(max_rent) : undefined,
+      bedrooms: bedrooms !== undefined ? Number(bedrooms) : undefined,
+      minBedrooms: min_bedrooms !== undefined ? Number(min_bedrooms) : undefined,
+      search: search as string | undefined,
+      page: page !== undefined ? Number(page) : undefined,
+      limit: limit !== undefined ? Number(limit) : undefined,
+    });
 
     return res.json({
       success: true,
       data: properties,
+      pagination,
       message: 'Properties retrieved',
     });
   } catch (error) {

@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id),
   agreement_id UUID REFERENCES agreements(id),
-  type TEXT NOT NULL CHECK (type IN ('AGREEMENT_BASIC','AGREEMENT_REVIEWED','SUBSCRIPTION','RENTAL_HISTORY')),
+  type TEXT NOT NULL CHECK (type IN ('TENANT_MOVE_IN_FEE','TENANT_LAWYER_REVIEW','RENTAL_HISTORY_EXPORT','LANDLORD_SUBSCRIPTION')),
   amount NUMERIC(12,2) NOT NULL,
   status TEXT DEFAULT 'PENDING' CHECK (status IN ('PENDING','SUCCESS','FAILED')),
   paystack_reference TEXT UNIQUE NOT NULL, -- legacy column name, now stores the Flutterwave tx_ref

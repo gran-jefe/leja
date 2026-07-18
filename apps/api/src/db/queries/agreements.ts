@@ -1,86 +1,72 @@
 import { supabase } from '../index';
 import { findUserByEmail } from './users';
-import { createProperty } from './properties';
+import { findPropertyById } from './properties';
 
-interface CreateAgreementInput {
+interface CreateAgreementDraftInput {
   landlordId: string;
+  propertyId: string;
   tenantEmail: string;
-  address: string;
-  city: string;
-  state: string;
-  propertyType: string;
-  bedrooms: number;
-  bathrooms: number;
   startDate: string;
   endDate: string;
   monthlyRent: number;
   annualRent: number;
-  withLawyerReview: boolean;
-  paymentReference: string;
+  wantsLawyerReview: boolean;
 }
 
-class TenantNotFoundError extends Error {
+export class TenantNotFoundError extends Error {
   status = 404;
 }
 
-export const createAgreementWithProperty = async (input: CreateAgreementInput) => {
+export class PropertyNotFoundError extends Error {
+  status = 404;
+}
+
+export class PropertyOwnershipError extends Error {
+  status = 403;
+}
+
+// Landlord-only, free draft creation — no payment involved. The tenant pays
+// the move-in fee later, at acceptance (see createPaymentForAcceptance).
+export const createAgreementDraft = async (input: CreateAgreementDraftInput) => {
   const tenant = await findUserByEmail(input.tenantEmail);
   if (!tenant) {
     throw new TenantNotFoundError(
-      'No Leja account found for this tenant email. Ask them to sign up first.'
+      "This tenant doesn't have a Leja account yet. Ask them to sign up at leja.ng first."
     );
   }
 
-  const property = await createProperty({
-    landlordId: input.landlordId,
-    address: input.address,
-    city: input.city,
-    state: input.state,
-    propertyType: input.propertyType,
-    bedrooms: input.bedrooms,
-    bathrooms: input.bathrooms,
-    monthlyRent: input.monthlyRent,
-    annualRent: input.annualRent,
-  });
+  const property = await findPropertyById(input.propertyId);
+  if (!property) {
+    throw new PropertyNotFoundError('Property not found');
+  }
+  if (property.landlord_id !== input.landlordId) {
+    throw new PropertyOwnershipError('You do not own this property');
+  }
 
   const { data: agreement, error } = await supabase
     .from('agreements')
     .insert({
-      property_id: property.id,
+      property_id: input.propertyId,
       landlord_id: input.landlordId,
       tenant_id: tenant.id,
       start_date: input.startDate,
       end_date: input.endDate,
       monthly_rent: input.monthlyRent,
       annual_rent: input.annualRent,
-      status: 'PENDING_PAYMENT',
-      lawyer_review_status: input.withLawyerReview ? 'PENDING' : 'NOT_REQUESTED',
-      payment_reference: input.paymentReference,
+      status: 'DRAFT',
+      lawyer_review_status: input.wantsLawyerReview ? 'PENDING' : 'NOT_REQUESTED',
     })
     .select('*')
     .single();
 
   if (error) throw new Error(`Failed to create agreement: ${error.message}`);
-
-  // The Flutterwave webhook confirms payment by looking up a `payments` row
-  // by reference, then flips the linked agreement to ACTIVE — without this
-  // row the webhook has nothing to match against and the agreement would
-  // never activate.
-  const { error: paymentError } = await supabase.from('payments').insert({
-    user_id: input.landlordId,
-    agreement_id: agreement.id,
-    type: input.withLawyerReview ? 'AGREEMENT_REVIEWED' : 'AGREEMENT_BASIC',
-    amount: input.withLawyerReview ? 12000 : 3500,
-    status: 'PENDING',
-    paystack_reference: input.paymentReference,
-  });
-
-  if (paymentError) {
-    throw new Error(`Failed to record agreement payment: ${paymentError.message}`);
-  }
-
   return agreement;
 };
+
+// Derived, not stored — a landlord flags interest via lawyer_review_status
+// rather than a separate boolean column.
+export const wantsLawyerReview = (agreement: { lawyer_review_status: string }) =>
+  agreement.lawyer_review_status !== 'NOT_REQUESTED';
 
 const enrichAgreements = async (agreements: any[]) => {
   if (agreements.length === 0) return [];
@@ -106,18 +92,27 @@ const enrichAgreements = async (agreements: any[]) => {
   }));
 };
 
-export const findAgreementsForUser = async (userId: string, role: 'LANDLORD' | 'TENANT') => {
+export const findAgreementsForUser = async (
+  userId: string,
+  role: 'LANDLORD' | 'TENANT',
+  status?: string
+) => {
   const column = role === 'LANDLORD' ? 'landlord_id' : 'tenant_id';
 
-  const { data: agreements, error } = await supabase
-    .from('agreements')
-    .select('*')
-    .eq(column, userId)
-    .order('created_at', { ascending: false });
+  let query = supabase.from('agreements').select('*').eq(column, userId);
+  if (status) query = query.eq('status', status);
+
+  const { data: agreements, error } = await query.order('created_at', { ascending: false });
 
   if (error) throw new Error(`Failed to list agreements: ${error.message}`);
   return enrichAgreements(agreements || []);
 };
+
+export const getAgreementsByTenantId = async (tenantId: string, status?: string) =>
+  findAgreementsForUser(tenantId, 'TENANT', status);
+
+export const getAgreementsByLandlordId = async (landlordId: string, status?: string) =>
+  findAgreementsForUser(landlordId, 'LANDLORD', status);
 
 export const findAgreementById = async (id: string) => {
   const { data: agreement, error } = await supabase
@@ -135,10 +130,41 @@ export const findAgreementById = async (id: string) => {
   return enriched;
 };
 
-export const updateAgreementLawyerReview = async (id: string, status: string) => {
+// Fuller version of findAgreementById used by the pre-payment preview screen —
+// includes full property details (type/bedrooms/bathrooms) rather than just
+// the address summary enrichAgreements attaches.
+export const getAgreementWithDetails = async (id: string) => {
   const { data: agreement, error } = await supabase
     .from('agreements')
-    .update({ lawyer_review_status: status })
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return null;
+    throw new Error(`Failed to find agreement: ${error.message}`);
+  }
+
+  const [propertyResult, landlordResult, tenantResult] = await Promise.all([
+    agreement.property_id
+      ? supabase.from('properties').select('*').eq('id', agreement.property_id).single()
+      : Promise.resolve({ data: null, error: null }),
+    supabase.from('users').select('id, name, email').eq('id', agreement.landlord_id).single(),
+    supabase.from('users').select('id, name, email').eq('id', agreement.tenant_id).single(),
+  ]);
+
+  return {
+    ...agreement,
+    property: propertyResult.data || null,
+    landlord: landlordResult.data || null,
+    tenant: tenantResult.data || null,
+  };
+};
+
+export const updateAgreementStatus = async (id: string, status: string) => {
+  const { data: agreement, error } = await supabase
+    .from('agreements')
+    .update({ status })
     .eq('id', id)
     .select('*')
     .single();
@@ -147,10 +173,22 @@ export const updateAgreementLawyerReview = async (id: string, status: string) =>
   return agreement;
 };
 
-export const updateAgreementStatus = async (id: string, status: string) => {
+export const updateAgreementPendingPayment = async (id: string, paymentReference: string) => {
   const { data: agreement, error } = await supabase
     .from('agreements')
-    .update({ status })
+    .update({ status: 'PENDING_PAYMENT', payment_reference: paymentReference })
+    .eq('id', id)
+    .select('*')
+    .single();
+
+  if (error) throw new Error(`Failed to update agreement: ${error.message}`);
+  return agreement;
+};
+
+export const updateAgreementLawyerReview = async (id: string, status: string) => {
+  const { data: agreement, error } = await supabase
+    .from('agreements')
+    .update({ lawyer_review_status: status })
     .eq('id', id)
     .select('*')
     .single();

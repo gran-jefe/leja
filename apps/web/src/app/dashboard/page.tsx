@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { Building2, FileText, History, PlusCircle } from 'lucide-react';
+import { Building2, Copy, Check, FileText, History, Home, PlusCircle, Search } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useAgreements } from '@/hooks/useAgreements';
+import { useAgreements, usePendingAgreements } from '@/hooks/useAgreements';
 import { useProperties } from '@/hooks/useProperties';
 import { useRentalHistory } from '@/hooks/useRentalHistory';
 import { Card } from '@/components/ui/Card';
@@ -13,6 +14,24 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
 import { formatDate, getAgreementStatusVariant } from '@/lib/utils';
+
+function CopyInviteLinkButton({ agreementId }: { agreementId: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    const link = `${window.location.origin}/agreement/${agreementId}/review`;
+    await navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <Button variant="secondary" size="sm" className="flex items-center gap-2" onClick={handleCopy}>
+      {copied ? <Check size={14} /> : <Copy size={14} />}
+      {copied ? 'Copied!' : 'Copy invite link'}
+    </Button>
+  );
+}
 
 function StatCard({
   icon: Icon,
@@ -56,7 +75,8 @@ function StatCard({
 export default function DashboardPage() {
   const { user, isLandlord, isTenant } = useAuth();
   const { agreements, loading: agreementsLoading, error: agreementsError, refetch: refetchAgreements } = useAgreements();
-  const { properties, loading: propertiesLoading, error: propertiesError, refetch: refetchProperties } = useProperties();
+  const { agreements: pendingAgreements, loading: pendingLoading } = usePendingAgreements();
+  const { properties, pagination: propertiesPagination, loading: propertiesLoading, error: propertiesError, refetch: refetchProperties } = useProperties();
   const { history, loading: historyLoading, error: historyError, refetch: refetchHistory } = useRentalHistory();
 
   const activeAgreements = agreements.filter((a) => a.status === 'ACTIVE');
@@ -68,9 +88,74 @@ export default function DashboardPage() {
         <p className="font-body text-xs uppercase tracking-wider text-muted mb-2">
           Your overview
         </p>
-        <h1 className="font-display text-3xl font-bold text-navy mb-8">
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-navy mb-8 break-words">
           Welcome back, {user?.name}!
         </h1>
+
+        {isTenant && !pendingLoading && pendingAgreements.length > 0 && (
+          <Card className="mb-6">
+            <h3 className="font-display text-lg font-semibold text-navy mb-4">
+              Agreements to Review
+            </h3>
+            <div className="space-y-3">
+              {pendingAgreements.map((agreement) => (
+                <div
+                  key={agreement.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-button border border-border"
+                >
+                  <div className="flex items-start gap-3 min-w-0">
+                    <span className="w-2 h-2 rounded-full bg-ember mt-2 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="font-body font-semibold text-charcoal text-sm">
+                        New agreement from {agreement.landlord?.name || 'your landlord'}
+                      </p>
+                      <p className="font-body text-muted text-xs truncate">
+                        {agreement.property?.address || 'Property'}
+                      </p>
+                    </div>
+                  </div>
+                  <Link href={`/agreement/${agreement.id}/review`}>
+                    <Button variant="primary" size="sm" className="whitespace-nowrap">
+                      Review &amp; Accept
+                    </Button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {isTenant && (
+          <Card className="mb-6 bg-navy">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-button bg-white bg-opacity-10 flex items-center justify-center flex-shrink-0">
+                  <Home className="text-white" size={24} />
+                </div>
+                <div>
+                  <p className="font-display text-lg font-semibold text-white">
+                    Browse Available Properties
+                  </p>
+                  <p className="font-body text-sm text-white text-opacity-70">
+                    {propertiesLoading
+                      ? 'Loading available properties…'
+                      : `${propertiesPagination?.total ?? properties.length} ${
+                          (propertiesPagination?.total ?? properties.length) === 1
+                            ? 'property'
+                            : 'properties'
+                        } available`}
+                  </p>
+                </div>
+              </div>
+              <Link href="/properties/browse">
+                <Button variant="primary" className="flex items-center gap-2 whitespace-nowrap">
+                  <Search size={18} />
+                  Browse Properties
+                </Button>
+              </Link>
+            </div>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {isLandlord && (
@@ -92,6 +177,15 @@ export default function DashboardPage() {
                 loading={agreementsLoading}
                 error={agreementsError}
                 onRetry={refetchAgreements}
+              />
+              <StatCard
+                icon={FileText}
+                label="Pending Acceptance"
+                subtitle="Drafts awaiting your tenant"
+                value={pendingAgreements.length}
+                loading={pendingLoading}
+                error=""
+                onRetry={() => {}}
               />
             </>
           )}
@@ -120,7 +214,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="mb-6 flex gap-4">
+        <div className="mb-6 flex flex-wrap gap-4">
           {isLandlord && (
             <>
               <Link href="/agreement/new">
@@ -147,6 +241,29 @@ export default function DashboardPage() {
             </Link>
           )}
         </div>
+
+        {isLandlord && !pendingLoading && pendingAgreements.length > 0 && (
+          <Card title="Pending Acceptance" className="mb-6">
+            <div className="space-y-3">
+              {pendingAgreements.map((agreement) => (
+                <div
+                  key={agreement.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-button border border-border"
+                >
+                  <div className="min-w-0">
+                    <p className="font-body font-semibold text-charcoal text-sm truncate">
+                      {agreement.property?.address || 'Property'}
+                    </p>
+                    <p className="font-body text-muted text-xs">
+                      Awaiting tenant · {agreement.tenant?.email || 'Unknown tenant'}
+                    </p>
+                  </div>
+                  <CopyInviteLinkButton agreementId={agreement.id} />
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
         <Card title="Recent Activity">
           {agreementsLoading ? (

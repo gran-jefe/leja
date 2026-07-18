@@ -1,5 +1,31 @@
 import { supabase } from '../index';
 
+export const createPendingPayment = async (data: {
+  userId: string;
+  agreementId: string;
+  type: string;
+  amount: number;
+  reference: string;
+  metadata?: Record<string, unknown>;
+}) => {
+  const { data: payment, error } = await supabase
+    .from('payments')
+    .insert({
+      user_id: data.userId,
+      agreement_id: data.agreementId,
+      type: data.type,
+      amount: data.amount,
+      status: 'PENDING',
+      paystack_reference: data.reference,
+      metadata: data.metadata || {},
+    })
+    .select('*')
+    .single();
+
+  if (error) throw new Error(`Failed to create payment: ${error.message}`);
+  return payment;
+};
+
 export const findPaymentByReference = async (reference: string) => {
   // paystack_reference is a legacy column name; it now stores the Flutterwave tx_ref
   const { data: payment, error } = await supabase

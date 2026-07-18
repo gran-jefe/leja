@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Home, Building2, Bed, Bath } from 'lucide-react';
-import { Sidebar } from '@/components/layout/Sidebar';
+import { DashboardShell } from '@/components/layout/DashboardShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/layout/EmptyState';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
@@ -21,10 +21,8 @@ export default function PropertiesPage() {
 
   return (
     <ProtectedPageWrapper requiredRole={UserRole.LANDLORD}>
-      <div className="flex">
-        <Sidebar />
-        <main className="flex-1 p-8">
-          <div className="max-w-4xl mx-auto">
+      <DashboardShell>
+        <div className="max-w-4xl mx-auto">
             <PageHeader
               title="My Properties"
               subtitle="Manage your listings and track availability"
@@ -97,9 +95,8 @@ export default function PropertiesPage() {
                 ))}
               </div>
             )}
-          </div>
-        </main>
-      </div>
+        </div>
+      </DashboardShell>
     </ProtectedPageWrapper>
   );
 }
