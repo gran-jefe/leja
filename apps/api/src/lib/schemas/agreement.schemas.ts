@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BEYOND_PRICING } from '@leja/shared';
+import { BEYOND_PRICING } from '@beyond/shared';
 
 export const createAgreementDraftSchema = z.object({
   propertyId: z.string().uuid('Invalid property ID'),

@@ -12,7 +12,7 @@ import { Card } from '@/components/ui/Card';
 import { useCreateProperty } from '@/hooks/useProperties';
 import { calculateAnnualRent } from '@/lib/utils';
 import { PROPERTY_TYPE_LABELS } from '@/lib/constants';
-import { UserRole } from '@leja/shared';
+import { UserRole } from '@beyond/shared';
 
 const propertySchema = z.object({
   address: z.string().min(1, 'Address is required'),

@@ -23,7 +23,3 @@ export const BEYOND_PRICING = {
   // are set by the insurer partner, not by us.
   INSURANCE_COMMISSION_RATE: 0.15,  // 15% of premium
 } as const;
-
-// Deprecated alias — kept only until every import has migrated to
-// BEYOND_PRICING. Do not use in new code.
-export const LEJA_PRICING = BEYOND_PRICING;

@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgreements } from '@/hooks/useAgreements';
-import { UserRole } from '@leja/shared';
+import { UserRole } from '@beyond/shared';
 import { formatDate, getAgreementStatusVariant } from '@/lib/utils';
 
 export default function AgreementsPage() {

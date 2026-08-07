@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { agreementRateLimit } from '../middleware/rateLimit';
-import { UserRole } from '@leja/shared';
+import { UserRole } from '@beyond/shared';
 import { insuranceInterestSchema } from '../lib/schemas';
 import { createInsuranceInterest, findInsuranceInterestsByTenant } from '../db/queries/insurance';
 import { findAgreementById } from '../db/queries/agreements';

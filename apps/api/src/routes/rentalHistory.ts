@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken, requireRole } from '../middleware/auth';
-import { UserRole, BEYOND_PRICING } from '@leja/shared';
+import { UserRole, BEYOND_PRICING } from '@beyond/shared';
 import { findRentalHistoryByTenant } from '../db/queries/rentalHistory';
 
 const router = Router();

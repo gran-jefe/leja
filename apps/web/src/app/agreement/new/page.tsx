@@ -17,7 +17,7 @@ import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useProperties } from '@/hooks/useProperties';
 import { useCreateAgreement } from '@/hooks/useAgreements';
-import { UserRole, BEYOND_PRICING, calculateLegalizationFee } from '@leja/shared';
+import { UserRole, BEYOND_PRICING, calculateLegalizationFee } from '@beyond/shared';
 import { formatNaira, calculateAnnualRent } from '@/lib/utils';
 import { PROPERTY_TYPE_LABELS } from '@/lib/constants';
 

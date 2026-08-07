@@ -1,5 +1,5 @@
 import { supabase } from '../index';
-import { calculateLegalizationFee, clampLegalizationRate } from '@leja/shared';
+import { calculateLegalizationFee, clampLegalizationRate } from '@beyond/shared';
 import { findUserByEmail } from './users';
 import { findPropertyById } from './properties';
 

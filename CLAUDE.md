@@ -11,7 +11,7 @@
 - **Monorepo:** Turborepo + npm workspaces
 - **Frontend (apps/web):** Next.js 14, TypeScript, Tailwind CSS, App Router, react-hook-form, axios, zod
 - **Backend (apps/api):** Node.js, Express, TypeScript, PostgreSQL (Supabase), Zod validation
-- **Shared types (packages/shared):** @leja/shared
+- **Shared types (packages/shared):** @beyond/shared
 - **Payments:** Flutterwave (all amounts in Naira — never convert to kobo; stored in Naira in DB)
 - **Auth:** JWT stored in httpOnly cookies (frontend uses js-cookie)
 - **Deployment:** Vercel (web), Render (api)
@@ -43,7 +43,7 @@
 - **Landlord:** lists properties FREE, connects with tenants FREE
 - **Tenant:** connects with landlords FREE; pays a **Legalization & Protection fee** when accepting an agreement — 8% of annual rent by default (`LEGALIZATION_FEE_RATE`), negotiable per agreement by the landlord within a 5%–10% band (`LEGALIZATION_FEE_MIN_RATE` / `LEGALIZATION_FEE_MAX_RATE`), floored at ₦10,000 and capped at ₦100,000 (`LEGALIZATION_FEE_FLOOR` / `LEGALIZATION_FEE_CAP`)
 - **Fee snapshotting:** the computed fee (rate + amount) is snapshotted onto the agreement at DRAFT creation — a later platform rate change must never alter an already-created agreement's fee
-- **Fee calculation:** always via `calculateLegalizationFee()` from `@leja/shared` (`packages/shared/src/utils/fees.ts`) — never compute the percentage/floor/cap inline. The API recomputes and verifies the fee server-side at payment initiation; a client-supplied amount is never trusted
+- **Fee calculation:** always via `calculateLegalizationFee()` from `@beyond/shared` (`packages/shared/src/utils/fees.ts`) — never compute the percentage/floor/cap inline. The API recomputes and verifies the fee server-side at payment initiation; a client-supplied amount is never trusted
 - **Tenant:** optional ₦8,000 lawyer deep-review add-on (`LAWYER_REVIEW_ADDON`, paid together with the legalization fee)
 - **Tenant:** optional rent-protection insurance offered via a licensed insurance partner — we earn commission (`INSURANCE_COMMISSION_RATE`), we do **not** underwrite the policy
 - **Tenant:** ₦5,000 rental history export
@@ -179,7 +179,7 @@ leja/
 
 ## Conventions
 
-- **API Responses:** All responses use `ApiResponse<T>` shape from @leja/shared:
+- **API Responses:** All responses use `ApiResponse<T>` shape from @beyond/shared:
   ```typescript
   {
     success: boolean;
@@ -190,7 +190,7 @@ leja/
   ```
 - **Zod schemas:** Live in `apps/api/src/lib/schemas/` — one file per domain
 - **Database queries:** Use Supabase client for simple CRUD, raw pg Pool for complex joins
-- **Type safety:** No `any` types — use @leja/shared types throughout
+- **Type safety:** No `any` types — use @beyond/shared types throughout
 - **Branch names:** `feature/short-description`, `fix/short-description`
 - **Commit style:** Conventional commits (`feat:`, `fix:`, `chore:`, `docs:`)
 

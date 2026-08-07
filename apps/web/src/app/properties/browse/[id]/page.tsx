@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useProperty } from '@/hooks/useProperties';
-import { UserRole, PropertyType } from '@leja/shared';
+import { UserRole, PropertyType } from '@beyond/shared';
 import { formatNaira } from '@/lib/utils';
 import { PROPERTY_TYPE_LABELS } from '@/lib/constants';
 

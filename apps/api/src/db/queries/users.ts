@@ -1,5 +1,5 @@
 import { supabase } from '../index';
-import { IUser, UserRole } from '@leja/shared';
+import { IUser, UserRole } from '@beyond/shared';
 
 type SafeUser = Omit<IUser, 'password_hash'> & { id: string };
 

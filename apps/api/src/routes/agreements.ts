@@ -3,7 +3,7 @@ import { authenticateToken, requireRole } from '../middleware/auth';
 import { agreementRateLimit } from '../middleware/rateLimit';
 import { initializePayment, generateReference } from '../lib/flutterwave';
 import { createPendingPayment } from '../db/queries/payments';
-import { UserRole, PaymentType, BEYOND_PRICING } from '@leja/shared';
+import { UserRole, PaymentType, BEYOND_PRICING } from '@beyond/shared';
 import { config } from '../config';
 import { createAgreementDraftSchema } from '../lib/schemas';
 import {

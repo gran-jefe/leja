@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Spinner } from '@/components/ui/Spinner';
-import { UserRole } from '@leja/shared';
+import { UserRole } from '@beyond/shared';
 
 interface ProtectedPageWrapperProps {
   children: React.ReactNode;

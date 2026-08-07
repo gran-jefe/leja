@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { UserRole } from '@leja/shared';
+import { UserRole } from '@beyond/shared';
 import { config } from '../config';
 
 export interface TokenPayload {

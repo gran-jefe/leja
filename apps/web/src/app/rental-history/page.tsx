@@ -14,7 +14,7 @@ import { PayButton } from '@/components/shared/PayButton';
 import { useAuth } from '@/hooks/useAuth';
 import { useRentalHistory } from '@/hooks/useRentalHistory';
 import api from '@/lib/api';
-import { UserRole, BEYOND_PRICING } from '@leja/shared';
+import { UserRole, BEYOND_PRICING } from '@beyond/shared';
 import { formatDate, formatNaira, getErrorMessage } from '@/lib/utils';
 
 const historyStatusVariant = (status: string) => {

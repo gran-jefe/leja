@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken, optionalAuth, requireRole } from '../middleware/auth';
-import { UserRole } from '@leja/shared';
+import { UserRole } from '@beyond/shared';
 import {
   createProperty,
   findPropertiesByLandlord,

@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgreementPreview, useAcceptAgreement, useDeclineAgreement } from '@/hooks/useAgreements';
-import { UserRole, BEYOND_PRICING } from '@leja/shared';
+import { UserRole, BEYOND_PRICING } from '@beyond/shared';
 import { formatNaira, formatDate } from '@/lib/utils';
 import api from '@/lib/api';
 

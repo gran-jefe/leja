@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../lib/jwt';
-import { UserRole } from '@leja/shared';
+import { UserRole } from '@beyond/shared';
 
 declare global {
   namespace Express {

@@ -30,7 +30,7 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import api from '@/lib/api';
 import { cn, getErrorMessage, formatNaira } from '@/lib/utils';
-import { BEYOND_PRICING, calculateLegalizationFee } from '@leja/shared';
+import { BEYOND_PRICING, calculateLegalizationFee } from '@beyond/shared';
 
 const LEGALIZATION_FEE_RATE_PERCENT = Math.round(BEYOND_PRICING.LEGALIZATION_FEE_RATE * 100);
 

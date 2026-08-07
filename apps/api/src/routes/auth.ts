@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
-import { UserRole } from '@leja/shared';
+import { UserRole } from '@beyond/shared';
 import { createUser, findUserByEmail, findUserById } from '../db/queries/users';
 import { signToken } from '../lib/jwt';
 import { registerSchema, loginSchema } from '../lib/schemas';

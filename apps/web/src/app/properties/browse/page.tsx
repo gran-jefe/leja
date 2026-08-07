@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/Input';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useProperties } from '@/hooks/useProperties';
-import { UserRole, PropertyType } from '@leja/shared';
+import { UserRole, PropertyType } from '@beyond/shared';
 import { formatNaira } from '@/lib/utils';
 import { PROPERTY_TYPE_LABELS } from '@/lib/constants';
 

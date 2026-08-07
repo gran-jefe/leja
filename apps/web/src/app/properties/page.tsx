@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useProperties } from '@/hooks/useProperties';
-import { UserRole } from '@leja/shared';
+import { UserRole } from '@beyond/shared';
 import { formatNaira } from '@/lib/utils';
 import { PROPERTY_TYPE_LABELS } from '@/lib/constants';
 
