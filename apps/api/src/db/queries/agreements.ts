@@ -1,4 +1,5 @@
 import { supabase } from '../index';
+import { calculateLegalizationFee, clampLegalizationRate } from '@leja/shared';
 import { findUserByEmail } from './users';
 import { findPropertyById } from './properties';
 
@@ -11,6 +12,7 @@ interface CreateAgreementDraftInput {
   monthlyRent: number;
   annualRent: number;
   wantsLawyerReview: boolean;
+  legalizationFeeRate?: number;
 }
 
 export class TenantNotFoundError extends Error {
@@ -26,12 +28,12 @@ export class PropertyOwnershipError extends Error {
 }
 
 // Landlord-only, free draft creation — no payment involved. The tenant pays
-// the move-in fee later, at acceptance (see createPaymentForAcceptance).
+// the Legalization & Protection fee later, at acceptance (POST /:id/accept).
 export const createAgreementDraft = async (input: CreateAgreementDraftInput) => {
   const tenant = await findUserByEmail(input.tenantEmail);
   if (!tenant) {
     throw new TenantNotFoundError(
-      "This tenant doesn't have a Leja account yet. Ask them to sign up at leja.ng first."
+      "This tenant doesn't have a BeyondAgency account yet. Ask them to sign up at leja.ng first."
     );
   }
 
@@ -42,6 +44,11 @@ export const createAgreementDraft = async (input: CreateAgreementDraftInput) => 
   if (property.landlord_id !== input.landlordId) {
     throw new PropertyOwnershipError('You do not own this property');
   }
+
+  // Snapshotted here, once — a later change to the platform's default rate
+  // must never alter an already-created agreement's fee.
+  const legalizationFeeRate = clampLegalizationRate(input.legalizationFeeRate);
+  const legalizationFeeAmount = calculateLegalizationFee(input.annualRent, legalizationFeeRate);
 
   const { data: agreement, error } = await supabase
     .from('agreements')
@@ -55,6 +62,8 @@ export const createAgreementDraft = async (input: CreateAgreementDraftInput) => 
       annual_rent: input.annualRent,
       status: 'DRAFT',
       lawyer_review_status: input.wantsLawyerReview ? 'PENDING' : 'NOT_REQUESTED',
+      legalization_fee_rate: legalizationFeeRate,
+      legalization_fee_amount: legalizationFeeAmount,
     })
     .select('*')
     .single();
@@ -67,6 +76,33 @@ export const createAgreementDraft = async (input: CreateAgreementDraftInput) => 
 // rather than a separate boolean column.
 export const wantsLawyerReview = (agreement: { lawyer_review_status: string }) =>
   agreement.lawyer_review_status !== 'NOT_REQUESTED';
+
+// Resolves the fee to charge from the agreement's own snapshot rather than
+// ever trusting a client-supplied amount. Recomputes from the snapshotted
+// rate + annual rent and cross-checks against the stored amount — a
+// mismatch means the row was tampered with or corrupted, not something to
+// silently paper over. Pre-migration agreements (no snapshot yet) fall back
+// to a fresh calculation at the default rate.
+export const resolveLegalizationFee = (agreement: {
+  annual_rent: number;
+  legalization_fee_rate: number | null;
+  legalization_fee_amount: number | null;
+}): number => {
+  const recomputed = calculateLegalizationFee(
+    agreement.annual_rent,
+    agreement.legalization_fee_rate ?? undefined
+  );
+
+  if (agreement.legalization_fee_amount == null) {
+    return recomputed;
+  }
+
+  if (Math.abs(agreement.legalization_fee_amount - recomputed) > 0.01) {
+    throw new Error('Legalization fee mismatch — agreement data may be corrupted');
+  }
+
+  return agreement.legalization_fee_amount;
+};
 
 const enrichAgreements = async (agreements: any[]) => {
   if (agreements.length === 0) return [];

@@ -1,4 +1,4 @@
--- Leja PostgreSQL Schema
+-- BeyondAgency PostgreSQL Schema
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at()
@@ -72,6 +72,10 @@ CREATE TABLE IF NOT EXISTS agreements (
   lawyer_review_status TEXT DEFAULT 'NOT_REQUESTED' CHECK (lawyer_review_status IN ('NOT_REQUESTED','PENDING','IN_REVIEW','COMPLETED')),
   lawyer_review_id UUID,
   payment_reference TEXT,
+  -- Snapshotted at DRAFT creation via calculateLegalizationFee() so a later
+  -- platform rate change never alters an already-created agreement's fee.
+  legalization_fee_rate NUMERIC(4,3) DEFAULT 0.08,
+  legalization_fee_amount NUMERIC(12,2),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -118,3 +122,17 @@ CREATE TABLE IF NOT EXISTS rental_history (
 );
 
 CREATE INDEX idx_rental_history_tenant_id ON rental_history(tenant_id);
+
+-- Insurance interest capture (lightweight — no insurer integration yet)
+CREATE TABLE IF NOT EXISTS insurance_interests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  agreement_id UUID NOT NULL REFERENCES agreements(id),
+  tenant_id UUID NOT NULL REFERENCES users(id),
+  product_type TEXT NOT NULL DEFAULT 'RENT_PROTECTION' CHECK (product_type IN ('RENT_PROTECTION')),
+  status TEXT NOT NULL DEFAULT 'INTERESTED' CHECK (status IN ('INTERESTED', 'CONTACTED', 'DECLINED')),
+  is_deleted BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_insurance_interests_tenant_id ON insurance_interests(tenant_id);
+CREATE INDEX idx_insurance_interests_agreement_id ON insurance_interests(agreement_id);

@@ -3,11 +3,13 @@ import { authenticateToken, requireRole } from '../middleware/auth';
 import { agreementRateLimit } from '../middleware/rateLimit';
 import { initializePayment, generateReference } from '../lib/flutterwave';
 import { createPendingPayment } from '../db/queries/payments';
-import { UserRole, PaymentType, BEYOND_PRICING, calculateLegalizationFee } from '@leja/shared';
+import { UserRole, PaymentType, BEYOND_PRICING } from '@leja/shared';
 import { config } from '../config';
+import { createAgreementDraftSchema } from '../lib/schemas';
 import {
   createAgreementDraft,
   wantsLawyerReview,
+  resolveLegalizationFee,
   findAgreementsForUser,
   findAgreementById,
   getAgreementWithDetails,
@@ -19,7 +21,7 @@ import {
 const router = Router();
 
 // Landlord creates a free draft agreement. No payment at this step — the
-// tenant pays the move-in fee later, when they accept.
+// tenant pays the Legalization & Protection fee later, when they accept.
 router.post(
   '/',
   authenticateToken,
@@ -27,8 +29,24 @@ router.post(
   agreementRateLimit,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { propertyId, tenantEmail, startDate, endDate, monthlyRent, annualRent, wantsLawyerReview: wantsReviewFlag } =
-        req.body;
+      const parsed = createAgreementDraftSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          success: false,
+          errors: parsed.error.errors.map((e) => e.message),
+        });
+      }
+
+      const {
+        propertyId,
+        tenantEmail,
+        startDate,
+        endDate,
+        monthlyRent,
+        annualRent,
+        wantsLawyerReview: wantsReviewFlag,
+        legalizationFeeRate,
+      } = parsed.data;
 
       const agreement = await createAgreementDraft({
         landlordId: req.user!.id,
@@ -36,9 +54,10 @@ router.post(
         tenantEmail,
         startDate,
         endDate,
-        monthlyRent: Number(monthlyRent),
-        annualRent: Number(annualRent),
+        monthlyRent,
+        annualRent,
         wantsLawyerReview: !!wantsReviewFlag,
+        legalizationFeeRate,
       });
 
       return res.status(201).json({
@@ -122,7 +141,7 @@ router.get(
       }
 
       const includesLawyerReview = wantsLawyerReview(agreement);
-      const moveInFee = calculateLegalizationFee(agreement.annual_rent);
+      const moveInFee = resolveLegalizationFee(agreement);
       const lawyerReviewFee = includesLawyerReview ? BEYOND_PRICING.LAWYER_REVIEW_ADDON : 0;
       const total = moveInFee + lawyerReviewFee;
       const totalSavings = includesLawyerReview
@@ -181,10 +200,10 @@ router.post(
       }
 
       const includesLawyerReview = wantsLawyerReview(agreement);
-      const moveInFee = calculateLegalizationFee(agreement.annual_rent);
+      const moveInFee = resolveLegalizationFee(agreement);
       const lawyerReviewFee = includesLawyerReview ? BEYOND_PRICING.LAWYER_REVIEW_ADDON : 0;
       const total = moveInFee + lawyerReviewFee;
-      const reference = generateReference('LEJA_TENANT');
+      const reference = generateReference('BEYOND_TENANT');
 
       const { paymentLink } = await initializePayment({
         email: req.user!.email,

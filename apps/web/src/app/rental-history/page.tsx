@@ -32,7 +32,7 @@ export default function RentalHistoryPage() {
   const { user } = useAuth();
   const { history, loading, error, refetch } = useRentalHistory();
   const [exportError, setExportError] = useState('');
-  const reference = useMemo(() => `LEJA_RHX_${Date.now()}`, []);
+  const reference = useMemo(() => `BEYOND_RHX_${Date.now()}`, []);
 
   const handleExportSuccess = async (response: any) => {
     setExportError('');

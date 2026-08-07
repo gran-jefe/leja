@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAgreementPreview, useAcceptAgreement, useDeclineAgreement } from '@/hooks/useAgreements';
 import { UserRole, BEYOND_PRICING } from '@leja/shared';
 import { formatNaira, formatDate } from '@/lib/utils';
+import api from '@/lib/api';
 
 const LEGALIZATION_FEE_RATE_PERCENT = Math.round(BEYOND_PRICING.LEGALIZATION_FEE_RATE * 100);
 
@@ -33,6 +34,7 @@ function ReviewContent() {
   const { acceptAgreement, loading: accepting, error: acceptError } = useAcceptAgreement();
   const { declineAgreement, loading: declining } = useDeclineAgreement();
   const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
+  const [wantsInsurance, setWantsInsurance] = useState(false);
 
   if (loading) {
     return (
@@ -71,9 +73,17 @@ function ReviewContent() {
 
   const handleAccept = async () => {
     const result = await acceptAgreement(id);
-    if (result?.paymentLink) {
-      window.location.href = result.paymentLink;
+    if (!result?.paymentLink) return;
+
+    if (wantsInsurance) {
+      try {
+        await api.post('/insurance/interest', { agreementId: id, productType: 'RENT_PROTECTION' });
+      } catch {
+        // Non-blocking — insurance interest is a nice-to-have, never delay payment over it.
+      }
     }
+
+    window.location.href = result.paymentLink;
   };
 
   const handleDecline = async () => {
@@ -153,6 +163,25 @@ function ReviewContent() {
           <p>BeyondAgency fee: {formatNaira(pricing.total)}</p>
           <p className="font-semibold">Your saving: {formatNaira(pricing.savings.totalSavings)}</p>
         </div>
+      </Card>
+
+      <Card>
+        <label className="flex items-start gap-3 cursor-pointer font-body">
+          <input
+            type="checkbox"
+            checked={wantsInsurance}
+            onChange={(e) => setWantsInsurance(e.target.checked)}
+            className="w-4 h-4 mt-1"
+          />
+          <span>
+            <span className="block font-semibold text-charcoal">
+              I'm interested in rent-protection insurance
+            </span>
+            <span className="block text-sm text-muted mt-1">
+              A partner will contact you. Optional — no obligation.
+            </span>
+          </span>
+        </label>
       </Card>
 
       <Card>

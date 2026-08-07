@@ -41,6 +41,9 @@ function NewAgreementForm() {
   const { createAgreement, loading: submitting, error: agreementError } = useCreateAgreement();
   const [step, setStep] = useState(1);
   const [wantsLawyerReview, setWantsLawyerReview] = useState(false);
+  const [legalizationFeeRatePercent, setLegalizationFeeRatePercent] = useState(
+    BEYOND_PRICING.LEGALIZATION_FEE_RATE * 100
+  );
   const [formData, setFormData] = useState<Partial<FormState>>({});
 
   const selectedProperty = properties.find((p) => p.id === formData.propertyId);
@@ -77,7 +80,7 @@ function NewAgreementForm() {
 
   const monthlyRent = formData.monthlyRent || 0;
   const annualRent = calculateAnnualRent(monthlyRent);
-  const legalizationFee = calculateLegalizationFee(annualRent);
+  const legalizationFee = calculateLegalizationFee(annualRent, legalizationFeeRatePercent / 100);
   const tenantTotal = wantsLawyerReview
     ? legalizationFee + BEYOND_PRICING.LAWYER_REVIEW_ADDON
     : legalizationFee;
@@ -91,6 +94,7 @@ function NewAgreementForm() {
       monthlyRent,
       annualRent,
       wantsLawyerReview,
+      legalizationFeeRate: legalizationFeeRatePercent / 100,
     });
 
     const agreement = result?.agreement;
@@ -224,6 +228,36 @@ function NewAgreementForm() {
               />
 
               <div className="border border-border rounded-button p-4">
+                <label className="block font-semibold text-charcoal font-body mb-1">
+                  Legalization &amp; Protection fee rate
+                </label>
+                <p className="text-sm text-muted font-body mb-3">
+                  Default is {BEYOND_PRICING.LEGALIZATION_FEE_RATE * 100}% of annual rent. You may
+                  negotiate between {BEYOND_PRICING.LEGALIZATION_FEE_MIN_RATE * 100}% and{' '}
+                  {BEYOND_PRICING.LEGALIZATION_FEE_MAX_RATE * 100}% — paid by your tenant, floored
+                  at {formatNaira(BEYOND_PRICING.LEGALIZATION_FEE_FLOOR)} and capped at{' '}
+                  {formatNaira(BEYOND_PRICING.LEGALIZATION_FEE_CAP)}.
+                </p>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min={BEYOND_PRICING.LEGALIZATION_FEE_MIN_RATE * 100}
+                    max={BEYOND_PRICING.LEGALIZATION_FEE_MAX_RATE * 100}
+                    step={0.5}
+                    value={legalizationFeeRatePercent}
+                    onChange={(e) => setLegalizationFeeRatePercent(Number(e.target.value))}
+                    className="w-24 px-3 py-2 border border-border rounded-button focus:outline-none focus:ring-2 focus:ring-forest font-body"
+                  />
+                  <span className="font-body text-charcoal">%</span>
+                  {annualRent > 0 && (
+                    <span className="font-body text-sm text-muted">
+                      = {formatNaira(legalizationFee)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="border border-border rounded-button p-4">
                 <label className="flex items-start gap-3 cursor-pointer font-body">
                   <input
                     type="checkbox"
@@ -276,6 +310,10 @@ function NewAgreementForm() {
                 </p>
                 <p>
                   <span className="font-semibold">Annual Rent:</span> {formatNaira(annualRent)}
+                </p>
+                <p>
+                  <span className="font-semibold">Legalization Fee Rate:</span>{' '}
+                  {legalizationFeeRatePercent}%
                 </p>
                 <p>
                   <span className="font-semibold">Lawyer Review:</span>{' '}

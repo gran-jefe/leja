@@ -1,4 +1,4 @@
--- Leja Sample Data for Testing
+-- BeyondAgency Sample Data for Testing
 
 -- Insert sample users
 INSERT INTO users (id, email, password_hash, name, phone, role, is_verified)

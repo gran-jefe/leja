@@ -36,8 +36,9 @@ export async function initializePayment({
       redirect_url: redirectUrl,
       customer: { email, name, phonenumber: phone },
       customizations: {
-        title: 'Leja',
+        title: 'BeyondAgency',
         description: 'Tenancy Agreement Payment',
+        // TODO(MIGRATION_NOTES): logo asset still lives on the old domain
         logo: 'https://leja.ng/logo.png',
       },
       meta: meta || {},
@@ -75,6 +76,6 @@ export function verifyWebhookSignature(requestHash: string): boolean {
   return requestHash === config.flutterwave.webhookHash;
 }
 
-export function generateReference(prefix: string = 'LEJA'): string {
+export function generateReference(prefix: string = 'BEYOND'): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 }

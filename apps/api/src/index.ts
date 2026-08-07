@@ -13,6 +13,7 @@ import agreementsRoutes from './routes/agreements';
 import paymentsRoutes from './routes/payments';
 import rentalHistoryRoutes from './routes/rentalHistory';
 import contactRoutes from './routes/contact';
+import insuranceRoutes from './routes/insurance';
 
 // Validate config before starting
 validateConfig();
@@ -40,7 +41,7 @@ app.use(express.json({ limit: '10mb' }));
 // Health check endpoints (no auth required)
 app.get('/', (req: Request, res: Response) => {
   res.json({
-    message: 'Leja API',
+    message: 'BeyondAgency API',
     docs: '/api/v1',
     health: '/health',
   });
@@ -62,6 +63,7 @@ app.use('/api/v1/agreements', agreementsRoutes);
 app.use('/api/v1/payments', paymentsRoutes);
 app.use('/api/v1/rental-history', rentalHistoryRoutes);
 app.use('/api/v1/contact', contactRoutes);
+app.use('/api/v1/insurance', insuranceRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
@@ -73,5 +75,5 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 app.listen(config.port, () => {
-  console.log(`Leja API running on port ${config.port} (${config.env})`);
+  console.log(`BeyondAgency API running on port ${config.port} (${config.env})`);
 });
