@@ -1,6 +1,13 @@
-export const LEJA_PRICING = {
-  TENANT_MOVE_IN_FEE: 15000,        // Naira
-  TENANT_LAWYER_REVIEW: 8000,       // Naira — add-on to move-in fee
+export const BEYOND_PRICING = {
+  // Legalization & Protection fee — percentage of annual rent, clamped by
+  // the min/max negotiation band, then floored and capped in Naira.
+  LEGALIZATION_FEE_RATE: 0.08,      // 8% of annual rent (default rate)
+  LEGALIZATION_FEE_MIN_RATE: 0.05,  // 5% — lowest a landlord may negotiate to
+  LEGALIZATION_FEE_MAX_RATE: 0.1,   // 10% — highest a landlord may negotiate to
+  LEGALIZATION_FEE_FLOOR: 10000,    // Naira
+  LEGALIZATION_FEE_CAP: 100000,     // Naira
+
+  LAWYER_REVIEW_ADDON: 8000,        // Naira — add-on to the legalization fee
   RENTAL_HISTORY_EXPORT: 5000,      // Naira
   LANDLORD_SUBSCRIPTION: 20000,     // Naira/month
 
@@ -10,5 +17,13 @@ export const LEJA_PRICING = {
 
   // Lawyer payout split
   LAWYER_REVIEW_PAYOUT: 5000,       // Naira — lawyer earns this
-  LAWYER_REVIEW_PLATFORM_CUT: 3000, // Naira — Leja keeps this
+  LAWYER_REVIEW_PLATFORM_CUT: 3000, // Naira — platform keeps this
+
+  // Placeholder until an insurer partnership is signed — premiums themselves
+  // are set by the insurer partner, not by us.
+  INSURANCE_COMMISSION_RATE: 0.15,  // 15% of premium
 } as const;
+
+// Deprecated alias — kept only until every import has migrated to
+// BEYOND_PRICING. Do not use in new code.
+export const LEJA_PRICING = BEYOND_PRICING;

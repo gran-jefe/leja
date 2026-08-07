@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken, requireRole } from '../middleware/auth';
-import { UserRole, LEJA_PRICING } from '@leja/shared';
+import { UserRole, BEYOND_PRICING } from '@leja/shared';
 import { findRentalHistoryByTenant } from '../db/queries/rentalHistory';
 
 const router = Router();
@@ -35,7 +35,7 @@ router.get(
       success: true,
       data: {
         paymentLink: 'https://flutterwave.com/pay/placeholder',
-        amount: LEJA_PRICING.RENTAL_HISTORY_EXPORT,
+        amount: BEYOND_PRICING.RENTAL_HISTORY_EXPORT,
       },
       message: 'Rental history export initiated',
     });

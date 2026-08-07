@@ -14,7 +14,7 @@ import { PayButton } from '@/components/shared/PayButton';
 import { useAuth } from '@/hooks/useAuth';
 import { useRentalHistory } from '@/hooks/useRentalHistory';
 import api from '@/lib/api';
-import { UserRole, LEJA_PRICING } from '@leja/shared';
+import { UserRole, BEYOND_PRICING } from '@leja/shared';
 import { formatDate, formatNaira, getErrorMessage } from '@/lib/utils';
 
 const historyStatusVariant = (status: string) => {
@@ -66,12 +66,12 @@ export default function RentalHistoryPage() {
               icon={History}
               action={
                 <PayButton
-                  amount={LEJA_PRICING.RENTAL_HISTORY_EXPORT}
+                  amount={BEYOND_PRICING.RENTAL_HISTORY_EXPORT}
                   email={user?.email || ''}
                   name={user?.name || ''}
                   reference={reference}
                   description="Rental History Export"
-                  label={`Export Verified Report — ${formatNaira(LEJA_PRICING.RENTAL_HISTORY_EXPORT)}`}
+                  label={`Export Verified Report — ${formatNaira(BEYOND_PRICING.RENTAL_HISTORY_EXPORT)}`}
                   onSuccess={handleExportSuccess}
                   disabled={history.length === 0}
                 />

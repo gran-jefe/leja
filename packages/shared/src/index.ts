@@ -5,3 +5,4 @@ export * from './types/payment';
 export * from './types/rentalHistory';
 export * from './types/api';
 export * from './constants/pricing';
+export * from './utils/fees';

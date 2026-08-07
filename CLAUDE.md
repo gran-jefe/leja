@@ -1,8 +1,10 @@
-# Leja
+# BeyondAgency
 
-## Project: Leja
+## Project: BeyondAgency
 
-**Brief:** Nigeria's residential rental transaction platform. Replaces informal estate agents with a structured digital layer for agreements, payments, and legal protection.
+**Brief:** Nigeria's trust platform for direct deals. Phase 1: residential rentals — landlords and tenants connect free; we monetize agreement legalization, insurance protection, and verification.
+
+**Tagline:** Bridging Trust. Simplifying Deals.
 
 ## Stack
 
@@ -38,18 +40,31 @@
 
 ## Key Business Rules
 
-- **Landlord:** lists properties FREE, generates agreements FREE
-- **Tenant:** pays ₦15,000 move-in fee at agreement acceptance (replaces the agent fee they'd otherwise pay)
-- **Tenant:** optional ₦8,000 lawyer review add-on (paid together with the move-in fee)
+- **Landlord:** lists properties FREE, connects with tenants FREE
+- **Tenant:** connects with landlords FREE; pays a **Legalization & Protection fee** when accepting an agreement — 8% of annual rent by default (`LEGALIZATION_FEE_RATE`), negotiable per agreement by the landlord within a 5%–10% band (`LEGALIZATION_FEE_MIN_RATE` / `LEGALIZATION_FEE_MAX_RATE`), floored at ₦10,000 and capped at ₦100,000 (`LEGALIZATION_FEE_FLOOR` / `LEGALIZATION_FEE_CAP`)
+- **Fee snapshotting:** the computed fee (rate + amount) is snapshotted onto the agreement at DRAFT creation — a later platform rate change must never alter an already-created agreement's fee
+- **Fee calculation:** always via `calculateLegalizationFee()` from `@leja/shared` (`packages/shared/src/utils/fees.ts`) — never compute the percentage/floor/cap inline. The API recomputes and verifies the fee server-side at payment initiation; a client-supplied amount is never trusted
+- **Tenant:** optional ₦8,000 lawyer deep-review add-on (`LAWYER_REVIEW_ADDON`, paid together with the legalization fee)
+- **Tenant:** optional rent-protection insurance offered via a licensed insurance partner — we earn commission (`INSURANCE_COMMISSION_RATE`), we do **not** underwrite the policy
 - **Tenant:** ₦5,000 rental history export
 - **Landlord:** optional ₦20,000/month subscription for 5+ properties
-- **Pricing constants:** all prices live in `LEJA_PRICING` (`packages/shared/src/constants/pricing.ts`) — never hardcode a Naira amount in a route handler or component
-- **Payment timing:** payment is collected when the **TENANT** accepts/signs the agreement, not when the landlord creates it. Agreement flow: landlord creates DRAFT (free) → tenant reviews via preview → tenant accepts + pays → webhook confirms → agreement ACTIVE
+- **Pricing constants:** all prices/rates live in `BEYOND_PRICING` (`packages/shared/src/constants/pricing.ts`) — never hardcode a Naira amount or a fee rate in a route handler or component
+- **Payment timing:** payment is collected when the **TENANT** accepts/signs the agreement, not when the landlord creates it. Agreement flow: landlord creates DRAFT (free, fee snapshotted) → tenant reviews via preview → tenant accepts + pays → webhook confirms → agreement ACTIVE
 - **Rental history export:** ₦5,000
 - **Payment confirmation:** Payment must be confirmed via Flutterwave webhook before agreement status changes to ACTIVE
 - **Agreement visibility:** Only visible to the two parties involved (landlord + tenant)
 - **Property deletion:** Soft delete only (is_deleted flag, never hard delete)
 - **Monetary storage:** All values stored in **Naira** (2 decimal places) in DB; Flutterwave amounts are in Naira — never convert to kobo
+
+## Future Phases
+
+BeyondAgency is a multi-sector trust platform, not a single-purpose rental tool — architecture should not hardcode assumptions that would block later phases:
+
+- **Phase 2:** Insurance comparison (multiple insurer partners, not just one)
+- **Phase 3:** Legal marketplace (lawyers beyond the single deep-review add-on)
+- **Phase 4:** Tech services marketplace
+
+Keep fee/product logic (e.g. `calculateLegalizationFee`, insurance interest capture) generic enough to extend rather than rewrite when these land.
 
 ## Flutterwave Integration Notes
 

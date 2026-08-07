@@ -3,7 +3,7 @@ import { authenticateToken, requireRole } from '../middleware/auth';
 import { agreementRateLimit } from '../middleware/rateLimit';
 import { initializePayment, generateReference } from '../lib/flutterwave';
 import { createPendingPayment } from '../db/queries/payments';
-import { UserRole, PaymentType, LEJA_PRICING } from '@leja/shared';
+import { UserRole, PaymentType, BEYOND_PRICING, calculateLegalizationFee } from '@leja/shared';
 import { config } from '../config';
 import {
   createAgreementDraft,
@@ -122,12 +122,12 @@ router.get(
       }
 
       const includesLawyerReview = wantsLawyerReview(agreement);
-      const moveInFee = LEJA_PRICING.TENANT_MOVE_IN_FEE;
-      const lawyerReviewFee = includesLawyerReview ? LEJA_PRICING.TENANT_LAWYER_REVIEW : 0;
+      const moveInFee = calculateLegalizationFee(agreement.annual_rent);
+      const lawyerReviewFee = includesLawyerReview ? BEYOND_PRICING.LAWYER_REVIEW_ADDON : 0;
       const total = moveInFee + lawyerReviewFee;
       const totalSavings = includesLawyerReview
-        ? LEJA_PRICING.TYPICAL_AGENT_FEE + LEJA_PRICING.TYPICAL_LEGAL_FEE - moveInFee - lawyerReviewFee
-        : LEJA_PRICING.TYPICAL_AGENT_FEE + LEJA_PRICING.TYPICAL_LEGAL_FEE - moveInFee;
+        ? BEYOND_PRICING.TYPICAL_AGENT_FEE + BEYOND_PRICING.TYPICAL_LEGAL_FEE - moveInFee - lawyerReviewFee
+        : BEYOND_PRICING.TYPICAL_AGENT_FEE + BEYOND_PRICING.TYPICAL_LEGAL_FEE - moveInFee;
 
       return res.json({
         success: true,
@@ -138,8 +138,8 @@ router.get(
             lawyerReviewFee,
             total,
             savings: {
-              vsAgentFee: LEJA_PRICING.TYPICAL_AGENT_FEE,
-              vsLegalFee: LEJA_PRICING.TYPICAL_LEGAL_FEE,
+              vsAgentFee: BEYOND_PRICING.TYPICAL_AGENT_FEE,
+              vsLegalFee: BEYOND_PRICING.TYPICAL_LEGAL_FEE,
               totalSavings,
             },
           },
@@ -181,8 +181,8 @@ router.post(
       }
 
       const includesLawyerReview = wantsLawyerReview(agreement);
-      const moveInFee = LEJA_PRICING.TENANT_MOVE_IN_FEE;
-      const lawyerReviewFee = includesLawyerReview ? LEJA_PRICING.TENANT_LAWYER_REVIEW : 0;
+      const moveInFee = calculateLegalizationFee(agreement.annual_rent);
+      const lawyerReviewFee = includesLawyerReview ? BEYOND_PRICING.LAWYER_REVIEW_ADDON : 0;
       const total = moveInFee + lawyerReviewFee;
       const reference = generateReference('LEJA_TENANT');
 

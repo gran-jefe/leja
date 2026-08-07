@@ -17,7 +17,7 @@ import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useProperties } from '@/hooks/useProperties';
 import { useCreateAgreement } from '@/hooks/useAgreements';
-import { UserRole, LEJA_PRICING } from '@leja/shared';
+import { UserRole, BEYOND_PRICING, calculateLegalizationFee } from '@leja/shared';
 import { formatNaira, calculateAnnualRent } from '@/lib/utils';
 import { PROPERTY_TYPE_LABELS } from '@/lib/constants';
 
@@ -77,9 +77,10 @@ function NewAgreementForm() {
 
   const monthlyRent = formData.monthlyRent || 0;
   const annualRent = calculateAnnualRent(monthlyRent);
+  const legalizationFee = calculateLegalizationFee(annualRent);
   const tenantTotal = wantsLawyerReview
-    ? LEJA_PRICING.TENANT_MOVE_IN_FEE + LEJA_PRICING.TENANT_LAWYER_REVIEW
-    : LEJA_PRICING.TENANT_MOVE_IN_FEE;
+    ? legalizationFee + BEYOND_PRICING.LAWYER_REVIEW_ADDON
+    : legalizationFee;
 
   const handleSubmit = async () => {
     const result = await createAgreement({
@@ -235,8 +236,8 @@ function NewAgreementForm() {
                       Would you like lawyer review for this agreement?
                     </span>
                     <span className="block text-sm text-muted mt-1">
-                      Lawyer review: {formatNaira(LEJA_PRICING.TENANT_LAWYER_REVIEW)} — paid by
-                      your tenant, included in their move-in fee.
+                      Lawyer review: {formatNaira(BEYOND_PRICING.LAWYER_REVIEW_ADDON)} — paid by
+                      your tenant, included in their Legalization &amp; Protection fee.
                     </span>
                   </span>
                 </label>
@@ -291,9 +292,9 @@ function NewAgreementForm() {
                 {formatNaira(tenantTotal)}
               </p>
               <p className="font-body text-sm text-white text-opacity-70">
-                {formatNaira(LEJA_PRICING.TENANT_MOVE_IN_FEE)} move-in fee
-                {wantsLawyerReview && ` + ${formatNaira(LEJA_PRICING.TENANT_LAWYER_REVIEW)} lawyer review`}
-                . This replaces the {formatNaira(LEJA_PRICING.TYPICAL_AGENT_FEE)}+ they would have
+                {formatNaira(legalizationFee)} Legalization &amp; Protection fee
+                {wantsLawyerReview && ` + ${formatNaira(BEYOND_PRICING.LAWYER_REVIEW_ADDON)} lawyer review`}
+                . This replaces the {formatNaira(BEYOND_PRICING.TYPICAL_AGENT_FEE)}+ they would have
                 paid an agent.
               </p>
             </Card>

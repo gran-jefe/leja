@@ -29,7 +29,11 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import api from '@/lib/api';
 import { cn, getErrorMessage, formatNaira } from '@/lib/utils';
-import { LEJA_PRICING } from '@leja/shared';
+import { BEYOND_PRICING, calculateLegalizationFee } from '@leja/shared';
+
+// Illustrative example for the pricing cards — a full interactive
+// annual-rent → fee calculator lands in a later pass.
+const EXAMPLE_ANNUAL_RENT = 1200000;
 
 const landlordBenefits = [
   'Verified tenant profiles before you sign anything',
@@ -408,7 +412,7 @@ export default function Home() {
                 For Tenants
               </p>
               <p className="font-display text-white font-bold text-4xl mb-1">
-                {formatNaira(LEJA_PRICING.TENANT_MOVE_IN_FEE)}
+                {formatNaira(calculateLegalizationFee(EXAMPLE_ANNUAL_RENT))}
               </p>
               <p className="font-body text-white text-opacity-70 text-sm mb-6">
                 One-time move-in fee per tenancy
@@ -418,23 +422,23 @@ export default function Home() {
                 <p className="text-white text-opacity-70 mb-2">vs going through an agent:</p>
                 <div className="flex justify-between text-white text-opacity-60">
                   <span>Agent fee</span>
-                  <span className="line-through">{formatNaira(LEJA_PRICING.TYPICAL_AGENT_FEE)}</span>
+                  <span className="line-through">{formatNaira(BEYOND_PRICING.TYPICAL_AGENT_FEE)}</span>
                 </div>
                 <div className="flex justify-between text-white text-opacity-60">
                   <span>Legal fee</span>
-                  <span className="line-through">{formatNaira(LEJA_PRICING.TYPICAL_LEGAL_FEE)}</span>
+                  <span className="line-through">{formatNaira(BEYOND_PRICING.TYPICAL_LEGAL_FEE)}</span>
                 </div>
                 <div className="flex justify-between text-white">
                   <span>Leja fee</span>
-                  <span>{formatNaira(LEJA_PRICING.TENANT_MOVE_IN_FEE)} ✓</span>
+                  <span>{formatNaira(calculateLegalizationFee(EXAMPLE_ANNUAL_RENT))} ✓</span>
                 </div>
                 <div className="border-t border-white border-opacity-20 mt-2 pt-2 flex justify-between font-semibold text-ember">
                   <span>You save</span>
                   <span>
                     {formatNaira(
-                      LEJA_PRICING.TYPICAL_AGENT_FEE +
-                        LEJA_PRICING.TYPICAL_LEGAL_FEE -
-                        LEJA_PRICING.TENANT_MOVE_IN_FEE
+                      BEYOND_PRICING.TYPICAL_AGENT_FEE +
+                        BEYOND_PRICING.TYPICAL_LEGAL_FEE -
+                        calculateLegalizationFee(EXAMPLE_ANNUAL_RENT)
                     )}
                   </span>
                 </div>
@@ -461,7 +465,7 @@ export default function Home() {
                 Lawyer Review
               </p>
               <p className="font-display text-ember font-bold text-4xl mb-1">
-                +{formatNaira(LEJA_PRICING.TENANT_LAWYER_REVIEW)}
+                +{formatNaira(BEYOND_PRICING.LAWYER_REVIEW_ADDON)}
               </p>
               <p className="font-body text-muted text-sm mb-6">
                 Optional add-on to your move-in fee
