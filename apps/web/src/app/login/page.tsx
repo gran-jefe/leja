@@ -69,7 +69,7 @@ export default function LoginPage() {
           Welcome back
         </p>
         <Card className="w-full max-w-md shadow-2xl">
-          <h1 className="font-display text-2xl font-bold text-navy mb-6">Log in to Leja</h1>
+          <h1 className="font-display text-2xl font-bold text-navy mb-6">Log in to BeyondAgency</h1>
 
           {error && (
             <div className="mb-4 p-3 bg-ember bg-opacity-10 text-ember rounded-button text-sm">

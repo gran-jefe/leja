@@ -89,7 +89,7 @@ export const Sidebar = () => {
       {/* Mobile top bar */}
       <div className="md:hidden sticky top-0 z-30 bg-navy flex items-center justify-between px-4 py-3 flex-shrink-0">
         <Link href="/dashboard" className="font-display text-xl font-bold text-white">
-          Leja
+          BeyondAgency
         </Link>
         <button
           onClick={() => setMobileOpen(true)}
@@ -104,7 +104,7 @@ export const Sidebar = () => {
       <aside className="hidden md:flex w-64 bg-navy min-h-screen flex-col flex-shrink-0">
         <div className="p-6">
           <Link href="/dashboard" className="font-display text-2xl font-bold text-white">
-            Leja
+            BeyondAgency
           </Link>
         </div>
         {renderLinks()}
@@ -121,7 +121,7 @@ export const Sidebar = () => {
                 className="font-display text-2xl font-bold text-white"
                 onClick={() => setMobileOpen(false)}
               >
-                Leja
+                BeyondAgency
               </Link>
               <button
                 onClick={() => setMobileOpen(false)}

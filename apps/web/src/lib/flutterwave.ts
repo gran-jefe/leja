@@ -24,8 +24,9 @@ export function buildFlwConfig(options: FlutterwaveConfig) {
       phone_number: options.phone || '',
     },
     customizations: {
-      title: 'Leja',
+      title: 'BeyondAgency',
       description: options.description || 'Tenancy Agreement Payment',
+      // TODO(MIGRATION_NOTES): logo asset still lives on the old domain
       logo: 'https://leja.ng/logo.png',
     },
   };

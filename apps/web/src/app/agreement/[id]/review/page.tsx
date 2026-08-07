@@ -11,8 +11,10 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgreementPreview, useAcceptAgreement, useDeclineAgreement } from '@/hooks/useAgreements';
-import { UserRole } from '@leja/shared';
+import { UserRole, BEYOND_PRICING } from '@leja/shared';
 import { formatNaira, formatDate } from '@/lib/utils';
+
+const LEGALIZATION_FEE_RATE_PERCENT = Math.round(BEYOND_PRICING.LEGALIZATION_FEE_RATE * 100);
 
 function monthsBetween(start?: string, end?: string) {
   if (!start || !end) return null;
@@ -121,9 +123,13 @@ function ReviewContent() {
         <p className="font-body text-sm text-white text-opacity-70 mb-3">What you'll pay today</p>
         <div className="space-y-2 font-body text-white">
           <div className="flex justify-between">
-            <span>Move-in fee</span>
+            <span>Legalization &amp; Protection fee</span>
             <span>{formatNaira(pricing.moveInFee)}</span>
           </div>
+          <p className="text-xs text-white text-opacity-60">
+            {LEGALIZATION_FEE_RATE_PERCENT}% of {formatNaira(agreement.annual_rent)} annual rent ={' '}
+            {formatNaira(pricing.moveInFee)}
+          </p>
           {pricing.lawyerReviewFee > 0 && (
             <div className="flex justify-between">
               <span>Lawyer review</span>
@@ -144,7 +150,7 @@ function ReviewContent() {
         <div className="font-body text-sm text-white text-opacity-90 space-y-1">
           <p>Typical agent fee: {formatNaira(pricing.savings.vsAgentFee)}</p>
           <p>Typical legal fee: {formatNaira(pricing.savings.vsLegalFee)}</p>
-          <p>Leja fee: {formatNaira(pricing.total)}</p>
+          <p>BeyondAgency fee: {formatNaira(pricing.total)}</p>
           <p className="font-semibold">Your saving: {formatNaira(pricing.savings.totalSavings)}</p>
         </div>
       </Card>
@@ -166,7 +172,7 @@ function ReviewContent() {
           </p>
           <p className="flex items-start gap-2">
             <CheckCircle2 size={16} className="text-forest flex-shrink-0 mt-0.5" />
-            Dispute resolution through the Leja platform
+            Dispute resolution through the BeyondAgency platform
           </p>
           <p className="flex items-start gap-2">
             <CheckCircle2 size={16} className="text-forest flex-shrink-0 mt-0.5" />

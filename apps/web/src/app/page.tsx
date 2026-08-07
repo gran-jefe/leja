@@ -13,10 +13,11 @@ import {
   Home as HomeIcon,
   CheckCircle,
   CheckCircle2,
-  UserPlus,
   FileText,
   ShieldCheck,
   Scale,
+  CreditCard,
+  Link2,
   Calendar,
   Video,
   Twitter,
@@ -31,8 +32,9 @@ import api from '@/lib/api';
 import { cn, getErrorMessage, formatNaira } from '@/lib/utils';
 import { BEYOND_PRICING, calculateLegalizationFee } from '@leja/shared';
 
-// Illustrative example for the pricing cards — a full interactive
-// annual-rent → fee calculator lands in a later pass.
+const LEGALIZATION_FEE_RATE_PERCENT = Math.round(BEYOND_PRICING.LEGALIZATION_FEE_RATE * 100);
+
+// Illustrative default for the savings calculator below.
 const EXAMPLE_ANNUAL_RENT = 1200000;
 
 const landlordBenefits = [
@@ -52,21 +54,21 @@ const tenantBenefits = [
 const steps = [
   {
     number: '01',
-    icon: UserPlus,
-    title: 'Create your account',
-    body: 'Sign up as a landlord or tenant in under 2 minutes. No documents needed to get started.',
+    icon: Link2,
+    title: 'Connect',
+    body: 'Browse verified listings and connect directly with a landlord or tenant — no agent fee, ever.',
   },
   {
     number: '02',
     icon: FileText,
-    title: 'Generate your agreement',
-    body: 'Fill in the property details and tenancy terms. Leja generates a state-compliant agreement instantly.',
+    title: 'Agree',
+    body: 'Fill in the tenancy terms together. We generate a standardized digital tenancy agreement instantly.',
   },
   {
     number: '03',
     icon: ShieldCheck,
-    title: 'Sign, pay, move in',
-    body: 'Both parties confirm digitally. Payment is processed securely. Your PDF agreement is ready to download.',
+    title: 'Protect',
+    body: `Legalized for just ${LEGALIZATION_FEE_RATE_PERCENT}% of annual rent — capped, and always far below a typical agent fee plus legal costs. Optional lawyer review and rent-protection insurance available.`,
   },
 ];
 
@@ -74,7 +76,7 @@ const stats = [
   { value: '₦180B+', label: 'paid in agent fees annually in Lagos alone' },
   { value: '65%', label: 'of Lagos tenant complaints involve landlord misconduct' },
   { value: '22M', label: 'unit housing deficit across Nigeria' },
-  { value: '48hrs', label: 'average time to get a lawyer-reviewed agreement on Leja' },
+  { value: '48hrs', label: 'average time to get a lawyer-reviewed agreement on BeyondAgency' },
   { value: '₦105,000', label: 'saved per tenant vs using an agent' },
 ];
 
@@ -98,6 +100,66 @@ const lawyerReviewFeatures = [
   'Legal practitioner certified',
   'Priority dispute support',
 ];
+
+const trustPoints = [
+  {
+    icon: ShieldCheck,
+    title: 'Verified landlords',
+    body: 'Ownership documents checked before a property can be listed.',
+  },
+  {
+    icon: Scale,
+    title: 'Legal counsel, in-house',
+    body: 'Every agreement template is drafted and maintained by our in-house legal counsel.',
+  },
+  {
+    icon: Shield,
+    title: 'Insurance-backed protection',
+    body: 'Optional rent-protection insurance through a licensed insurance partner.',
+  },
+  {
+    icon: CreditCard,
+    title: 'Secure payments',
+    body: 'All payments processed via Flutterwave — never handled off-platform.',
+  },
+];
+
+const comingSoon = ['Insurance comparison', 'Legal marketplace', 'Tech services'];
+
+function LegalizationFeeCalculator() {
+  const [annualRent, setAnnualRent] = useState(EXAMPLE_ANNUAL_RENT);
+  const fee = calculateLegalizationFee(annualRent || 0);
+  const agentTotal = BEYOND_PRICING.TYPICAL_AGENT_FEE + BEYOND_PRICING.TYPICAL_LEGAL_FEE;
+
+  return (
+    <div className="bg-white bg-opacity-5 rounded-button p-4 mb-6 font-body text-sm">
+      <label className="block text-white text-opacity-70 mb-2" htmlFor="annual-rent-calculator">
+        Your annual rent
+      </label>
+      <input
+        id="annual-rent-calculator"
+        type="number"
+        min={0}
+        value={annualRent}
+        onChange={(e) => setAnnualRent(Number(e.target.value))}
+        className="w-full px-3 py-2 mb-4 rounded-button bg-white bg-opacity-10 text-white placeholder-white placeholder-opacity-40 border border-white border-opacity-20 focus:outline-none focus:ring-2 focus:ring-forest"
+        placeholder="e.g. 1,200,000"
+      />
+      <div className="flex justify-between text-white text-opacity-60">
+        <span>Agent fee + legal fee</span>
+        <span className="line-through">{formatNaira(agentTotal)}</span>
+      </div>
+      <div className="flex justify-between text-white">
+        <span>BeyondAgency fee ({LEGALIZATION_FEE_RATE_PERCENT}% of rent, capped)</span>
+        <span>{formatNaira(fee)} ✓</span>
+      </div>
+      <div className="border-t border-white border-opacity-20 mt-2 pt-2 flex justify-between font-semibold text-ember">
+        <span>You save</span>
+        <span>{formatNaira(Math.max(agentTotal - fee, 0))}</span>
+      </div>
+    </div>
+  );
+}
 
 const contactSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -191,36 +253,36 @@ export default function Home() {
               Now available in Lagos & Abuja
             </span>
             <h1 className="font-display text-white font-bold text-[36px] md:text-[56px] leading-tight mb-6">
-              Renting in Nigeria,
+              Beyond agents.
               <br />
-              finally done properly.
+              Beyond fees. Beyond risk.
             </h1>
             <p className="font-body text-white text-opacity-90 text-xl mb-4">
-              No agents. No weak agreements. No excuses.
+              Landlords and tenants connect directly, free.
             </p>
             <p className="font-body text-[#A0AEC0] text-base mb-8 max-w-xl">
-              Landlords list free. Tenants pay ₦15,000 — not ₦100,000 to an agent who
-              disappears after handing over a key.
+              We make the deal legal and protected — with a standardized tenancy agreement,
+              optional lawyer review, and rent-protection insurance.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
-              <Link href="/#book-demo">
+              <Link href="/signup" className="w-full sm:w-auto">
                 <Button
                   variant="primary"
                   size="lg"
                   className="bg-ember hover:bg-opacity-90 w-full sm:w-auto"
                 >
-                  Book a Demo
+                  List your property — free
                 </Button>
               </Link>
-              <a href="#how-it-works" className="w-full sm:w-auto">
+              <Link href="/signup" className="w-full sm:w-auto">
                 <Button
                   variant="ghost"
                   size="lg"
                   className="w-full border-2 border-white text-white hover:bg-white hover:bg-opacity-10"
                 >
-                  See how it works
+                  Find a home
                 </Button>
-              </a>
+              </Link>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 text-sm text-[#A0AEC0] font-body">
               <div className="flex items-center gap-2">
@@ -242,8 +304,8 @@ export default function Home() {
             <div className="relative">
               <div className="absolute inset-0 rounded-card border-2 border-forest animate-pulse pointer-events-none" />
               <div className="relative bg-white rounded-card shadow-2xl p-6 overflow-hidden">
-                <div className="absolute -bottom-4 -right-4 font-display font-bold text-7xl text-forest opacity-5 rotate-[-30deg] select-none pointer-events-none">
-                  LEJA
+                <div className="absolute -bottom-4 -right-4 font-display font-bold text-4xl text-forest opacity-5 rotate-[-30deg] select-none pointer-events-none whitespace-nowrap">
+                  BEYONDAGENCY
                 </div>
                 <p className="font-display text-navy font-bold text-sm uppercase tracking-wide mb-4">
                   Tenancy Agreement
@@ -344,7 +406,7 @@ export default function Home() {
           <div className="border-t border-border mt-16 pt-8 flex flex-col sm:flex-row items-center justify-center gap-2 text-center">
             <Scale className="text-muted flex-shrink-0" size={18} />
             <p className="font-body text-muted text-sm">
-              Need a lawyer to review the agreement? Add one for ₦8,000 — reviewed within 48
+              Need a lawyer to review the agreement? Add one for {formatNaira(BEYOND_PRICING.LAWYER_REVIEW_ADDON)} — reviewed within 48
               hours.
             </p>
           </div>
@@ -365,6 +427,27 @@ export default function Home() {
               >
                 <p className="font-display text-ember font-bold text-4xl mb-2">{stat.value}</p>
                 <p className="font-body text-[#A0AEC0] text-sm">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Trust */}
+      <section className="bg-white py-24">
+        <div className="max-w-7xl mx-auto px-4">
+          <p className="text-center font-body text-xs uppercase tracking-wider text-muted mb-4">
+            Why trust the platform
+          </p>
+          <h2 className="text-center font-display text-navy font-bold text-[32px] md:text-[40px] mb-16">
+            Trust, built in — not bolted on.
+          </h2>
+          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-10">
+            {trustPoints.map((point) => (
+              <div key={point.title}>
+                <point.icon className="text-forest mb-4" size={32} />
+                <h3 className="font-display text-lg font-bold text-navy mb-2">{point.title}</h3>
+                <p className="font-body text-muted text-sm">{point.body}</p>
               </div>
             ))}
           </div>
@@ -412,37 +495,15 @@ export default function Home() {
                 For Tenants
               </p>
               <p className="font-display text-white font-bold text-4xl mb-1">
-                {formatNaira(calculateLegalizationFee(EXAMPLE_ANNUAL_RENT))}
+                {LEGALIZATION_FEE_RATE_PERCENT}% of annual rent
               </p>
               <p className="font-body text-white text-opacity-70 text-sm mb-6">
-                One-time move-in fee per tenancy
+                Legalization &amp; Protection fee, floored at{' '}
+                {formatNaira(BEYOND_PRICING.LEGALIZATION_FEE_FLOOR)} and capped at{' '}
+                {formatNaira(BEYOND_PRICING.LEGALIZATION_FEE_CAP)}
               </p>
 
-              <div className="bg-white bg-opacity-5 rounded-button p-4 mb-6 font-body text-sm">
-                <p className="text-white text-opacity-70 mb-2">vs going through an agent:</p>
-                <div className="flex justify-between text-white text-opacity-60">
-                  <span>Agent fee</span>
-                  <span className="line-through">{formatNaira(BEYOND_PRICING.TYPICAL_AGENT_FEE)}</span>
-                </div>
-                <div className="flex justify-between text-white text-opacity-60">
-                  <span>Legal fee</span>
-                  <span className="line-through">{formatNaira(BEYOND_PRICING.TYPICAL_LEGAL_FEE)}</span>
-                </div>
-                <div className="flex justify-between text-white">
-                  <span>Leja fee</span>
-                  <span>{formatNaira(calculateLegalizationFee(EXAMPLE_ANNUAL_RENT))} ✓</span>
-                </div>
-                <div className="border-t border-white border-opacity-20 mt-2 pt-2 flex justify-between font-semibold text-ember">
-                  <span>You save</span>
-                  <span>
-                    {formatNaira(
-                      BEYOND_PRICING.TYPICAL_AGENT_FEE +
-                        BEYOND_PRICING.TYPICAL_LEGAL_FEE -
-                        calculateLegalizationFee(EXAMPLE_ANNUAL_RENT)
-                    )}
-                  </span>
-                </div>
-              </div>
+              <LegalizationFeeCalculator />
 
               <ul className="space-y-3 mb-8">
                 {tenantPricingFeatures.map((feature) => (
@@ -468,7 +529,7 @@ export default function Home() {
                 +{formatNaira(BEYOND_PRICING.LAWYER_REVIEW_ADDON)}
               </p>
               <p className="font-body text-muted text-sm mb-6">
-                Optional add-on to your move-in fee
+                Optional add-on to your Legalization &amp; Protection fee
               </p>
               <ul className="space-y-3 mb-8">
                 {lawyerReviewFeatures.map((feature) => (
@@ -491,16 +552,31 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Coming soon strip — BeyondAgency is a multi-sector platform, rentals is Phase 1 */}
+      <section className="bg-navy py-6 border-t border-white border-opacity-10">
+        <div className="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-center">
+          <span className="font-body text-xs uppercase tracking-wider text-forest font-semibold">
+            Coming soon
+          </span>
+          {comingSoon.map((item, i) => (
+            <span key={item} className="font-body text-sm text-[#A0AEC0] flex items-center gap-3">
+              {i > 0 && <span className="text-white text-opacity-20">·</span>}
+              {item}
+            </span>
+          ))}
+        </div>
+      </section>
+
       {/* Demo booking / contact form */}
       <section id="book-demo" className="bg-white py-24">
         <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-start">
           <div>
             <h2 className="font-display text-navy font-bold text-[32px] md:text-[40px] mb-4">
-              See Leja in action.
+              See BeyondAgency in action.
             </h2>
             <p className="font-body text-muted mb-8">
               We&apos;ll walk you through the platform, answer your questions, and show you how
-              to close your first deal on Leja.
+              to close your first deal on BeyondAgency.
             </p>
             <div className="space-y-4">
               <div className="flex items-center gap-3">
@@ -533,9 +609,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-10 mb-12">
             <div>
-              <p className="font-display text-white font-bold text-2xl mb-3">LEJA</p>
+              <p className="font-display text-white font-bold text-2xl mb-3">BEYONDAGENCY</p>
               <p className="font-body text-[#A0AEC0] text-sm mb-4">
-                Renting in Nigeria, finally done properly.
+                Bridging Trust. Simplifying Deals.
               </p>
               <p className="font-body text-[#A0AEC0] text-xs">
                 © 2026 Gran Jefe Technical Solutions. RC 9529101.

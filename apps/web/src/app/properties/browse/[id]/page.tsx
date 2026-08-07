@@ -134,8 +134,8 @@ function PropertyDetailContent() {
                 </h3>
                 <p className="font-body text-sm text-muted mb-4">
                   Contact the landlord directly and ask them to send you a tenancy agreement
-                  through Leja. You'll pay a ₦15,000 move-in fee once you accept it — no agent
-                  fees.
+                  through BeyondAgency. You'll pay a Legalization &amp; Protection fee once you
+                  accept it — no agent fees.
                 </p>
                 <div className="flex flex-col gap-3">
                   {property.landlord_email && (

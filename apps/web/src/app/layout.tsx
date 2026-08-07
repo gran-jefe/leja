@@ -3,8 +3,8 @@ import './globals.css';
 import { ProgressBar } from '@/components/layout/ProgressBar';
 
 export const metadata: Metadata = {
-  title: 'Leja - Rent with confidence',
-  description: 'Nigeria\'s residential rental transaction platform',
+  title: 'BeyondAgency - Bridging Trust. Simplifying Deals.',
+  description: 'Nigeria\'s trust platform for direct deals — landlords and tenants connect free.',
 };
 
 export default function RootLayout({

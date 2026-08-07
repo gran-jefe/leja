@@ -51,7 +51,7 @@ export const Navbar = () => {
       <nav className="bg-navy border-b border-white border-opacity-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="font-display text-2xl font-bold text-white">
-            Leja
+            BeyondAgency
           </Link>
 
           {isAuthenticated && (
@@ -107,7 +107,7 @@ export const Navbar = () => {
     >
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/" className="font-display text-2xl font-bold text-white">
-          Leja
+          BeyondAgency
         </Link>
 
         <div className="hidden md:flex gap-8 items-center">
