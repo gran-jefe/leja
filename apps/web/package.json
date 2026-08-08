@@ -1,7 +1,7 @@
 {
   "name": "web",
   "version": "0.1.0",
-  "description": "Leja web application",
+  "description": "BeyondAgency web application",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

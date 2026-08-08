@@ -1,6 +1,6 @@
-# Leja
+# BeyondAgency
 
-Nigeria's residential rental transaction platform. Replaces informal estate agents with a structured digital layer for agreements, payments, and legal protection.
+Nigeria's trust platform for direct deals. Phase 1: residential rentals — landlords and tenants connect free; we monetize agreement legalization, insurance protection, and verification.
 
 ## Prerequisites
 
@@ -73,7 +73,7 @@ leja/
 │   ├── api/          # Express backend (Node.js + TypeScript)
 │   └── web/          # Next.js frontend (React + TypeScript)
 ├── packages/
-│   └── shared/       # @leja/shared types and utilities
+│   └── shared/       # @beyond/shared types and utilities
 ├── turbo.json        # Turborepo configuration
 └── package.json      # Root workspace configuration
 ```
@@ -209,7 +209,7 @@ lsof -ti:5000 | xargs kill -9
 
 ### Module Import Errors
 - Run `npm install` to ensure all dependencies are installed
-- Check that `@leja/shared` package was built: `npm run build`
+- Check that `@beyond/shared` package was built: `npm run build`
 - Verify tsconfig paths (apps/web should have `@/*` → `./src/*`)
 
 ## License
