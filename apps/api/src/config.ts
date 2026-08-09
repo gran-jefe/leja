@@ -5,25 +5,30 @@ export const config = {
   isDevelopment: process.env.NODE_ENV === 'development',
 
   db: {
-    url: process.env.DATABASE_URL || '',
-    supabaseUrl: process.env.SUPABASE_URL || '',
-    supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
-    supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+    // .trim() defensively — a stray leading/trailing space pasted into a
+    // dashboard env var (Render, Vercel, etc.) silently breaks
+    // createClient()'s URL parsing and manifests as an opaque
+    // "TypeError: fetch failed" with no useful stack, so we guard against
+    // it here rather than relying on every env var being pasted cleanly.
+    url: (process.env.DATABASE_URL || '').trim(),
+    supabaseUrl: (process.env.SUPABASE_URL || '').trim(),
+    supabaseAnonKey: (process.env.SUPABASE_ANON_KEY || '').trim(),
+    supabaseServiceRoleKey: (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim(),
   },
 
   auth: {
-    jwtSecret: process.env.JWT_SECRET || '',
+    jwtSecret: (process.env.JWT_SECRET || '').trim(),
     jwtExpiresIn: '7d' as const,
   },
 
   flutterwave: {
-    secretKey: process.env.FLW_SECRET_KEY || '',
-    publicKey: process.env.FLW_PUBLIC_KEY || '',
-    webhookHash: process.env.FLW_WEBHOOK_HASH || '',
+    secretKey: (process.env.FLW_SECRET_KEY || '').trim(),
+    publicKey: (process.env.FLW_PUBLIC_KEY || '').trim(),
+    webhookHash: (process.env.FLW_WEBHOOK_HASH || '').trim(),
     baseUrl: 'https://api.flutterwave.com/v3',
   },
 
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+  frontendUrl: (process.env.FRONTEND_URL || 'http://localhost:3000').trim(),
 
   // No dedicated ADMIN role exists in the schema — admin-only marketplace
   // routes (provider verification, internal staff onboarding) gate on this
