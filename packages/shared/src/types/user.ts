@@ -1,6 +1,7 @@
 export enum UserRole {
   LANDLORD = 'LANDLORD',
   TENANT = 'TENANT',
+  PROVIDER = 'PROVIDER',
 }
 
 export interface IUser {

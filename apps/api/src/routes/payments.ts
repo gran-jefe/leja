@@ -3,8 +3,26 @@ import { authenticateToken } from '../middleware/auth';
 import { verifyPayment, verifyWebhookSignature } from '../lib/flutterwave';
 import { markPaymentSuccessful } from '../db/queries/payments';
 import { generateAndSaveAgreementPDF } from '../lib/pdf';
+import { findAgreementById } from '../db/queries/agreements';
+import { createLegalizationJob, awardJob } from '../db/queries/marketplace';
 
 const router = Router();
+
+// Posts the legalization job to the bid marketplace and attempts an
+// immediate award. If no providers have bid yet, awardJob is a safe no-op —
+// the job stays OPEN until a provider bids (a retry/cron sweep to award
+// once a bid lands after the fact is a later pass, not built here).
+const postLegalizationJobAndAward = async (agreementId: string) => {
+  try {
+    const agreement = await findAgreementById(agreementId);
+    if (!agreement) return;
+
+    const job = await createLegalizationJob(agreementId, agreement.tenant_id);
+    await awardJob(job.id);
+  } catch (err) {
+    console.error(`[MARKETPLACE] Failed to post/award legalization job for agreement ${agreementId}:`, err);
+  }
+};
 
 const triggerAgreementPDF = (agreementId: string) => {
   // Don't await — let it run in the background so the webhook responds fast.
@@ -36,8 +54,9 @@ router.post('/webhook', async (req: Request, res: Response) => {
         const payment = await markPaymentSuccessful(data.tx_ref);
 
         if (payment?.agreement_id) {
-          console.log(`[WEBHOOK] Tenant move-in fee confirmed for agreement ${payment.agreement_id}`);
+          console.log(`[WEBHOOK] Legalization & Protection fee confirmed for agreement ${payment.agreement_id}`);
           triggerAgreementPDF(payment.agreement_id);
+          void postLegalizationJobAndAward(payment.agreement_id);
         }
       }
     } else {
@@ -61,6 +80,7 @@ router.post('/verify/:transactionId', authenticateToken, async (req: Request, re
 
       if (payment?.agreement_id) {
         triggerAgreementPDF(payment.agreement_id);
+        void postLegalizationJobAndAward(payment.agreement_id);
       }
     }
 

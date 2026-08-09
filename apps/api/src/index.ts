@@ -14,6 +14,7 @@ import paymentsRoutes from './routes/payments';
 import rentalHistoryRoutes from './routes/rentalHistory';
 import contactRoutes from './routes/contact';
 import insuranceRoutes from './routes/insurance';
+import marketplaceRoutes from './routes/marketplace';
 
 // Validate config before starting
 validateConfig();
@@ -64,6 +65,7 @@ app.use('/api/v1/payments', paymentsRoutes);
 app.use('/api/v1/rental-history', rentalHistoryRoutes);
 app.use('/api/v1/contact', contactRoutes);
 app.use('/api/v1/insurance', insuranceRoutes);
+app.use('/api/v1/marketplace', marketplaceRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

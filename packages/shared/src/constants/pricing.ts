@@ -22,4 +22,10 @@ export const BEYOND_PRICING = {
   // Placeholder until an insurer partnership is signed — premiums themselves
   // are set by the insurer partner, not by us.
   INSURANCE_COMMISSION_RATE: 0.15,  // 15% of premium
+
+  // Service-bid marketplace: providers bid the actual price/turnaround
+  // within these platform guardrails; the legalization bid range is derived
+  // from LEGALIZATION_FEE_* above via the job's min/max price.
+  BID_WINDOW_HOURS: 6,              // how long a job stays open for bids
+  PLATFORM_COMMISSION_RATE: 0.1,    // platform's cut on top of the winning bid — provider payout vs. platform margin
 } as const;
