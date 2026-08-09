@@ -1,3 +1,11 @@
+// RETIRED — not mounted in apps/api/src/index.ts. The tenant-initiated
+// "express interest in insurance" flow was retired because it made the
+// tenant the requester/payer on the posted job, contradicting the
+// landlord-pays model (see property.requires_insurance /
+// createInsuranceJob in db/queries/marketplace.ts, which is the real
+// mechanism now). Left on disk only because this environment couldn't
+// delete the file — safe to delete this file, db/queries/insurance.ts, and
+// lib/schemas/insurance.ts entirely whenever convenient.
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { agreementRateLimit } from '../middleware/rateLimit';

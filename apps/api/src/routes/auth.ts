@@ -6,6 +6,7 @@ import { signToken } from '../lib/jwt';
 import { registerSchema, loginSchema } from '../lib/schemas';
 import { authenticateToken } from '../middleware/auth';
 import { authRateLimit } from '../middleware/rateLimit';
+import { isAdmin } from '../lib/admin';
 
 const router = Router();
 
@@ -54,6 +55,11 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
           phone: user.phone,
           role: user.role,
           isVerified: (user as any).is_verified,
+          // No ADMIN role exists in the schema — this is a deploy-time
+          // email allowlist check (ADMIN_EMAILS), computed fresh on every
+          // auth response rather than stored, so revoking access is just
+          // an env var change, not a DB write.
+          isAdmin: isAdmin(user.email),
         },
         token,
       },
@@ -110,6 +116,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
           phone: user.phone,
           role: user.role,
           isVerified: (user as any).is_verified,
+          isAdmin: isAdmin(user.email),
         },
         token,
       },
@@ -131,7 +138,7 @@ router.get('/me', authenticateToken, async (req: Request, res: Response, next: N
 
     return res.status(200).json({
       success: true,
-      data: { user },
+      data: { user: { ...user, isAdmin: isAdmin(user.email) } },
     });
   } catch (error) {
     next(error);

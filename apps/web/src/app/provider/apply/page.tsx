@@ -45,11 +45,12 @@ function ProviderApplyContent() {
           </div>
           <h2 className="font-display text-xl font-bold text-navy mb-2">Application submitted</h2>
           <p className="font-body text-sm text-muted mb-6">
-            We'll verify your license and activate your provider account. Once active, you'll
-            see live insurance jobs to bid on.
+            We'll verify your license and activate your provider account. Once you get a
+            confirmation, log out and back in — that refreshes your account to unlock the
+            provider dashboard — then you'll see live insurance jobs to bid on.
           </p>
-          <Button variant="primary" onClick={() => router.push('/provider/dashboard')}>
-            Go to provider dashboard
+          <Button variant="primary" onClick={() => router.push('/dashboard')}>
+            Back to dashboard
           </Button>
         </Card>
       </div>

@@ -13,7 +13,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAgreementPreview, useAcceptAgreement, useDeclineAgreement } from '@/hooks/useAgreements';
 import { UserRole } from '@beyond/shared';
 import { formatNaira, formatDate } from '@/lib/utils';
-import api from '@/lib/api';
 
 function monthsBetween(start?: string, end?: string) {
   if (!start || !end) return null;
@@ -32,7 +31,6 @@ function ReviewContent() {
   const { acceptAgreement, loading: accepting, error: acceptError } = useAcceptAgreement();
   const { declineAgreement, loading: declining } = useDeclineAgreement();
   const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
-  const [wantsInsurance, setWantsInsurance] = useState(false);
 
   if (loading) {
     return (
@@ -72,14 +70,6 @@ function ReviewContent() {
   const handleAccept = async () => {
     const result = await acceptAgreement(id);
     if (!result) return;
-
-    if (wantsInsurance) {
-      try {
-        await api.post('/insurance/interest', { agreementId: id, productType: 'RENT_PROTECTION' });
-      } catch {
-        // Non-blocking — insurance interest is a nice-to-have, never delay acceptance over it.
-      }
-    }
 
     // Base acceptance is free — only redirect to a payment page if the
     // tenant opted into the paid lawyer-review add-on.
@@ -170,8 +160,8 @@ function ReviewContent() {
         </div>
       </Card>
 
-      <Card>
-        {agreement.property?.requires_insurance ? (
+      {agreement.property?.requires_insurance && (
+        <Card>
           <div className="flex items-start gap-3 font-body">
             <Shield size={18} className="text-forest flex-shrink-0 mt-0.5" />
             <span>
@@ -185,25 +175,8 @@ function ReviewContent() {
               </span>
             </span>
           </div>
-        ) : (
-          <label className="flex items-start gap-3 cursor-pointer font-body">
-            <input
-              type="checkbox"
-              checked={wantsInsurance}
-              onChange={(e) => setWantsInsurance(e.target.checked)}
-              className="w-4 h-4 mt-1"
-            />
-            <span>
-              <span className="block font-semibold text-charcoal">
-                I'm interested in rent-protection insurance
-              </span>
-              <span className="block text-sm text-muted mt-1">
-                Optional — no obligation. We'll post it to our insurer network for a quote.
-              </span>
-            </span>
-          </label>
-        )}
-      </Card>
+        </Card>
+      )}
 
       <Card>
         <h3 className="font-display text-lg font-semibold text-navy mb-3">Agreement Terms</h3>

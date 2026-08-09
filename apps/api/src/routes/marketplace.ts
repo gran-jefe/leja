@@ -23,13 +23,9 @@ import { createPendingPayment } from '../db/queries/payments';
 import { initializePayment, generateReference } from '../lib/flutterwave';
 import { PaymentType, BEYOND_PRICING } from '@beyond/shared';
 import { config } from '../config';
+import { isAdmin } from '../lib/admin';
 
 const router = Router();
-
-// Admin-only. There is no dedicated ADMIN role yet — gate on an explicit
-// allowlist of admin emails via env until one exists, so this can't be
-// called by an ordinary authenticated user.
-const isAdmin = (email?: string) => !!email && config.admin.emails.includes(email.toLowerCase());
 
 // Public application flow — EXTERNAL providers only (currently INSURANCE;
 // more categories as the marketplace expands). LEGAL is staffed in-house,

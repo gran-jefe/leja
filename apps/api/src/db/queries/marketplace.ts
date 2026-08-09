@@ -1,6 +1,7 @@
 import { supabase } from '../index';
 import { BEYOND_PRICING } from '@beyond/shared';
 import { findAgreementById } from './agreements';
+import { promoteToProviderRole } from './users';
 
 // Public application flow — for EXTERNAL providers only. LEGAL is staffed
 // in-house (salaried, admin-onboarded via createInternalProvider below), so
@@ -49,6 +50,12 @@ export const createInternalProvider = async (data: {
     .single();
 
   if (error) throw new Error(`Failed to onboard internal provider: ${error.message}`);
+
+  // Internal staff go straight to ACTIVE — promote their account role
+  // immediately, same as the external verify path below, so they can
+  // actually reach /provider/dashboard the next time they log in.
+  await promoteToProviderRole(data.userId);
+
   return provider;
 };
 
@@ -142,6 +149,13 @@ export const verifyProvider = async (id: string) => {
     .single();
 
   if (error) throw new Error(`Failed to verify provider: ${error.message}`);
+
+  // Without this, verification flips service_providers.status to ACTIVE
+  // but the user's own role stays LANDLORD/TENANT forever — every
+  // /marketplace/providers/* dashboard route requires role === PROVIDER,
+  // so they'd be permanently locked out despite being "verified".
+  await promoteToProviderRole(provider.user_id);
+
   return provider;
 };
 

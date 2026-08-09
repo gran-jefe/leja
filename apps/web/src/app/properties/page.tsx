@@ -61,35 +61,51 @@ export default function PropertiesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {properties.map((property) => (
                   <Link key={property.id} href={`/properties/${property.id}`}>
-                    <Card className="h-full hover:shadow-md hover:border-forest transition-all cursor-pointer">
-                      <div className="flex items-start justify-between mb-3">
-                        <h3 className="font-display text-lg font-semibold text-navy">
+                    <Card className="h-full p-0 overflow-hidden hover:shadow-md hover:border-forest transition-all cursor-pointer">
+                      <div className="relative w-full aspect-[16/9] bg-cream">
+                        {property.images?.[0] ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={property.images[0]}
+                            alt={property.address}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted">
+                            <Building2 size={28} />
+                          </div>
+                        )}
+                        <div className="absolute top-2 right-2">
+                          <Badge variant={property.is_available ? 'success' : 'default'}>
+                            {property.is_available ? 'Available' : 'Occupied'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="p-6">
+                        <h3 className="font-display text-lg font-semibold text-navy mb-2">
                           {property.address}
                         </h3>
-                        <Badge variant={property.is_available ? 'success' : 'default'}>
-                          {property.is_available ? 'Available' : 'Occupied'}
-                        </Badge>
+                        <p className="font-body text-sm text-muted mb-3">
+                          {property.city}, {property.state}
+                        </p>
+                        <div className="flex items-center gap-4 font-body text-sm text-charcoal mb-3">
+                          <span>
+                            {PROPERTY_TYPE_LABELS[property.property_type] || property.property_type}
+                          </span>
+                          <span className="flex items-center gap-1 text-muted">
+                            <Bed size={14} />
+                            {property.bedrooms}
+                          </span>
+                          <span className="flex items-center gap-1 text-muted">
+                            <Bath size={14} />
+                            {property.bathrooms}
+                          </span>
+                        </div>
+                        <p className="font-display text-lg font-bold text-forest">
+                          {formatNaira(property.annual_rent)}
+                          <span className="text-sm font-body text-muted">/year</span>
+                        </p>
                       </div>
-                      <p className="font-body text-sm text-muted mb-3">
-                        {property.city}, {property.state}
-                      </p>
-                      <div className="flex items-center gap-4 font-body text-sm text-charcoal mb-3">
-                        <span>
-                          {PROPERTY_TYPE_LABELS[property.property_type] || property.property_type}
-                        </span>
-                        <span className="flex items-center gap-1 text-muted">
-                          <Bed size={14} />
-                          {property.bedrooms}
-                        </span>
-                        <span className="flex items-center gap-1 text-muted">
-                          <Bath size={14} />
-                          {property.bathrooms}
-                        </span>
-                      </div>
-                      <p className="font-display text-lg font-bold text-forest">
-                        {formatNaira(property.monthly_rent)}
-                        <span className="text-sm font-body text-muted">/month</span>
-                      </p>
                     </Card>
                   </Link>
                 ))}

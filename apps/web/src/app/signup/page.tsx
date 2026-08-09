@@ -19,7 +19,7 @@ const signupSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Invalid email'),
   phone: z.string().min(11, 'Phone must be at least 11 digits'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   role: z.enum(['LANDLORD', 'TENANT']),
 });
 
@@ -50,7 +50,7 @@ export default function SignupPage() {
       const { token, user } = response.data.data;
       Cookies.set('leja_token', token, { expires: 7 });
       localStorage.setItem('leja_user', JSON.stringify(user));
-      router.push('/dashboard');
+      router.push(user?.isAdmin ? '/admin' : '/dashboard');
     } catch (err: any) {
       NProgress.done();
       if (!err.response) {

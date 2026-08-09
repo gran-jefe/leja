@@ -89,18 +89,57 @@ export default function PropertyDetailPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm text-muted font-body">Monthly Rent</label>
-                        <p className="text-charcoal font-body font-semibold">
-                          {formatNaira(property.monthly_rent)}
-                        </p>
-                      </div>
-                      <div>
                         <label className="text-sm text-muted font-body">Annual Rent</label>
                         <p className="text-charcoal font-body font-semibold">
                           {formatNaira(property.annual_rent)}
                         </p>
                       </div>
+                      <div>
+                        <label className="text-sm text-muted font-body">Monthly Rent</label>
+                        <p className="text-charcoal font-body font-semibold">
+                          {formatNaira(property.monthly_rent)}
+                        </p>
+                      </div>
                     </div>
+                    {property.description && (
+                      <div>
+                        <label className="text-sm text-muted font-body">Description</label>
+                        <p className="text-charcoal font-body whitespace-pre-line">
+                          {property.description}
+                        </p>
+                      </div>
+                    )}
+                    {property.amenities?.length > 0 && (
+                      <div>
+                        <label className="text-sm text-muted font-body">Amenities</label>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {property.amenities.map((a: string) => (
+                            <span
+                              key={a}
+                              className="px-2 py-1 rounded-button bg-cream text-xs font-body text-charcoal"
+                            >
+                              {a}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {property.images?.length > 0 && (
+                      <div>
+                        <label className="text-sm text-muted font-body mb-2 block">Photos</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {property.images.map((img: string, i: number) => (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              key={img + i}
+                              src={img}
+                              alt=""
+                              className="w-full aspect-square object-cover rounded-button"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </Card>
 

@@ -277,50 +277,65 @@ function BrowsePropertiesContent() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {properties.map((property) => (
-                  <Card key={property.id} className="flex flex-col h-full">
-                    <div className="flex items-start justify-between mb-2 gap-2">
-                      <h3 className="font-display text-lg font-semibold text-navy">
-                        {propertyLabel(property)}
-                      </h3>
-                      <div className="flex flex-col items-end gap-1">
+                  <Card key={property.id} className="flex flex-col h-full p-0 overflow-hidden">
+                    <div className="relative w-full aspect-[4/3] bg-cream">
+                      {property.images?.[0] ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={property.images[0]}
+                          alt={property.address}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted">
+                          <Home size={32} />
+                        </div>
+                      )}
+                      <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
                         <Badge variant="success">Available</Badge>
                         {property.requires_insurance && (
                           <Badge variant="info">Insured Tenancy</Badge>
                         )}
                       </div>
                     </div>
-                    <p className="font-body text-sm text-charcoal mb-1">{property.address}</p>
-                    <p className="font-body text-sm text-muted mb-4">
-                      {property.city}, {property.state}
-                    </p>
 
-                    <div className="flex items-center gap-4 font-body text-sm text-muted mb-4">
-                      <span className="flex items-center gap-1">
-                        <Bed size={14} />
-                        {property.bedrooms}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Bath size={14} />
-                        {property.bathrooms}
-                      </span>
-                    </div>
-
-                    <div className="mb-4">
-                      <p className="font-display text-xl font-bold text-forest">
-                        {formatNaira(property.monthly_rent)}
-                        <span className="text-sm font-body text-muted">/month</span>
+                    <div className="p-6 flex flex-col flex-1">
+                      <h3 className="font-display text-lg font-semibold text-navy mb-2">
+                        {propertyLabel(property)}
+                      </h3>
+                      <p className="font-body text-sm text-charcoal mb-1">{property.address}</p>
+                      <p className="font-body text-sm text-muted mb-4">
+                        {property.city}, {property.state}
                       </p>
-                      <p className="font-body text-sm text-muted">
-                        {formatNaira(property.annual_rent)}/year
-                      </p>
-                    </div>
 
-                    <div className="mt-auto">
-                      <Link href={`/properties/browse/${property.id}`}>
-                        <Button variant="secondary" className="w-full">
-                          View Details
-                        </Button>
-                      </Link>
+                      <div className="flex items-center gap-4 font-body text-sm text-muted mb-4">
+                        <span className="flex items-center gap-1">
+                          <Bed size={14} />
+                          {property.bedrooms}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Bath size={14} />
+                          {property.bathrooms}
+                        </span>
+                      </div>
+
+                      <div className="mb-4">
+                        <p className="font-display text-xl font-bold text-forest">
+                          {formatNaira(property.annual_rent)}
+                          <span className="text-sm font-body text-muted">/year</span>
+                        </p>
+                        <p className="font-body text-sm text-muted">
+                          {formatNaira(property.monthly_rent)}/month
+                        </p>
+                      </div>
+
+                      <div className="mt-auto">
+                        <Link href={`/properties/browse/${property.id}`}>
+                          <Button variant="secondary" className="w-full">
+                            View Details
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
                   </Card>
                 ))}

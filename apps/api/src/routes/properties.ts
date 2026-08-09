@@ -18,7 +18,19 @@ router.post(
   requireRole(UserRole.LANDLORD),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { address, city, state, propertyType, bedrooms, bathrooms, monthlyRent, requiresInsurance } = req.body;
+      const {
+        address,
+        city,
+        state,
+        propertyType,
+        bedrooms,
+        bathrooms,
+        monthlyRent,
+        requiresInsurance,
+        description,
+        images,
+        amenities,
+      } = req.body;
       const annualRent = Number(monthlyRent) * 12;
 
       const property = await createProperty({
@@ -32,6 +44,13 @@ router.post(
         monthlyRent: Number(monthlyRent),
         annualRent,
         requiresInsurance: Boolean(requiresInsurance),
+        description: typeof description === 'string' ? description.trim().slice(0, 2000) : undefined,
+        images: Array.isArray(images)
+          ? images.filter((u: unknown) => typeof u === 'string' && u.trim()).slice(0, 12)
+          : undefined,
+        amenities: Array.isArray(amenities)
+          ? amenities.filter((a: unknown) => typeof a === 'string' && a.trim()).slice(0, 30)
+          : undefined,
       });
 
       return res.status(201).json({
@@ -124,6 +143,18 @@ router.patch(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
+
+      const existing = await findPropertyById(id);
+      if (!existing) {
+        return res.status(404).json({ success: false, message: 'Property not found' });
+      }
+      if (existing.landlord_id !== req.user!.id) {
+        return res.status(403).json({
+          success: false,
+          message: 'You do not own this property',
+        });
+      }
+
       const {
         address,
         city,
@@ -134,6 +165,9 @@ router.patch(
         annualRent,
         isAvailable,
         requiresInsurance,
+        description,
+        images,
+        amenities,
       } = req.body;
 
       const property = await updateProperty(id, {
@@ -146,6 +180,13 @@ router.patch(
         annualRent: annualRent !== undefined ? Number(annualRent) : undefined,
         isAvailable,
         requiresInsurance,
+        description: typeof description === 'string' ? description.trim().slice(0, 2000) : undefined,
+        images: Array.isArray(images)
+          ? images.filter((u: unknown) => typeof u === 'string' && u.trim()).slice(0, 12)
+          : undefined,
+        amenities: Array.isArray(amenities)
+          ? amenities.filter((a: unknown) => typeof a === 'string' && a.trim()).slice(0, 30)
+          : undefined,
       });
 
       return res.json({
@@ -166,6 +207,18 @@ router.delete(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
+
+      const existing = await findPropertyById(id);
+      if (!existing) {
+        return res.status(404).json({ success: false, message: 'Property not found' });
+      }
+      if (existing.landlord_id !== req.user!.id) {
+        return res.status(403).json({
+          success: false,
+          message: 'You do not own this property',
+        });
+      }
+
       await softDeleteProperty(id);
 
       return res.json({

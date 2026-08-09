@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { FilePlus, Home } from 'lucide-react';
@@ -13,19 +13,22 @@ import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
 import { EmptyState } from '@/components/layout/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useProperties } from '@/hooks/useProperties';
 import { useCreateAgreement } from '@/hooks/useAgreements';
 import { UserRole, BEYOND_PRICING } from '@beyond/shared';
-import { formatNaira, calculateAnnualRent } from '@/lib/utils';
+import { formatNaira } from '@/lib/utils';
 import { PROPERTY_TYPE_LABELS } from '@/lib/constants';
 
+// Rent is quoted yearly in Nigeria — the landlord enters the annual figure
+// here and monthly is derived (annual / 12), not the other way round.
 const tenancySchema = z.object({
   tenantEmail: z.string().email('Invalid email'),
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().min(1, 'End date is required'),
-  monthlyRent: z.coerce.number().min(1, 'Monthly rent is required'),
+  annualRent: z.coerce.number().min(1, 'Annual rent is required'),
 });
 
 type TenancyFormData = z.infer<typeof tenancySchema>;
@@ -52,7 +55,7 @@ function NewAgreementForm() {
 
   useEffect(() => {
     if (selectedProperty) {
-      tenancyForm.setValue('monthlyRent', selectedProperty.monthly_rent);
+      tenancyForm.setValue('annualRent', selectedProperty.annual_rent);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProperty?.id]);
@@ -75,8 +78,8 @@ function NewAgreementForm() {
     setStep((prev) => Math.max(1, prev - 1));
   };
 
-  const monthlyRent = formData.monthlyRent || 0;
-  const annualRent = calculateAnnualRent(monthlyRent);
+  const annualRent = formData.annualRent || 0;
+  const monthlyRent = annualRent ? Math.round(annualRent / 12) : 0;
   const tenantTotal = wantsLawyerReview ? BEYOND_PRICING.LAWYER_REVIEW_ADDON : 0;
 
   const handleSubmit = async () => {
@@ -167,7 +170,7 @@ function NewAgreementForm() {
                           </p>
                         </div>
                         <p className="font-display text-sm font-bold text-forest whitespace-nowrap">
-                          {formatNaira(property.monthly_rent)}/mo
+                          {formatNaira(property.annual_rent)}/yr
                         </p>
                       </div>
                     </label>
@@ -212,13 +215,30 @@ function NewAgreementForm() {
                   error={tenancyForm.formState.errors.endDate?.message}
                 />
               </div>
-              <Input
-                label="Monthly Rent (₦)"
-                type="number"
-                placeholder="500000"
-                {...tenancyForm.register('monthlyRent')}
-                error={tenancyForm.formState.errors.monthlyRent?.message}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <Controller
+                  name="annualRent"
+                  control={tenancyForm.control}
+                  render={({ field }) => (
+                    <CurrencyInput
+                      label="Annual Rent"
+                      placeholder="2,400,000"
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      error={tenancyForm.formState.errors.annualRent?.message}
+                    />
+                  )}
+                />
+                <CurrencyInput
+                  label="Monthly Rent (calculated)"
+                  value={
+                    tenancyForm.watch('annualRent')
+                      ? Math.round(tenancyForm.watch('annualRent') / 12)
+                      : 0
+                  }
+                  readOnly
+                />
+              </div>
 
               <div className="border border-border rounded-button p-4 bg-forest bg-opacity-5">
                 <p className="font-body text-sm text-charcoal">
@@ -278,10 +298,10 @@ function NewAgreementForm() {
                   {formData.endDate}
                 </p>
                 <p>
-                  <span className="font-semibold">Monthly Rent:</span> {formatNaira(monthlyRent)}
+                  <span className="font-semibold">Annual Rent:</span> {formatNaira(annualRent)}
                 </p>
                 <p>
-                  <span className="font-semibold">Annual Rent:</span> {formatNaira(annualRent)}
+                  <span className="font-semibold">Monthly Rent:</span> {formatNaira(monthlyRent)}
                 </p>
                 <p>
                   <span className="font-semibold">Lawyer Review:</span>{' '}

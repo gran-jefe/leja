@@ -40,6 +40,22 @@ export const config = {
       .filter(Boolean),
   },
 
+  // Optional — email notifications (e.g. "you got a new message") degrade
+  // to a no-op (logged, not sent) when RESEND_API_KEY isn't set, so this
+  // is never a hard requirement to run the app. See lib/email.ts.
+  //
+  // fromAddress defaults to Resend's sandbox sender (onboarding@resend.dev)
+  // because sending "from" any address requires verifying you own that
+  // domain — a gmail.com address can never be a from-address here.
+  // replyToAddress is where actual replies should land instead; defaults
+  // to a personal inbox so "reply" on a notification email works without
+  // needing a verified custom domain yet.
+  email: {
+    resendApiKey: (process.env.RESEND_API_KEY || '').trim(),
+    fromAddress: (process.env.EMAIL_FROM || 'BeyondAgency <onboarding@resend.dev>').trim(),
+    replyToAddress: (process.env.EMAIL_REPLY_TO || 'granjefetech@gmail.com').trim(),
+  },
+
   cors: {
     allowedOrigins:
       process.env.NODE_ENV === 'production'

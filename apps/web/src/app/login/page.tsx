@@ -43,7 +43,7 @@ export default function LoginPage() {
       const { token, user } = response.data.data;
       Cookies.set('leja_token', token, { expires: 7 });
       localStorage.setItem('leja_user', JSON.stringify(user));
-      router.push('/dashboard');
+      router.push(user?.isAdmin ? '/admin' : '/dashboard');
     } catch (err: any) {
       NProgress.done();
       if (!err.response) {

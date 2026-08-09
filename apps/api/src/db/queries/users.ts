@@ -66,3 +66,21 @@ export async function updateUser(
   if (error) throw new Error(`Failed to update user: ${error.message}`);
   return user as unknown as SafeUser;
 }
+
+// A user signs up as LANDLORD or TENANT (registerSchema only allows those
+// two) and later separately applies to the service-bid marketplace as a
+// provider. Every /marketplace/providers/* dashboard route requires
+// role === PROVIDER, so without this the account would pass verification
+// and then hit a permanent 403 wall — there'd be no path that ever
+// changes their stored role. Called the moment a provider becomes ACTIVE
+// (on verification, or immediately for admin-onboarded internal staff).
+// Note: an already-issued JWT still carries the old role until the user
+// logs in again — this updates the DB, not any live token.
+export async function promoteToProviderRole(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('users')
+    .update({ role: UserRole.PROVIDER, updated_at: new Date().toISOString() })
+    .eq('id', userId);
+
+  if (error) throw new Error(`Failed to promote user to PROVIDER role: ${error.message}`);
+}

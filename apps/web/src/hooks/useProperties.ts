@@ -90,3 +90,26 @@ export function useCreateProperty() {
 
   return { createProperty, loading, error };
 }
+
+export function useUpdateProperty(id: string) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const updateProperty = async (data: Record<string, unknown>) => {
+    setLoading(true);
+    setError('');
+    try {
+      await api.patch(`/properties/${id}`, data);
+      router.push(`/properties/${id}`);
+      return true;
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to update property'));
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { updateProperty, loading, error };
+}

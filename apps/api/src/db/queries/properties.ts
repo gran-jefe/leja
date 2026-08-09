@@ -11,6 +11,9 @@ interface CreatePropertyInput {
   monthlyRent: number;
   annualRent: number;
   requiresInsurance?: boolean;
+  description?: string;
+  images?: string[];
+  amenities?: string[];
 }
 
 export const createProperty = async (data: CreatePropertyInput) => {
@@ -27,6 +30,9 @@ export const createProperty = async (data: CreatePropertyInput) => {
       monthly_rent: data.monthlyRent,
       annual_rent: data.annualRent,
       requires_insurance: data.requiresInsurance ?? false,
+      description: data.description || null,
+      images: data.images ?? [],
+      amenities: data.amenities ?? [],
     })
     .select('*')
     .single();
@@ -130,7 +136,7 @@ export const findPropertyById = async (id: string) => {
 
   const { data: landlord } = await supabase
     .from('users')
-    .select('name, email')
+    .select('name, email, phone')
     .eq('id', property.landlord_id)
     .single();
 
@@ -138,6 +144,7 @@ export const findPropertyById = async (id: string) => {
     ...property,
     landlord_name: landlord?.name || null,
     landlord_email: landlord?.email || null,
+    landlord_phone: landlord?.phone || null,
   };
 };
 
@@ -151,6 +158,9 @@ interface UpdatePropertyInput {
   annualRent?: number;
   isAvailable?: boolean;
   requiresInsurance?: boolean;
+  description?: string;
+  images?: string[];
+  amenities?: string[];
 }
 
 export const updateProperty = async (id: string, data: UpdatePropertyInput) => {
@@ -164,6 +174,9 @@ export const updateProperty = async (id: string, data: UpdatePropertyInput) => {
   if (data.annualRent !== undefined) updateData.annual_rent = data.annualRent;
   if (data.isAvailable !== undefined) updateData.is_available = data.isAvailable;
   if (data.requiresInsurance !== undefined) updateData.requires_insurance = data.requiresInsurance;
+  if (data.description !== undefined) updateData.description = data.description;
+  if (data.images !== undefined) updateData.images = data.images;
+  if (data.amenities !== undefined) updateData.amenities = data.amenities;
 
   const { data: property, error } = await supabase
     .from('properties')

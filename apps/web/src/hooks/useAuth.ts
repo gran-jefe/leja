@@ -7,6 +7,10 @@ interface User {
   email: string;
   name: string;
   role: 'LANDLORD' | 'TENANT' | 'PROVIDER';
+  // No ADMIN role exists in the schema — this is a deploy-time email
+  // allowlist check (ADMIN_EMAILS) computed server-side on every auth
+  // response, not stored. A user can be e.g. TENANT *and* isAdmin at once.
+  isAdmin?: boolean;
 }
 
 export function useAuth() {
@@ -39,6 +43,7 @@ export function useAuth() {
     isLandlord: user?.role === 'LANDLORD',
     isTenant: user?.role === 'TENANT',
     isProvider: user?.role === 'PROVIDER',
+    isAdmin: !!user?.isAdmin,
     logout,
   };
 }

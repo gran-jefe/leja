@@ -3,3 +3,4 @@ export * from './contact.schemas';
 export * from './agreement.schemas';
 export * from './insurance';
 export * from './marketplace';
+export * from './messages';

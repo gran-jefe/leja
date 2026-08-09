@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Bed, Bath, User, ArrowLeft } from 'lucide-react';
+import { Home, Bed, Bath, User, ArrowLeft, Phone, Mail, CheckCircle2, MessageCircle } from 'lucide-react';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
 import { Button } from '@/components/ui/Button';
@@ -12,8 +13,9 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { Badge } from '@/components/ui/Badge';
 import { useProperty } from '@/hooks/useProperties';
 import { UserRole, PropertyType } from '@beyond/shared';
-import { formatNaira } from '@/lib/utils';
+import { formatNaira, getErrorMessage } from '@/lib/utils';
 import { PROPERTY_TYPE_LABELS } from '@/lib/constants';
+import api from '@/lib/api';
 
 const bedroomEncodedTypes = [
   PropertyType.ONE_BEDROOM,
@@ -28,6 +30,98 @@ const propertyLabel = (property: any) => {
   const typeLabel = PROPERTY_TYPE_LABELS[property.property_type] || property.property_type;
   return `${property.bedrooms} Bedroom ${typeLabel}`;
 };
+
+// Nigerian phone numbers are usually stored as 0XXXXXXXXXX — WhatsApp's
+// click-to-chat link needs the international format with no leading zero.
+const toWhatsAppNumber = (phone: string) => {
+  const digits = phone.replace(/[^0-9]/g, '');
+  if (digits.startsWith('234')) return digits;
+  if (digits.startsWith('0')) return `234${digits.slice(1)}`;
+  return digits;
+};
+
+function ImageGallery({ images, alt }: { images: string[]; alt: string }) {
+  const [active, setActive] = useState(0);
+
+  if (!images || images.length === 0) {
+    return (
+      <div className="w-full aspect-video bg-cream rounded-card flex items-center justify-center text-muted">
+        <Home size={40} />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="w-full aspect-video bg-cream rounded-card overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={images[active]} alt={alt} className="w-full h-full object-cover" />
+      </div>
+      {images.length > 1 && (
+        <div className="flex gap-2 mt-2 overflow-x-auto">
+          {images.map((img, i) => (
+            <button
+              key={img + i}
+              onClick={() => setActive(i)}
+              className={`flex-shrink-0 w-16 h-16 rounded-button overflow-hidden border-2 ${
+                active === i ? 'border-forest' : 'border-transparent'
+              }`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={img} alt="" className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MessageLandlordForm({ propertyId, address }: { propertyId: string; address: string }) {
+  const router = useRouter();
+  const [message, setMessage] = useState(
+    `Hi, I'm interested in ${address}. Is it still available?`
+  );
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSend = async () => {
+    if (!message.trim()) return;
+    setSending(true);
+    setError('');
+    try {
+      const res = await api.post('/messages/conversations', { propertyId, body: message.trim() });
+      router.push(`/messages/${res.data.data.conversation.id}`);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to send message'));
+      setSending(false);
+    }
+  };
+
+  return (
+    <div>
+      <textarea
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        rows={3}
+        className="w-full px-4 py-2 font-body text-sm border border-border rounded-button focus:outline-none focus:ring-2 focus:ring-forest mb-2"
+      />
+      {error && <p className="text-sm text-ember font-body mb-2">{error}</p>}
+      <Button
+        variant="primary"
+        className="w-full flex items-center justify-center gap-2"
+        loading={sending}
+        onClick={handleSend}
+      >
+        <MessageCircle size={16} />
+        Message Landlord
+      </Button>
+      <p className="text-xs text-muted font-body mt-2">
+        Sent through BeyondAgency — the landlord can reply here, and you'll see it in your inbox.
+      </p>
+    </div>
+  );
+}
 
 function PropertyDetailContent() {
   const params = useParams();
@@ -59,6 +153,8 @@ function PropertyDetailContent() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
+              <ImageGallery images={property.images || []} alt={property.address} />
+
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-button bg-navy bg-opacity-5 flex items-center justify-center flex-shrink-0">
                   <Home className="text-navy" size={24} />
@@ -84,6 +180,14 @@ function PropertyDetailContent() {
                 </div>
               </div>
 
+              {property.description && (
+                <Card title="About this property">
+                  <p className="font-body text-sm text-charcoal whitespace-pre-line">
+                    {property.description}
+                  </p>
+                </Card>
+              )}
+
               <Card title="Details">
                 <div className="grid grid-cols-3 gap-4">
                   <div>
@@ -107,17 +211,33 @@ function PropertyDetailContent() {
                 </div>
               </Card>
 
+              {property.amenities?.length > 0 && (
+                <Card title="Amenities">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {property.amenities.map((amenity: string) => (
+                      <div
+                        key={amenity}
+                        className="flex items-center gap-2 font-body text-sm text-charcoal"
+                      >
+                        <CheckCircle2 size={14} className="text-forest flex-shrink-0" />
+                        {amenity}
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
               <div className="bg-navy rounded-card p-6 flex flex-col sm:flex-row gap-6 sm:gap-12">
-                <div>
-                  <p className="text-white text-opacity-70 text-sm font-body mb-1">Monthly Rent</p>
-                  <p className="font-display text-2xl font-bold text-white">
-                    {formatNaira(property.monthly_rent)}
-                  </p>
-                </div>
                 <div>
                   <p className="text-white text-opacity-70 text-sm font-body mb-1">Annual Rent</p>
                   <p className="font-display text-2xl font-bold text-white">
                     {formatNaira(property.annual_rent)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-white text-opacity-70 text-sm font-body mb-1">Monthly Rent</p>
+                  <p className="font-display text-2xl font-bold text-white">
+                    {formatNaira(property.monthly_rent)}
                   </p>
                 </div>
               </div>
@@ -145,27 +265,44 @@ function PropertyDetailContent() {
                   Interested in this property?
                 </h3>
                 <p className="font-body text-sm text-muted mb-4">
-                  Contact the landlord directly and ask them to send you a tenancy agreement
-                  through BeyondAgency. You'll pay a Legalization &amp; Protection fee once you
-                  accept it — no agent fees.
+                  Message the landlord through BeyondAgency and ask them to send you a tenancy
+                  agreement. Connecting and accepting the agreement are completely free — no
+                  agent fees, no legalization fee.
                 </p>
-                <div className="flex flex-col gap-3">
-                  {property.landlord_email && (
-                    <a href={`mailto:${property.landlord_email}?subject=${encodeURIComponent(`Interested in ${property.address}`)}`}>
-                      <Button variant="primary" className="w-full">
-                        Contact Landlord
-                      </Button>
-                    </a>
-                  )}
-                  <div className="relative group">
-                    <Button variant="secondary" className="w-full" disabled>
-                      Save for later
-                    </Button>
-                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block whitespace-nowrap bg-navy text-white text-xs font-body px-2 py-1 rounded">
-                      Coming soon
+
+                <MessageLandlordForm propertyId={property.id} address={property.address} />
+
+                {(property.landlord_phone || property.landlord_email) && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="text-xs text-muted font-body mb-2">Prefer another way?</p>
+                    <div className="flex flex-col gap-2">
+                      {property.landlord_phone && (
+                        <a
+                          href={`https://wa.me/${toWhatsAppNumber(property.landlord_phone)}?text=${encodeURIComponent(
+                            `Hi, I'm interested in ${property.address}, ${property.city} on BeyondAgency.`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Button variant="ghost" size="sm" className="w-full flex items-center justify-center gap-2">
+                            <Phone size={14} />
+                            WhatsApp
+                          </Button>
+                        </a>
+                      )}
+                      {property.landlord_email && (
+                        <a
+                          href={`mailto:${property.landlord_email}?subject=${encodeURIComponent(`Interested in ${property.address}`)}`}
+                        >
+                          <Button variant="ghost" size="sm" className="w-full flex items-center justify-center gap-2">
+                            <Mail size={14} />
+                            Email
+                          </Button>
+                        </a>
+                      )}
                     </div>
                   </div>
-                </div>
+                )}
               </Card>
             </div>
           </div>
