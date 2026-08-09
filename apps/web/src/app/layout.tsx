@@ -3,8 +3,9 @@ import './globals.css';
 import { ProgressBar } from '@/components/layout/ProgressBar';
 
 export const metadata: Metadata = {
-  title: 'BeyondAgency - Bridging Trust. Simplifying Deals.',
-  description: 'Nigeria\'s trust platform for direct deals — landlords and tenants connect free.',
+  title: 'BeyondAgency — Nigeria\'s Trust Platform-as-a-Service',
+  description:
+    'BeyondAgency connects the two sides of a deal for free, then earns from a marketplace of vetted providers who compete for the optional work around it. Residential rentals is Phase 1 — insurance, legal, and tech services run on the same platform.',
 };
 
 export default function RootLayout({

@@ -9,10 +9,10 @@ import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
 const navLinks = [
+  { href: '/#platform', label: 'Platform' },
   { href: '/#how-it-works', label: 'How it works' },
-  { href: '/#for-landlords', label: 'For Landlords' },
-  { href: '/#for-tenants', label: 'For Tenants' },
   { href: '/#pricing', label: 'Pricing' },
+  { href: '/provider/apply', label: 'For Providers' },
 ];
 
 const landlordLinks = [

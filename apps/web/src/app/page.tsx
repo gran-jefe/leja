@@ -30,12 +30,7 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import api from '@/lib/api';
 import { cn, getErrorMessage, formatNaira } from '@/lib/utils';
-import { BEYOND_PRICING, calculateLegalizationFee } from '@beyond/shared';
-
-const LEGALIZATION_FEE_RATE_PERCENT = Math.round(BEYOND_PRICING.LEGALIZATION_FEE_RATE * 100);
-
-// Illustrative default for the savings calculator below.
-const EXAMPLE_ANNUAL_RENT = 1200000;
+import { BEYOND_PRICING } from '@beyond/shared';
 
 const landlordBenefits = [
   'Verified tenant profiles before you sign anything',
@@ -68,7 +63,7 @@ const steps = [
     number: '03',
     icon: ShieldCheck,
     title: 'Protect',
-    body: `Legalized for just ${LEGALIZATION_FEE_RATE_PERCENT}% of annual rent — capped, and always far below a typical agent fee plus legal costs. Optional lawyer review and rent-protection insurance available.`,
+    body: 'Legalized for free — standardized agreement included. Optional lawyer review and rent-protection insurance available if you want them.',
   },
 ];
 
@@ -109,13 +104,13 @@ const trustPoints = [
   },
   {
     icon: Scale,
-    title: 'Legal counsel, in-house',
-    body: 'Every agreement template is drafted and maintained by our in-house legal counsel.',
+    title: 'In-house legal team',
+    body: 'Optional lawyer review is handled by our own salaried legal team, not a stranger from an open marketplace — one flat price, assigned fast.',
   },
   {
     icon: Shield,
     title: 'Insurance-backed protection',
-    body: 'Optional rent-protection insurance through a licensed insurance partner.',
+    body: 'Optional rent-protection insurance, matched through competitive bidding among licensed insurer partners once they\'re live.',
   },
   {
     icon: CreditCard,
@@ -124,38 +119,22 @@ const trustPoints = [
   },
 ];
 
-const comingSoon = ['Insurance comparison', 'Legal marketplace', 'Tech services'];
-
-function LegalizationFeeCalculator() {
-  const [annualRent, setAnnualRent] = useState(EXAMPLE_ANNUAL_RENT);
-  const fee = calculateLegalizationFee(annualRent || 0);
+function SavingsComparison() {
   const agentTotal = BEYOND_PRICING.TYPICAL_AGENT_FEE + BEYOND_PRICING.TYPICAL_LEGAL_FEE;
 
   return (
     <div className="bg-white bg-opacity-5 rounded-button p-4 mb-6 font-body text-sm">
-      <label className="block text-white text-opacity-70 mb-2" htmlFor="annual-rent-calculator">
-        Your annual rent
-      </label>
-      <input
-        id="annual-rent-calculator"
-        type="number"
-        min={0}
-        value={annualRent}
-        onChange={(e) => setAnnualRent(Number(e.target.value))}
-        className="w-full px-3 py-2 mb-4 rounded-button bg-white bg-opacity-10 text-white placeholder-white placeholder-opacity-40 border border-white border-opacity-20 focus:outline-none focus:ring-2 focus:ring-forest"
-        placeholder="e.g. 1,200,000"
-      />
       <div className="flex justify-between text-white text-opacity-60">
-        <span>Agent fee + legal fee</span>
+        <span>Typical agent + legal fee elsewhere</span>
         <span className="line-through">{formatNaira(agentTotal)}</span>
       </div>
       <div className="flex justify-between text-white">
-        <span>BeyondAgency fee ({LEGALIZATION_FEE_RATE_PERCENT}% of rent, capped)</span>
-        <span>{formatNaira(fee)} ✓</span>
+        <span>BeyondAgency base fee</span>
+        <span>₦0 ✓</span>
       </div>
       <div className="border-t border-white border-opacity-20 mt-2 pt-2 flex justify-between font-semibold text-ember">
         <span>You save</span>
-        <span>{formatNaira(Math.max(agentTotal - fee, 0))}</span>
+        <span>{formatNaira(agentTotal)}</span>
       </div>
     </div>
   );
@@ -334,6 +313,74 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Platform identity — BeyondAgency is a multi-sector trust PaaS;
+          residential rentals is Phase 1, not the whole company. Placed
+          right after the hero so this reads first, not as a footnote. */}
+      <section id="platform" className="bg-navy py-16 border-t border-white border-opacity-10">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <div>
+              <span className="font-body text-xs uppercase tracking-wider text-forest font-semibold mb-3 block">
+                The platform
+              </span>
+              <h2 className="font-display text-white font-bold text-[28px] md:text-[36px] max-w-2xl">
+                One trust platform. Every deal, eventually.
+              </h2>
+              <p className="font-body text-[#A0AEC0] mt-3 max-w-2xl">
+                BeyondAgency is a Platform-as-a-Service: we connect the two sides of a deal for
+                free, then earn from a marketplace of vetted providers who compete for the
+                optional work around it. Residential rentals is where we started — not where we
+                stop.
+              </p>
+            </div>
+            <a
+              href="/provider/apply"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-button border-2 border-white text-white font-body font-semibold text-sm hover:bg-white hover:bg-opacity-10 transition whitespace-nowrap"
+            >
+              I'm a licensed provider
+            </a>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white bg-opacity-5 border border-white border-opacity-10 rounded-card p-5">
+              <p className="font-display text-white font-bold mb-1">Real Estate</p>
+              <span className="inline-block bg-forest text-white text-xs font-semibold px-3 py-1 rounded-full font-body">
+                Live now
+              </span>
+              <p className="font-body text-[#A0AEC0] text-sm mt-3">
+                Free landlord/tenant connection, in-house legal review, insurance bidding.
+              </p>
+            </div>
+            <div className="bg-white bg-opacity-5 border border-white border-opacity-10 rounded-card p-5">
+              <p className="font-display text-white font-bold mb-1">Insurance</p>
+              <span className="inline-block bg-white bg-opacity-10 text-white text-xs font-semibold px-3 py-1 rounded-full font-body">
+                Bid marketplace
+              </span>
+              <p className="font-body text-[#A0AEC0] text-sm mt-3">
+                Licensed insurers compete for rent-protection jobs — same engine, own category.
+              </p>
+            </div>
+            <div className="bg-white bg-opacity-5 border border-white border-opacity-10 rounded-card p-5">
+              <p className="font-display text-white font-bold mb-1">Legal</p>
+              <span className="inline-block bg-white bg-opacity-10 text-white text-xs font-semibold px-3 py-1 rounded-full font-body">
+                In-house
+              </span>
+              <p className="font-body text-[#A0AEC0] text-sm mt-3">
+                Salaried team today; opens to vetted external firms as volume grows.
+              </p>
+            </div>
+            <div className="bg-white bg-opacity-5 border border-white border-opacity-10 rounded-card p-5">
+              <p className="font-display text-white font-bold mb-1">Technology</p>
+              <span className="inline-block bg-white bg-opacity-10 text-white text-xs font-semibold px-3 py-1 rounded-full font-body">
+                Coming soon
+              </span>
+              <p className="font-body text-[#A0AEC0] text-sm mt-3">
+                Startups and SMEs source vetted service providers the same way.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Split value proposition */}
       <section id="for-landlords" className="bg-cream py-24">
         <div className="max-w-7xl mx-auto px-4">
@@ -458,10 +505,10 @@ export default function Home() {
       <section id="pricing" className="bg-cream py-24">
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-center font-display text-navy font-bold text-[32px] md:text-[40px] mb-3">
-            Transparent pricing. No surprises.
+            Free to connect. Free to legalize.
           </h2>
           <p className="text-center font-body text-muted mb-16">
-            One clear fee, paid once — no negotiating with an agent.
+            No agent fee, no platform fee — pay only if you choose an optional add-on.
           </p>
           <div className="grid md:grid-cols-3 gap-8 md:items-center">
             {/* For Landlords — free */}
@@ -486,7 +533,7 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* For Tenants — highlighted */}
+            {/* For Tenants — also free */}
             <div className="relative bg-navy text-white rounded-card p-8 shadow-xl md:scale-105">
               <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-ember text-white text-xs font-semibold px-4 py-1 rounded-full font-body whitespace-nowrap">
                 Replaces your agency fee
@@ -494,16 +541,13 @@ export default function Home() {
               <p className="font-body text-xs uppercase tracking-wider text-white text-opacity-70 font-semibold mb-4">
                 For Tenants
               </p>
-              <p className="font-display text-white font-bold text-4xl mb-1">
-                {LEGALIZATION_FEE_RATE_PERCENT}% of annual rent
-              </p>
+              <p className="font-display text-white font-bold text-4xl mb-1">FREE</p>
               <p className="font-body text-white text-opacity-70 text-sm mb-6">
-                Legalization &amp; Protection fee, floored at{' '}
-                {formatNaira(BEYOND_PRICING.LEGALIZATION_FEE_FLOOR)} and capped at{' '}
-                {formatNaira(BEYOND_PRICING.LEGALIZATION_FEE_CAP)}
+                Connecting, browsing, and your standardized tenancy agreement — ₦0. No percentage
+                of rent, no platform fee.
               </p>
 
-              <LegalizationFeeCalculator />
+              <SavingsComparison />
 
               <ul className="space-y-3 mb-8">
                 {tenantPricingFeatures.map((feature) => (
@@ -520,16 +564,17 @@ export default function Home() {
               </Link>
             </div>
 
-            {/* Lawyer review add-on */}
+            {/* Lawyer review add-on — the only thing that can cost anything */}
             <div className="bg-white border-2 border-ember rounded-card p-8">
               <p className="font-body text-xs uppercase tracking-wider text-ember font-semibold mb-4">
                 Lawyer Review
               </p>
               <p className="font-display text-ember font-bold text-4xl mb-1">
-                +{formatNaira(BEYOND_PRICING.LAWYER_REVIEW_ADDON)}
+                {formatNaira(BEYOND_PRICING.LAWYER_REVIEW_ADDON)}
               </p>
               <p className="font-body text-muted text-sm mb-6">
-                Optional add-on to your Legalization &amp; Protection fee
+                Optional. Handled by our own in-house, salaried legal team — one flat price, no
+                stranger bidding for your business.
               </p>
               <ul className="space-y-3 mb-8">
                 {lawyerReviewFeatures.map((feature) => (
@@ -546,24 +591,32 @@ export default function Home() {
           </div>
 
           <p className="text-center font-body text-muted text-lg mt-16">
-            Landlords pay nothing. Tenants pay a fraction of what agents charge. That&apos;s the
-            deal.
+            Landlords pay nothing. Tenants pay nothing to connect or legalize. That&apos;s the
+            deal — we earn from the marketplace of providers who compete for optional work, not
+            from you.
           </p>
         </div>
       </section>
 
-      {/* Coming soon strip — BeyondAgency is a multi-sector platform, rentals is Phase 1 */}
-      <section className="bg-navy py-6 border-t border-white border-opacity-10">
-        <div className="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-center">
-          <span className="font-body text-xs uppercase tracking-wider text-forest font-semibold">
-            Coming soon
-          </span>
-          {comingSoon.map((item, i) => (
-            <span key={item} className="font-body text-sm text-[#A0AEC0] flex items-center gap-3">
-              {i > 0 && <span className="text-white text-opacity-20">·</span>}
-              {item}
-            </span>
-          ))}
+      {/* Become a provider — second acquisition funnel. Legal review is
+          in-house/salaried (not applied for here), so this now targets
+          insurers and future external categories only. */}
+      <section className="bg-cream py-10 border-t border-border">
+        <div className="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="font-display text-navy font-bold text-lg">
+              Licensed insurer?
+            </p>
+            <p className="font-body text-muted text-sm">
+              Join the bid pool — rent-protection insurance jobs come to you, no cold outreach.
+            </p>
+          </div>
+          <a
+            href="/provider/apply"
+            className="inline-flex items-center px-6 py-3 rounded-button bg-navy text-white font-body font-semibold text-sm hover:bg-opacity-90 transition"
+          >
+            Become a provider
+          </a>
         </div>
       </section>
 

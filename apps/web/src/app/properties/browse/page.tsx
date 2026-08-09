@@ -278,11 +278,16 @@ function BrowsePropertiesContent() {
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {properties.map((property) => (
                   <Card key={property.id} className="flex flex-col h-full">
-                    <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-start justify-between mb-2 gap-2">
                       <h3 className="font-display text-lg font-semibold text-navy">
                         {propertyLabel(property)}
                       </h3>
-                      <Badge variant="success">Available</Badge>
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge variant="success">Available</Badge>
+                        {property.requires_insurance && (
+                          <Badge variant="info">Insured Tenancy</Badge>
+                        )}
+                      </div>
                     </div>
                     <p className="font-body text-sm text-charcoal mb-1">{property.address}</p>
                     <p className="font-body text-sm text-muted mb-4">

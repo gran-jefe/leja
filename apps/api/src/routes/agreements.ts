@@ -6,17 +6,29 @@ import { createPendingPayment } from '../db/queries/payments';
 import { UserRole, PaymentType, BEYOND_PRICING } from '@beyond/shared';
 import { config } from '../config';
 import { createAgreementDraftSchema } from '../lib/schemas';
+import { generateAndSaveAgreementPDF } from '../lib/pdf';
+import { createInsuranceJob } from '../db/queries/marketplace';
 import {
   createAgreementDraft,
   wantsLawyerReview,
-  resolveLegalizationFee,
   findAgreementsForUser,
   findAgreementById,
   getAgreementWithDetails,
   updateAgreementStatus,
-  updateAgreementPendingPayment,
   updateAgreementLawyerReview,
 } from '../db/queries/agreements';
+
+// Don't await — let it run in the background so the accept endpoint responds
+// fast. Mirrors the webhook's own PDF trigger in routes/payments.ts.
+const triggerAgreementPDF = (agreementId: string) => {
+  generateAndSaveAgreementPDF(agreementId)
+    .then((pdfUrl) => {
+      console.log(`[PDF] Agreement ${agreementId} PDF generated: ${pdfUrl}`);
+    })
+    .catch((err) => {
+      console.error(`[PDF] Failed to generate PDF for agreement ${agreementId}:`, err.message);
+    });
+};
 
 const router = Router();
 
@@ -141,21 +153,17 @@ router.get(
       }
 
       const includesLawyerReview = wantsLawyerReview(agreement);
-      const moveInFee = resolveLegalizationFee(agreement);
       const lawyerReviewFee = includesLawyerReview ? BEYOND_PRICING.LAWYER_REVIEW_ADDON : 0;
-      const total = moveInFee + lawyerReviewFee;
-      const totalSavings = includesLawyerReview
-        ? BEYOND_PRICING.TYPICAL_AGENT_FEE + BEYOND_PRICING.TYPICAL_LEGAL_FEE - moveInFee - lawyerReviewFee
-        : BEYOND_PRICING.TYPICAL_AGENT_FEE + BEYOND_PRICING.TYPICAL_LEGAL_FEE - moveInFee;
+      const totalSavings = BEYOND_PRICING.TYPICAL_AGENT_FEE + BEYOND_PRICING.TYPICAL_LEGAL_FEE;
 
       return res.json({
         success: true,
         data: {
           agreement,
           pricing: {
-            moveInFee,
+            baseFee: BEYOND_PRICING.BASE_LEGALIZATION_FEE,
             lawyerReviewFee,
-            total,
+            total: lawyerReviewFee,
             savings: {
               vsAgentFee: BEYOND_PRICING.TYPICAL_AGENT_FEE,
               vsLegalFee: BEYOND_PRICING.TYPICAL_LEGAL_FEE,
@@ -171,7 +179,12 @@ router.get(
   }
 );
 
-// Tenant accepts the agreement and initiates the move-in fee payment.
+// Tenant accepts the agreement. Connecting and the standardized agreement
+// are free — the agreement goes ACTIVE immediately, no payment required.
+// The only thing that can cost the tenant anything is an optional lawyer
+// review add-on, which — if requested — is posted to the bid marketplace
+// and paid separately (at whatever a provider's winning bid is, capped at
+// LAWYER_REVIEW_ADDON), without blocking the agreement from being active.
 router.post(
   '/:id/accept',
   authenticateToken,
@@ -195,50 +208,71 @@ router.post(
       if (agreement.status !== 'DRAFT') {
         return res.status(400).json({
           success: false,
-          message: 'This agreement has already been accepted or paid for',
+          message: 'This agreement has already been accepted',
         });
       }
 
       const includesLawyerReview = wantsLawyerReview(agreement);
-      const moveInFee = resolveLegalizationFee(agreement);
-      const lawyerReviewFee = includesLawyerReview ? BEYOND_PRICING.LAWYER_REVIEW_ADDON : 0;
-      const total = moveInFee + lawyerReviewFee;
-      const reference = generateReference('BEYOND_TENANT');
+
+      const activated = await updateAgreementStatus(id, 'ACTIVE');
+      triggerAgreementPDF(id);
+
+      // Landlord-required insurance is a condition of tenancy the landlord
+      // set on the property (not a tenant opt-in) — post the job the
+      // moment the agreement goes active, with the landlord as requester
+      // since this product protects their asset and they're the payer.
+      // Non-fatal: never let a marketplace hiccup block acceptance.
+      if (agreement.property?.requires_insurance) {
+        try {
+          await createInsuranceJob(id, agreement.landlord_id);
+        } catch (err) {
+          console.error(`[MARKETPLACE] Failed to post required insurance job for agreement ${id}:`, err);
+        }
+      }
+
+      if (!includesLawyerReview) {
+        return res.json({
+          success: true,
+          data: { agreement: activated, paymentLink: null, total: 0 },
+          message: 'Agreement accepted — free, no payment required',
+        });
+      }
+
+      const lawyerReviewFee = BEYOND_PRICING.LAWYER_REVIEW_ADDON;
+      const reference = generateReference('BEYOND_LAWYER_REVIEW');
 
       const { paymentLink } = await initializePayment({
         email: req.user!.email,
-        amount: total,
+        amount: lawyerReviewFee,
         reference,
         name: req.user!.name || req.user!.email,
         redirectUrl: `${config.frontendUrl}/agreement/${id}?payment=success`,
         meta: {
           agreementId: id,
-          paymentType: PaymentType.TENANT_MOVE_IN_FEE,
+          paymentType: PaymentType.TENANT_LAWYER_REVIEW,
           tenantId: req.user!.id,
-          wantsLawyerReview: includesLawyerReview,
         },
       });
 
       await createPendingPayment({
         userId: req.user!.id,
         agreementId: id,
-        type: PaymentType.TENANT_MOVE_IN_FEE,
-        amount: total,
+        type: PaymentType.TENANT_LAWYER_REVIEW,
+        amount: lawyerReviewFee,
         reference,
-        metadata: { wantsLawyerReview: includesLawyerReview },
+        metadata: {},
       });
-
-      await updateAgreementPendingPayment(id, reference);
 
       return res.json({
         success: true,
         data: {
+          agreement: activated,
           paymentLink,
           reference,
-          total,
-          breakdown: { moveInFee, lawyerReviewFee, total },
+          total: lawyerReviewFee,
+          breakdown: { lawyerReviewFee, total: lawyerReviewFee },
         },
-        message: 'Payment initiated',
+        message: 'Agreement active. Optional lawyer review payment initiated.',
       });
     } catch (error) {
       next(error);

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
+import { Badge } from '@/components/ui/Badge';
 import { useProperty } from '@/hooks/useProperties';
 import { UserRole, PropertyType } from '@beyond/shared';
 import { formatNaira } from '@/lib/utils';
@@ -63,12 +64,23 @@ function PropertyDetailContent() {
                   <Home className="text-navy" size={24} />
                 </div>
                 <div>
-                  <h1 className="font-display text-2xl sm:text-3xl font-bold text-navy">
-                    {propertyLabel(property)}
-                  </h1>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="font-display text-2xl sm:text-3xl font-bold text-navy">
+                      {propertyLabel(property)}
+                    </h1>
+                    {property.requires_insurance && (
+                      <Badge variant="info">Insured Tenancy</Badge>
+                    )}
+                  </div>
                   <p className="font-body text-muted">
                     {property.address}, {property.city}, {property.state}
                   </p>
+                  {property.requires_insurance && (
+                    <p className="font-body text-xs text-muted mt-1">
+                      This landlord requires rent-protection insurance as a condition of
+                      tenancy — underwritten by a licensed insurer, paid by the landlord.
+                    </p>
+                  )}
                 </div>
               </div>
 

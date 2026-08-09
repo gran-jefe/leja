@@ -2,7 +2,7 @@
 
 ## Project: BeyondAgency
 
-**Brief:** Nigeria's trust platform for direct deals. Phase 1: residential rentals — landlords and tenants connect free; we monetize agreement legalization, insurance protection, and verification.
+**Brief:** Nigeria's trust platform for direct deals — a mixed Platform-as-a-Service. Phase 1: residential rentals — landlords and tenants connect, agree, and legalize their tenancy entirely free. Monetization comes from the service-bid marketplace: vetted lawyers and insurers compete for optional jobs (lawyer review, rent-protection insurance), and BeyondAgency earns a commission on winning bids plus provider subscriptions — never a fee on the base deal.
 
 **Tagline:** Bridging Trust. Simplifying Deals.
 
@@ -37,21 +37,22 @@
 
 - **LANDLORD:** Can create properties, initiate agreements, view tenant rental history
 - **TENANT:** Can view and accept agreements, build rental history, request rental history export
+- **PROVIDER:** Licensed lawyer or insurer who bids on optional jobs in the service-bid marketplace
 
 ## Key Business Rules
 
 - **Landlord:** lists properties FREE, connects with tenants FREE
-- **Tenant:** connects with landlords FREE; pays a **Legalization & Protection fee** when accepting an agreement — 8% of annual rent by default (`LEGALIZATION_FEE_RATE`), negotiable per agreement by the landlord within a 5%–10% band (`LEGALIZATION_FEE_MIN_RATE` / `LEGALIZATION_FEE_MAX_RATE`), floored at ₦10,000 and capped at ₦100,000 (`LEGALIZATION_FEE_FLOOR` / `LEGALIZATION_FEE_CAP`)
-- **Fee snapshotting:** the computed fee (rate + amount) is snapshotted onto the agreement at DRAFT creation — a later platform rate change must never alter an already-created agreement's fee
-- **Fee calculation:** always via `calculateLegalizationFee()` from `@beyond/shared` (`packages/shared/src/utils/fees.ts`) — never compute the percentage/floor/cap inline. The API recomputes and verifies the fee server-side at payment initiation; a client-supplied amount is never trusted
-- **Tenant:** optional ₦8,000 lawyer deep-review add-on (`LAWYER_REVIEW_ADDON`, paid together with the legalization fee)
-- **Tenant:** optional rent-protection insurance offered via a licensed insurance partner — we earn commission (`INSURANCE_COMMISSION_RATE`), we do **not** underwrite the policy
+- **Tenant:** connects with landlords FREE; accepting an agreement is FREE — no legalization fee, no percentage of rent, no platform charge on the base deal (`BEYOND_PRICING.BASE_LEGALIZATION_FEE` is explicitly `0`)
+- **Agreement flow:** landlord creates DRAFT (free) → tenant reviews via preview → tenant accepts → agreement goes **ACTIVE immediately**, no payment gate. `calculateLegalizationFee()` / `LEGALIZATION_FEE_*` constants in `@beyond/shared` are deprecated — kept only so agreements created before this pivot can still resolve their historical snapshotted fee. Do not use them to charge new agreements.
+- **Tenant:** optional lawyer deep-review add-on — a flat `LAWYER_REVIEW_ADDON` fee (₦20,000), delivered by BeyondAgency's own **in-house, monthly-salaried legal team**, not the open bid marketplace. Paid separately from — and never blocking — agreement acceptance. On payment confirmation the job auto-assigns to whichever ACTIVE `employment_type: 'INTERNAL'` `LEGAL` provider currently has the lightest load that month (`findLeastBusyInternalProvider()` / `createAndAssignLegalReviewJob()` in `apps/api/src/db/queries/marketplace.ts`) — no competitive bidding, one bid is created on their behalf and awarded immediately. Falls back to the old open-bid shape only if zero internal lawyers are onboarded yet (an edge case, not the intended steady state — hire at least one before relying on this).
+- **Tenant:** optional rent-protection insurance — genuine service-bid marketplace mechanic (`INSURANCE` category, `employment_type: 'EXTERNAL'` providers) once insurer partners are onboarded; we earn commission (`INSURANCE_COMMISSION_RATE`), we do **not** underwrite the policy
+- **Service-bid marketplace (external categories only):** applies to `INSURANCE` now, more categories later (inspection, moving, tech services). Vetted `PROVIDER`-role users with `employment_type: 'EXTERNAL'` bid on `service_jobs` via `service_bids`; the platform earns `PLATFORM_COMMISSION_RATE` deducted from the provider's payout (never added on top of what the requester pays) plus optional `PROVIDER_PRIORITY_SUBSCRIPTION` fees for priority bid-pool visibility. `LEGAL` is intentionally excluded from this — see above. Public applications for `category: 'LEGAL'` are rejected at `POST /marketplace/providers/apply`; internal staff are onboarded via the admin-only `POST /marketplace/providers/internal` instead. See `apps/api/src/routes/marketplace.ts` and `apps/api/src/db/queries/marketplace.ts`.
 - **Tenant:** ₦5,000 rental history export
 - **Landlord:** optional ₦20,000/month subscription for 5+ properties
 - **Pricing constants:** all prices/rates live in `BEYOND_PRICING` (`packages/shared/src/constants/pricing.ts`) — never hardcode a Naira amount or a fee rate in a route handler or component
-- **Payment timing:** payment is collected when the **TENANT** accepts/signs the agreement, not when the landlord creates it. Agreement flow: landlord creates DRAFT (free, fee snapshotted) → tenant reviews via preview → tenant accepts + pays → webhook confirms → agreement ACTIVE
+- **Payment timing:** there is no payment at agreement acceptance. The only tenant-side payment is the optional lawyer-review add-on, initiated at accept time but independent of the ACTIVE status change.
 - **Rental history export:** ₦5,000
-- **Payment confirmation:** Payment must be confirmed via Flutterwave webhook before agreement status changes to ACTIVE
+- **Bid award:** a job's winning bid is awarded automatically right after its associated payment is confirmed via the Flutterwave webhook (`awardJob()` in `apps/api/src/db/queries/marketplace.ts`) — picks the lowest qualifying bid unless a preferred provider is specified. No cron/retry exists yet for jobs that receive zero bids before the award attempt.
 - **Agreement visibility:** Only visible to the two parties involved (landlord + tenant)
 - **Property deletion:** Soft delete only (is_deleted flag, never hard delete)
 - **Monetary storage:** All values stored in **Naira** (2 decimal places) in DB; Flutterwave amounts are in Naira — never convert to kobo

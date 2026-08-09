@@ -6,7 +6,7 @@ interface User {
   id: string;
   email: string;
   name: string;
-  role: 'LANDLORD' | 'TENANT';
+  role: 'LANDLORD' | 'TENANT' | 'PROVIDER';
 }
 
 export function useAuth() {
@@ -38,6 +38,7 @@ export function useAuth() {
     isAuthenticated: !!user,
     isLandlord: user?.role === 'LANDLORD',
     isTenant: user?.role === 'TENANT',
+    isProvider: user?.role === 'PROVIDER',
     logout,
   };
 }

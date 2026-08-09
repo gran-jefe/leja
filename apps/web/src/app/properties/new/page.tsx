@@ -22,6 +22,7 @@ const propertySchema = z.object({
   bedrooms: z.coerce.number().min(1, 'Bedrooms must be at least 1'),
   bathrooms: z.coerce.number().min(1, 'Bathrooms must be at least 1'),
   monthlyRent: z.coerce.number().min(1, 'Monthly rent is required'),
+  requiresInsurance: z.boolean().optional().default(false),
 });
 
 type PropertyFormData = z.infer<typeof propertySchema>;
@@ -133,6 +134,26 @@ export default function NewPropertyPage() {
                   value={annualRent}
                   readOnly
                 />
+                <div className="border border-border rounded-button p-4">
+                  <label className="flex items-start gap-3 cursor-pointer font-body">
+                    <input
+                      type="checkbox"
+                      {...register('requiresInsurance')}
+                      className="w-4 h-4 mt-1"
+                    />
+                    <span>
+                      <span className="block font-semibold text-charcoal">
+                        Require rent-protection insurance for this property
+                      </span>
+                      <span className="block text-sm text-muted mt-1">
+                        A condition of tenancy you set, not us — protects you against unpaid rent
+                        and property damage. Licensed insurers bid to underwrite it; you pay the
+                        premium, we take a commission. Shown to tenants as an "Insured Tenancy"
+                        badge on your listing.
+                      </span>
+                    </span>
+                  </label>
+                </div>
                 <Button variant="primary" className="w-full" loading={loading}>
                   Save Property
                 </Button>

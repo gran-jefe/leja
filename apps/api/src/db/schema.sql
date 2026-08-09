@@ -42,6 +42,13 @@ CREATE TABLE IF NOT EXISTS properties (
   monthly_rent NUMERIC(12,2) NOT NULL,
   annual_rent NUMERIC(12,2) NOT NULL,
   is_available BOOLEAN DEFAULT true,
+  -- Landlord-set condition of tenancy, not a platform mandate: when true,
+  -- rent-protection insurance is posted to the bid marketplace automatically
+  -- on agreement acceptance rather than left to the tenant's opt-in
+  -- checkbox. Landlord is the requester/payer — this product protects
+  -- their asset, not the tenant's. Surfaced on the listing as a trust
+  -- badge ("Insured Tenancy").
+  requires_insurance BOOLEAN DEFAULT false,
   is_deleted BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -94,7 +101,7 @@ CREATE TABLE IF NOT EXISTS payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id),
   agreement_id UUID REFERENCES agreements(id),
-  type TEXT NOT NULL CHECK (type IN ('TENANT_MOVE_IN_FEE','TENANT_LAWYER_REVIEW','RENTAL_HISTORY_EXPORT','LANDLORD_SUBSCRIPTION')),
+  type TEXT NOT NULL CHECK (type IN ('TENANT_MOVE_IN_FEE','TENANT_LAWYER_REVIEW','RENTAL_HISTORY_EXPORT','LANDLORD_SUBSCRIPTION','PROVIDER_SUBSCRIPTION')),
   amount NUMERIC(12,2) NOT NULL,
   status TEXT DEFAULT 'PENDING' CHECK (status IN ('PENDING','SUCCESS','FAILED')),
   paystack_reference TEXT UNIQUE NOT NULL, -- legacy column name, now stores the Flutterwave tx_ref
@@ -148,6 +155,15 @@ CREATE TABLE IF NOT EXISTS service_providers (
   license_verified BOOLEAN DEFAULT false,
   status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'ACTIVE', 'SUSPENDED')),
   subscription_tier TEXT NOT NULL DEFAULT 'STANDARD' CHECK (subscription_tier IN ('STANDARD', 'PRIORITY')),
+  -- Null or in the past means effectively STANDARD regardless of the tier
+  -- column above — checked at read time rather than via a cron downgrade.
+  subscription_expires_at TIMESTAMPTZ,
+  -- EXTERNAL providers compete in the open bid marketplace (currently
+  -- INSURANCE, and any future category). INTERNAL providers are
+  -- BeyondAgency's own salaried staff (currently LEGAL) — they don't bid,
+  -- they're auto-assigned jobs at a flat platform-set price. Onboarded via
+  -- an admin-only endpoint, not the public /providers/apply flow.
+  employment_type TEXT NOT NULL DEFAULT 'EXTERNAL' CHECK (employment_type IN ('INTERNAL', 'EXTERNAL')),
   rating NUMERIC(3,2),
   rating_count INT DEFAULT 0,
   is_deleted BOOLEAN DEFAULT false,

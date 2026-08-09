@@ -5,6 +5,7 @@ import { UserRole } from '@beyond/shared';
 import { insuranceInterestSchema } from '../lib/schemas';
 import { createInsuranceInterest, findInsuranceInterestsByTenant } from '../db/queries/insurance';
 import { findAgreementById } from '../db/queries/agreements';
+import { createInsuranceJob } from '../db/queries/marketplace';
 
 const router = Router();
 
@@ -42,10 +43,23 @@ router.post(
         productType,
       });
 
+      // Actually post the job to the bid marketplace — expressing interest
+      // now genuinely puts this in front of licensed insurers, it doesn't
+      // just sit in a lead list. Non-fatal if this fails: the interest
+      // record still exists and can be manually followed up.
+      let job = null;
+      try {
+        job = await createInsuranceJob(agreementId, req.user!.id);
+      } catch (err) {
+        console.error(`[MARKETPLACE] Failed to post insurance job for agreement ${agreementId}:`, err);
+      }
+
       return res.status(201).json({
         success: true,
-        data: interest,
-        message: 'Insurance interest recorded',
+        data: { interest, job },
+        message: job
+          ? 'Insurance interest recorded and posted for insurer bids'
+          : 'Insurance interest recorded',
       });
     } catch (error) {
       next(error);

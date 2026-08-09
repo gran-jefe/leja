@@ -17,7 +17,7 @@ import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useProperties } from '@/hooks/useProperties';
 import { useCreateAgreement } from '@/hooks/useAgreements';
-import { UserRole, BEYOND_PRICING, calculateLegalizationFee } from '@beyond/shared';
+import { UserRole, BEYOND_PRICING } from '@beyond/shared';
 import { formatNaira, calculateAnnualRent } from '@/lib/utils';
 import { PROPERTY_TYPE_LABELS } from '@/lib/constants';
 
@@ -41,9 +41,6 @@ function NewAgreementForm() {
   const { createAgreement, loading: submitting, error: agreementError } = useCreateAgreement();
   const [step, setStep] = useState(1);
   const [wantsLawyerReview, setWantsLawyerReview] = useState(false);
-  const [legalizationFeeRatePercent, setLegalizationFeeRatePercent] = useState(
-    BEYOND_PRICING.LEGALIZATION_FEE_RATE * 100
-  );
   const [formData, setFormData] = useState<Partial<FormState>>({});
 
   const selectedProperty = properties.find((p) => p.id === formData.propertyId);
@@ -80,10 +77,7 @@ function NewAgreementForm() {
 
   const monthlyRent = formData.monthlyRent || 0;
   const annualRent = calculateAnnualRent(monthlyRent);
-  const legalizationFee = calculateLegalizationFee(annualRent, legalizationFeeRatePercent / 100);
-  const tenantTotal = wantsLawyerReview
-    ? legalizationFee + BEYOND_PRICING.LAWYER_REVIEW_ADDON
-    : legalizationFee;
+  const tenantTotal = wantsLawyerReview ? BEYOND_PRICING.LAWYER_REVIEW_ADDON : 0;
 
   const handleSubmit = async () => {
     const result = await createAgreement({
@@ -94,7 +88,6 @@ function NewAgreementForm() {
       monthlyRent,
       annualRent,
       wantsLawyerReview,
-      legalizationFeeRate: legalizationFeeRatePercent / 100,
     });
 
     const agreement = result?.agreement;
@@ -227,34 +220,12 @@ function NewAgreementForm() {
                 error={tenancyForm.formState.errors.monthlyRent?.message}
               />
 
-              <div className="border border-border rounded-button p-4">
-                <label className="block font-semibold text-charcoal font-body mb-1">
-                  Legalization &amp; Protection fee rate
-                </label>
-                <p className="text-sm text-muted font-body mb-3">
-                  Default is {BEYOND_PRICING.LEGALIZATION_FEE_RATE * 100}% of annual rent. You may
-                  negotiate between {BEYOND_PRICING.LEGALIZATION_FEE_MIN_RATE * 100}% and{' '}
-                  {BEYOND_PRICING.LEGALIZATION_FEE_MAX_RATE * 100}% — paid by your tenant, floored
-                  at {formatNaira(BEYOND_PRICING.LEGALIZATION_FEE_FLOOR)} and capped at{' '}
-                  {formatNaira(BEYOND_PRICING.LEGALIZATION_FEE_CAP)}.
+              <div className="border border-border rounded-button p-4 bg-forest bg-opacity-5">
+                <p className="font-body text-sm text-charcoal">
+                  <span className="font-semibold text-forest">Connecting and this agreement are free</span>
+                  {' '}— no fee for you or your tenant. Vetted providers only get paid if you or
+                  your tenant choose an optional add-on below.
                 </p>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="number"
-                    min={BEYOND_PRICING.LEGALIZATION_FEE_MIN_RATE * 100}
-                    max={BEYOND_PRICING.LEGALIZATION_FEE_MAX_RATE * 100}
-                    step={0.5}
-                    value={legalizationFeeRatePercent}
-                    onChange={(e) => setLegalizationFeeRatePercent(Number(e.target.value))}
-                    className="w-24 px-3 py-2 border border-border rounded-button focus:outline-none focus:ring-2 focus:ring-forest font-body"
-                  />
-                  <span className="font-body text-charcoal">%</span>
-                  {annualRent > 0 && (
-                    <span className="font-body text-sm text-muted">
-                      = {formatNaira(legalizationFee)}
-                    </span>
-                  )}
-                </div>
               </div>
 
               <div className="border border-border rounded-button p-4">
@@ -270,8 +241,9 @@ function NewAgreementForm() {
                       Would you like lawyer review for this agreement?
                     </span>
                     <span className="block text-sm text-muted mt-1">
-                      Lawyer review: {formatNaira(BEYOND_PRICING.LAWYER_REVIEW_ADDON)} — paid by
-                      your tenant, included in their Legalization &amp; Protection fee.
+                      Optional. Reviewed by our in-house legal team, not an open marketplace —
+                      one flat fee of {formatNaira(BEYOND_PRICING.LAWYER_REVIEW_ADDON)}, paid by
+                      your tenant.
                     </span>
                   </span>
                 </label>
@@ -312,28 +284,23 @@ function NewAgreementForm() {
                   <span className="font-semibold">Annual Rent:</span> {formatNaira(annualRent)}
                 </p>
                 <p>
-                  <span className="font-semibold">Legalization Fee Rate:</span>{' '}
-                  {legalizationFeeRatePercent}%
-                </p>
-                <p>
                   <span className="font-semibold">Lawyer Review:</span>{' '}
-                  {wantsLawyerReview ? 'Requested' : 'Not requested'}
+                  {wantsLawyerReview ? 'Requested (optional add-on)' : 'Not requested'}
                 </p>
               </div>
             </Card>
 
             <Card className="bg-navy">
               <p className="font-body text-sm text-white text-opacity-70 mb-2">
-                Your tenant will be asked to pay
+                Your tenant will pay
               </p>
               <p className="font-display text-3xl font-bold text-ember mb-2">
-                {formatNaira(tenantTotal)}
+                {tenantTotal > 0 ? formatNaira(tenantTotal) : 'Nothing — free'}
               </p>
               <p className="font-body text-sm text-white text-opacity-70">
-                {formatNaira(legalizationFee)} Legalization &amp; Protection fee
-                {wantsLawyerReview && ` + ${formatNaira(BEYOND_PRICING.LAWYER_REVIEW_ADDON)} lawyer review`}
-                . This replaces the {formatNaira(BEYOND_PRICING.TYPICAL_AGENT_FEE)}+ they would have
-                paid an agent.
+                {wantsLawyerReview
+                  ? `Connecting and the agreement itself are free. Only the optional lawyer review is paid — a flat ${formatNaira(BEYOND_PRICING.LAWYER_REVIEW_ADDON)}, handled by our in-house legal team.`
+                  : `Connecting and the agreement itself are completely free — this replaces the ${formatNaira(BEYOND_PRICING.TYPICAL_AGENT_FEE)}+ they would have paid an agent.`}
               </p>
             </Card>
 

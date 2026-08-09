@@ -4,23 +4,43 @@ import { verifyPayment, verifyWebhookSignature } from '../lib/flutterwave';
 import { markPaymentSuccessful } from '../db/queries/payments';
 import { generateAndSaveAgreementPDF } from '../lib/pdf';
 import { findAgreementById } from '../db/queries/agreements';
-import { createLegalizationJob, awardJob } from '../db/queries/marketplace';
+import { createAndAssignLegalReviewJob, awardJob, upgradeProviderSubscription } from '../db/queries/marketplace';
+import { PaymentType } from '@beyond/shared';
 
 const router = Router();
 
-// Posts the legalization job to the bid marketplace and attempts an
-// immediate award. If no providers have bid yet, awardJob is a safe no-op —
-// the job stays OPEN until a provider bids (a retry/cron sweep to award
-// once a bid lands after the fact is a later pass, not built here).
-const postLegalizationJobAndAward = async (agreementId: string) => {
+// Provider subscription payments have no agreement_id — this is the
+// non-agreement counterpart to the lawyer-review handler below.
+const handleProviderSubscriptionPayment = async (payment: { metadata?: Record<string, unknown> | null }) => {
+  const providerId = payment.metadata?.providerId as string | undefined;
+  if (!providerId) {
+    console.error('[MARKETPLACE] PROVIDER_SUBSCRIPTION payment confirmed with no providerId in metadata');
+    return;
+  }
+  try {
+    await upgradeProviderSubscription(providerId);
+  } catch (err) {
+    console.error(`[MARKETPLACE] Failed to upgrade provider ${providerId} subscription:`, err);
+  }
+};
+
+// Posts the optional lawyer-review job and assigns it to whichever
+// in-house lawyer has the lightest load — no open bidding, since legal
+// review is delivered by BeyondAgency's own salaried team, not independent
+// bidders. Only ever called for TENANT_LAWYER_REVIEW payments — the base
+// agreement is free and never goes through this. The extra awardJob call
+// is a safety net for the rare case no internal lawyer is onboarded yet
+// (job falls back to the old open-bid shape); it's a no-op once already
+// awarded internally.
+const postLawyerReviewJobAndAward = async (agreementId: string) => {
   try {
     const agreement = await findAgreementById(agreementId);
     if (!agreement) return;
 
-    const job = await createLegalizationJob(agreementId, agreement.tenant_id);
+    const job = await createAndAssignLegalReviewJob(agreementId, agreement.tenant_id);
     await awardJob(job.id);
   } catch (err) {
-    console.error(`[MARKETPLACE] Failed to post/award legalization job for agreement ${agreementId}:`, err);
+    console.error(`[MARKETPLACE] Failed to post/assign lawyer review job for agreement ${agreementId}:`, err);
   }
 };
 
@@ -54,9 +74,13 @@ router.post('/webhook', async (req: Request, res: Response) => {
         const payment = await markPaymentSuccessful(data.tx_ref);
 
         if (payment?.agreement_id) {
-          console.log(`[WEBHOOK] Legalization & Protection fee confirmed for agreement ${payment.agreement_id}`);
+          console.log(`[WEBHOOK] Payment confirmed for agreement ${payment.agreement_id} (${payment.type})`);
           triggerAgreementPDF(payment.agreement_id);
-          void postLegalizationJobAndAward(payment.agreement_id);
+          if (payment.type === PaymentType.TENANT_LAWYER_REVIEW) {
+            void postLawyerReviewJobAndAward(payment.agreement_id);
+          }
+        } else if (payment?.type === PaymentType.PROVIDER_SUBSCRIPTION) {
+          void handleProviderSubscriptionPayment(payment);
         }
       }
     } else {
@@ -80,7 +104,11 @@ router.post('/verify/:transactionId', authenticateToken, async (req: Request, re
 
       if (payment?.agreement_id) {
         triggerAgreementPDF(payment.agreement_id);
-        void postLegalizationJobAndAward(payment.agreement_id);
+        if (payment.type === PaymentType.TENANT_LAWYER_REVIEW) {
+          void postLawyerReviewJobAndAward(payment.agreement_id);
+        }
+      } else if (payment?.type === PaymentType.PROVIDER_SUBSCRIPTION) {
+        void handleProviderSubscriptionPayment(payment);
       }
     }
 

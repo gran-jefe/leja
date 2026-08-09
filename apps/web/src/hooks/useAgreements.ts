@@ -144,7 +144,13 @@ export function useAcceptAgreement() {
     setError('');
     try {
       const { data: response } = await api.post(`/agreements/${id}/accept`);
-      return response.data as { paymentLink: string; reference: string; total: number; breakdown: any };
+      return response.data as {
+        agreement: any;
+        paymentLink: string | null;
+        reference?: string;
+        total: number;
+        breakdown?: any;
+      };
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to accept agreement'));
       return null;

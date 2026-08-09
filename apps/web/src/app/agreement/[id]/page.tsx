@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Spinner } from '@/components/ui/Spinner';
-import { FileDown, CheckCircle2, CheckCircle, FileText, Copy, Check } from 'lucide-react';
+import { FileDown, CheckCircle2, CheckCircle, FileText, Copy, Check, Gavel, Shield } from 'lucide-react';
 import { useAgreement } from '@/hooks/useAgreements';
 import { useAuth } from '@/hooks/useAuth';
 import api from '@/lib/api';
@@ -33,6 +33,8 @@ function AgreementContent() {
   const [requestingReview, setRequestingReview] = useState(false);
   const [reviewError, setReviewError] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
+  const [legalJob, setLegalJob] = useState<any>(null);
+  const [insuranceJob, setInsuranceJob] = useState<any>(null);
 
   const justCreated = searchParams.get('created') === '1';
   const justPaid = searchParams.get('payment') === 'success';
@@ -49,6 +51,34 @@ function AgreementContent() {
 
     return () => clearInterval(interval);
   }, [isGeneratingPdf, isPendingPayment, refetch]);
+
+  useEffect(() => {
+    if (agreement?.status !== 'ACTIVE') return;
+
+    let cancelled = false;
+    const fetchJobs = async () => {
+      try {
+        const [legalRes, insuranceRes] = await Promise.all([
+          api.get(`/marketplace/jobs/by-agreement/${id}`, { params: { category: 'LEGAL' } }),
+          api.get(`/marketplace/jobs/by-agreement/${id}`, { params: { category: 'INSURANCE' } }),
+        ]);
+        if (!cancelled) {
+          setLegalJob(legalRes.data.data);
+          setInsuranceJob(insuranceRes.data.data);
+        }
+      } catch {
+        // Non-critical — the marketplace status is a nice-to-have on this page.
+      }
+    };
+
+    fetchJobs();
+    const anyOpen = legalJob?.status === 'OPEN' || insuranceJob?.status === 'OPEN';
+    const interval = anyOpen ? setInterval(fetchJobs, 8000) : undefined;
+    return () => {
+      cancelled = true;
+      if (interval) clearInterval(interval);
+    };
+  }, [agreement?.status, id, legalJob?.status, insuranceJob?.status]);
 
   const handleRequestLawyerReview = async () => {
     setRequestingReview(true);
@@ -222,6 +252,61 @@ function AgreementContent() {
             <div className="mt-4 p-3 bg-ember bg-opacity-10 text-ember rounded-button text-sm font-body">
               {reviewError}
             </div>
+          )}
+
+          {/* ACTIVE — in-house lawyer review assignment status */}
+          {agreement.status === 'ACTIVE' && legalJob && (
+            <Card className="mb-6">
+              <div className="flex items-center gap-3 mb-1">
+                <Gavel className="text-forest flex-shrink-0" size={20} />
+                <h3 className="font-display text-base font-semibold text-navy">
+                  Lawyer Review
+                </h3>
+              </div>
+              {legalJob.status === 'OPEN' ? (
+                <p className="font-body text-sm text-muted">
+                  Assigning your agreement to a member of our in-house legal team — typically
+                  within a few hours. This page updates automatically.
+                </p>
+              ) : legalJob.status === 'AWARDED' || legalJob.status === 'COMPLETED' ? (
+                <p className="font-body text-sm text-charcoal">
+                  Assigned to a member of our in-house legal team for review.
+                </p>
+              ) : (
+                <p className="font-body text-sm text-muted">
+                  No lawyer has been assigned yet — our team will follow up if this takes longer
+                  than expected.
+                </p>
+              )}
+            </Card>
+          )}
+
+          {/* ACTIVE — insurance bid marketplace status */}
+          {agreement.status === 'ACTIVE' && insuranceJob && (
+            <Card className="mb-6">
+              <div className="flex items-center gap-3 mb-1">
+                <Shield className="text-forest flex-shrink-0" size={20} />
+                <h3 className="font-display text-base font-semibold text-navy">
+                  Rent-Protection Insurance
+                </h3>
+              </div>
+              {insuranceJob.status === 'OPEN' ? (
+                <p className="font-body text-sm text-muted">
+                  Posted to our licensed insurer network — bidding is open now. This page updates
+                  automatically once an insurer is matched.
+                </p>
+              ) : insuranceJob.status === 'AWARDED' || insuranceJob.status === 'COMPLETED' ? (
+                <p className="font-body text-sm text-charcoal">
+                  Matched with a licensed insurer
+                  {insuranceJob.winning_bid ? ` — quoted ${formatNaira(insuranceJob.winning_bid.price)}` : ''}.
+                  They'll be in touch to finalize the policy.
+                </p>
+              ) : (
+                <p className="font-body text-sm text-muted">
+                  No insurer bid before the window closed — our team will follow up directly.
+                </p>
+              )}
+            </Card>
           )}
 
           {/* ACTIVE — existing PDF / lawyer review actions */}

@@ -10,6 +10,7 @@ interface CreatePropertyInput {
   bathrooms: number;
   monthlyRent: number;
   annualRent: number;
+  requiresInsurance?: boolean;
 }
 
 export const createProperty = async (data: CreatePropertyInput) => {
@@ -25,6 +26,7 @@ export const createProperty = async (data: CreatePropertyInput) => {
       bathrooms: data.bathrooms,
       monthly_rent: data.monthlyRent,
       annual_rent: data.annualRent,
+      requires_insurance: data.requiresInsurance ?? false,
     })
     .select('*')
     .single();
@@ -148,6 +150,7 @@ interface UpdatePropertyInput {
   monthlyRent?: number;
   annualRent?: number;
   isAvailable?: boolean;
+  requiresInsurance?: boolean;
 }
 
 export const updateProperty = async (id: string, data: UpdatePropertyInput) => {
@@ -160,6 +163,7 @@ export const updateProperty = async (id: string, data: UpdatePropertyInput) => {
   if (data.monthlyRent !== undefined) updateData.monthly_rent = data.monthlyRent;
   if (data.annualRent !== undefined) updateData.annual_rent = data.annualRent;
   if (data.isAvailable !== undefined) updateData.is_available = data.isAvailable;
+  if (data.requiresInsurance !== undefined) updateData.requires_insurance = data.requiresInsurance;
 
   const { data: property, error } = await supabase
     .from('properties')

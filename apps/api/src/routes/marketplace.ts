@@ -2,22 +2,41 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { agreementRateLimit } from '../middleware/rateLimit';
 import { UserRole } from '@beyond/shared';
-import { providerApplySchema, submitBidSchema } from '../lib/schemas';
+import { providerApplySchema, internalProviderSchema, submitBidSchema } from '../lib/schemas';
 import {
   applyAsProvider,
+  createInternalProvider,
   findProviderById,
   findProviderByUserAndCategory,
+  findPendingProviders,
   verifyProvider,
   findOpenJobsForCategory,
   findJobById,
   upsertBid,
   findBidsByProvider,
+  findJobByAgreement,
+  effectiveSubscriptionTier,
 } from '../db/queries/marketplace';
+import { findAgreementById } from '../db/queries/agreements';
+import { findUserByEmail } from '../db/queries/users';
+import { createPendingPayment } from '../db/queries/payments';
+import { initializePayment, generateReference } from '../lib/flutterwave';
+import { PaymentType, BEYOND_PRICING } from '@beyond/shared';
+import { config } from '../config';
 
 const router = Router();
 
-// Providers apply from any authenticated account (a PROVIDER-role signup
-// flow can be added later; for now any user can apply and is reviewed).
+// Admin-only. There is no dedicated ADMIN role yet — gate on an explicit
+// allowlist of admin emails via env until one exists, so this can't be
+// called by an ordinary authenticated user.
+const isAdmin = (email?: string) => {
+  const admins = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase());
+  return !!email && admins.includes(email.toLowerCase());
+};
+
+// Public application flow — EXTERNAL providers only (currently INSURANCE;
+// more categories as the marketplace expands). LEGAL is staffed in-house,
+// salaried — there's no open application for it. See /providers/internal.
 router.post(
   '/providers/apply',
   authenticateToken,
@@ -29,6 +48,14 @@ router.post(
         return res.status(400).json({
           success: false,
           errors: parsed.error.errors.map((e) => e.message),
+        });
+      }
+
+      if (parsed.data.category === 'LEGAL') {
+        return res.status(400).json({
+          success: false,
+          message:
+            'Legal review is delivered by our in-house team, not an open bid — we hire lawyers directly rather than accepting applications here. Reach out via the careers page if interested.',
         });
       }
 
@@ -57,14 +84,84 @@ router.post(
   }
 );
 
-// Admin-only license verification. There is no dedicated ADMIN role yet —
-// gate on an explicit allowlist of admin emails via env until one exists,
-// so this can't be called by an ordinary authenticated user.
-const isAdmin = (email?: string) => {
-  const admins = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase());
-  return !!email && admins.includes(email.toLowerCase());
-};
+// Admin-only onboarding for BeyondAgency's own salaried staff (e.g. a
+// newly-hired in-house lawyer). Bypasses the public apply/verify flow —
+// goes straight to an ACTIVE, INTERNAL provider record.
+router.post(
+  '/providers/internal',
+  authenticateToken,
+  agreementRateLimit,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!isAdmin(req.user!.email)) {
+        return res.status(403).json({ success: false, message: 'Forbidden: admin only' });
+      }
 
+      const parsed = internalProviderSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          success: false,
+          errors: parsed.error.errors.map((e) => e.message),
+        });
+      }
+
+      const user = await findUserByEmail(parsed.data.email);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'No BeyondAgency account with that email yet — they need to sign up first',
+        });
+      }
+
+      const provider = await createInternalProvider({
+        userId: user.id,
+        category: parsed.data.category,
+        licenseNumber: parsed.data.licenseNumber,
+      });
+
+      return res.status(201).json({
+        success: true,
+        data: provider,
+        message: 'Internal provider onboarded and active',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Lets the web admin UI check "am I even allowed to be here" once, instead
+// of every admin action failing individually with a 403 the UI has to
+// interpret. Returns isAdmin: false rather than a 403 for a non-admin —
+// this endpoint itself is safe to call from anyone, it reveals nothing.
+router.get('/admin/whoami', authenticateToken, async (req: Request, res: Response) => {
+  return res.json({ success: true, data: { isAdmin: isAdmin(req.user!.email) } });
+});
+
+// Admin-only queue of external provider applications awaiting verification.
+router.get(
+  '/providers/pending',
+  authenticateToken,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!isAdmin(req.user!.email)) {
+        return res.status(403).json({ success: false, message: 'Forbidden: admin only' });
+      }
+
+      const providers = await findPendingProviders();
+
+      return res.json({
+        success: true,
+        data: providers,
+        message: 'Pending providers retrieved',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Admin-only license verification — for EXTERNAL provider applications.
 router.post(
   '/providers/:id/verify',
   authenticateToken,
@@ -111,7 +208,7 @@ router.get(
         });
       }
 
-      const jobs = await findOpenJobsForCategory(category, provider.subscription_tier);
+      const jobs = await findOpenJobsForCategory(category, effectiveSubscriptionTier(provider));
 
       return res.json({
         success: true,
@@ -188,6 +285,89 @@ router.post(
 );
 
 router.get(
+  '/providers/me',
+  authenticateToken,
+  requireRole(UserRole.PROVIDER),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const provider =
+        (await findProviderByUserAndCategory(req.user!.id, 'LEGAL')) ||
+        (await findProviderByUserAndCategory(req.user!.id, 'INSURANCE'));
+
+      if (!provider) {
+        return res.json({ success: true, data: null, message: 'No provider profile yet' });
+      }
+
+      return res.json({
+        success: true,
+        data: { ...provider, effective_subscription_tier: effectiveSubscriptionTier(provider) },
+        message: 'Provider profile retrieved',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// External providers pay for 30 days of PRIORITY-tier bid-pool access
+// (immediate job visibility instead of the STANDARD visibility delay).
+// Actual upgrade happens on payment webhook confirmation, not here.
+router.post(
+  '/providers/subscribe',
+  authenticateToken,
+  requireRole(UserRole.PROVIDER),
+  agreementRateLimit,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const provider =
+        (await findProviderByUserAndCategory(req.user!.id, 'LEGAL')) ||
+        (await findProviderByUserAndCategory(req.user!.id, 'INSURANCE'));
+
+      if (!provider) {
+        return res.status(404).json({ success: false, message: 'No provider profile found' });
+      }
+      if (provider.employment_type === 'INTERNAL') {
+        return res.status(400).json({
+          success: false,
+          message: 'Priority subscriptions are for external bidding providers only',
+        });
+      }
+
+      const amount = BEYOND_PRICING.PROVIDER_PRIORITY_SUBSCRIPTION;
+      const reference = generateReference('BEYOND_PROVIDER_SUB');
+
+      const { paymentLink } = await initializePayment({
+        email: req.user!.email,
+        amount,
+        reference,
+        name: req.user!.name || req.user!.email,
+        redirectUrl: `${config.frontendUrl}/provider/dashboard?subscription=success`,
+        meta: {
+          providerId: provider.id,
+          paymentType: PaymentType.PROVIDER_SUBSCRIPTION,
+        },
+      });
+
+      await createPendingPayment({
+        userId: req.user!.id,
+        type: PaymentType.PROVIDER_SUBSCRIPTION,
+        amount,
+        reference,
+        metadata: { providerId: provider.id },
+      });
+
+      return res.json({
+        success: true,
+        data: { paymentLink, reference, amount },
+        message: 'Subscription payment initiated',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get(
   '/providers/me/bids',
   authenticateToken,
   requireRole(UserRole.PROVIDER),
@@ -207,6 +387,39 @@ router.get(
         success: true,
         data: bids,
         message: 'Bid history retrieved',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Lets the tenant/landlord on an agreement check whether a job (legal
+// review or insurance) has been matched with a provider yet.
+router.get(
+  '/jobs/by-agreement/:agreementId',
+  authenticateToken,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const category = (req.query.category as string) || 'LEGAL';
+      if (!['LEGAL', 'INSURANCE'].includes(category)) {
+        return res.status(400).json({ success: false, message: 'category must be LEGAL or INSURANCE' });
+      }
+
+      const agreement = await findAgreementById(req.params.agreementId);
+      if (!agreement) {
+        return res.status(404).json({ success: false, message: 'Agreement not found' });
+      }
+      if (![agreement.landlord_id, agreement.tenant_id].includes(req.user!.id)) {
+        return res.status(403).json({ success: false, message: 'Forbidden' });
+      }
+
+      const job = await findJobByAgreement(req.params.agreementId, category);
+
+      return res.json({
+        success: true,
+        data: job,
+        message: job ? 'Job status retrieved' : 'No job yet',
       });
     } catch (error) {
       next(error);

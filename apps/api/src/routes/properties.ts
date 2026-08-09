@@ -18,7 +18,7 @@ router.post(
   requireRole(UserRole.LANDLORD),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { address, city, state, propertyType, bedrooms, bathrooms, monthlyRent } = req.body;
+      const { address, city, state, propertyType, bedrooms, bathrooms, monthlyRent, requiresInsurance } = req.body;
       const annualRent = Number(monthlyRent) * 12;
 
       const property = await createProperty({
@@ -31,6 +31,7 @@ router.post(
         bathrooms: Number(bathrooms),
         monthlyRent: Number(monthlyRent),
         annualRent,
+        requiresInsurance: Boolean(requiresInsurance),
       });
 
       return res.status(201).json({
@@ -123,8 +124,17 @@ router.patch(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-      const { address, city, state, bedrooms, bathrooms, monthlyRent, annualRent, isAvailable } =
-        req.body;
+      const {
+        address,
+        city,
+        state,
+        bedrooms,
+        bathrooms,
+        monthlyRent,
+        annualRent,
+        isAvailable,
+        requiresInsurance,
+      } = req.body;
 
       const property = await updateProperty(id, {
         address,
@@ -135,6 +145,7 @@ router.patch(
         monthlyRent: monthlyRent !== undefined ? Number(monthlyRent) : undefined,
         annualRent: annualRent !== undefined ? Number(annualRent) : undefined,
         isAvailable,
+        requiresInsurance,
       });
 
       return res.json({

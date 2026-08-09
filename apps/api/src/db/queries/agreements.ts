@@ -1,5 +1,5 @@
 import { supabase } from '../index';
-import { calculateLegalizationFee, clampLegalizationRate } from '@beyond/shared';
+import { calculateLegalizationFee } from '@beyond/shared';
 import { findUserByEmail } from './users';
 import { findPropertyById } from './properties';
 
@@ -27,8 +27,11 @@ export class PropertyOwnershipError extends Error {
   status = 403;
 }
 
-// Landlord-only, free draft creation — no payment involved. The tenant pays
-// the Legalization & Protection fee later, at acceptance (POST /:id/accept).
+// Landlord-only, free draft creation — no payment involved, and the
+// agreement itself is free to accept. legalization_fee_rate/amount are no
+// longer computed or charged (see BEYOND_PRICING.BASE_LEGALIZATION_FEE) —
+// left null for new agreements. They still exist as columns only so
+// pre-pivot agreements can resolve their historical snapshotted fee.
 export const createAgreementDraft = async (input: CreateAgreementDraftInput) => {
   const tenant = await findUserByEmail(input.tenantEmail);
   if (!tenant) {
@@ -45,11 +48,6 @@ export const createAgreementDraft = async (input: CreateAgreementDraftInput) => 
     throw new PropertyOwnershipError('You do not own this property');
   }
 
-  // Snapshotted here, once — a later change to the platform's default rate
-  // must never alter an already-created agreement's fee.
-  const legalizationFeeRate = clampLegalizationRate(input.legalizationFeeRate);
-  const legalizationFeeAmount = calculateLegalizationFee(input.annualRent, legalizationFeeRate);
-
   const { data: agreement, error } = await supabase
     .from('agreements')
     .insert({
@@ -62,8 +60,8 @@ export const createAgreementDraft = async (input: CreateAgreementDraftInput) => 
       annual_rent: input.annualRent,
       status: 'DRAFT',
       lawyer_review_status: input.wantsLawyerReview ? 'PENDING' : 'NOT_REQUESTED',
-      legalization_fee_rate: legalizationFeeRate,
-      legalization_fee_amount: legalizationFeeAmount,
+      legalization_fee_rate: null,
+      legalization_fee_amount: null,
     })
     .select('*')
     .single();
@@ -77,12 +75,12 @@ export const createAgreementDraft = async (input: CreateAgreementDraftInput) => 
 export const wantsLawyerReview = (agreement: { lawyer_review_status: string }) =>
   agreement.lawyer_review_status !== 'NOT_REQUESTED';
 
-// Resolves the fee to charge from the agreement's own snapshot rather than
-// ever trusting a client-supplied amount. Recomputes from the snapshotted
-// rate + annual rent and cross-checks against the stored amount — a
-// mismatch means the row was tampered with or corrupted, not something to
-// silently paper over. Pre-migration agreements (no snapshot yet) fall back
-// to a fresh calculation at the default rate.
+// Legacy — not used in the charging path anymore (base agreements are
+// free, see BEYOND_PRICING.BASE_LEGALIZATION_FEE). Kept only to resolve
+// what a pre-pivot agreement's fee snapshot actually was, e.g. for admin
+// display or historical payment reconciliation. Recomputes from the
+// snapshotted rate + annual rent and cross-checks against the stored
+// amount — a mismatch means the row was tampered with or corrupted.
 export const resolveLegalizationFee = (agreement: {
   annual_rent: number;
   legalization_fee_rate: number | null;
@@ -112,7 +110,7 @@ const enrichAgreements = async (agreements: any[]) => {
 
   const [{ data: properties }, { data: users }] = await Promise.all([
     propertyIds.length
-      ? supabase.from('properties').select('id, address, city, state').in('id', propertyIds)
+      ? supabase.from('properties').select('id, address, city, state, requires_insurance').in('id', propertyIds)
       : Promise.resolve({ data: [] as any[] }),
     supabase.from('users').select('id, name, email').in('id', userIds),
   ]);

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Shield } from 'lucide-react';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
 import { Button } from '@/components/ui/Button';
@@ -11,11 +11,9 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgreementPreview, useAcceptAgreement, useDeclineAgreement } from '@/hooks/useAgreements';
-import { UserRole, BEYOND_PRICING } from '@beyond/shared';
+import { UserRole } from '@beyond/shared';
 import { formatNaira, formatDate } from '@/lib/utils';
 import api from '@/lib/api';
-
-const LEGALIZATION_FEE_RATE_PERCENT = Math.round(BEYOND_PRICING.LEGALIZATION_FEE_RATE * 100);
 
 function monthsBetween(start?: string, end?: string) {
   if (!start || !end) return null;
@@ -73,17 +71,23 @@ function ReviewContent() {
 
   const handleAccept = async () => {
     const result = await acceptAgreement(id);
-    if (!result?.paymentLink) return;
+    if (!result) return;
 
     if (wantsInsurance) {
       try {
         await api.post('/insurance/interest', { agreementId: id, productType: 'RENT_PROTECTION' });
       } catch {
-        // Non-blocking — insurance interest is a nice-to-have, never delay payment over it.
+        // Non-blocking — insurance interest is a nice-to-have, never delay acceptance over it.
       }
     }
 
-    window.location.href = result.paymentLink;
+    // Base acceptance is free — only redirect to a payment page if the
+    // tenant opted into the paid lawyer-review add-on.
+    if (result.paymentLink) {
+      window.location.href = result.paymentLink;
+    } else {
+      router.push(`/agreement/${id}?created=1`);
+    }
   };
 
   const handleDecline = async () => {
@@ -133,23 +137,24 @@ function ReviewContent() {
         <p className="font-body text-sm text-white text-opacity-70 mb-3">What you'll pay today</p>
         <div className="space-y-2 font-body text-white">
           <div className="flex justify-between">
-            <span>Legalization &amp; Protection fee</span>
-            <span>{formatNaira(pricing.moveInFee)}</span>
+            <span>Connecting &amp; standardized agreement</span>
+            <span className="text-forest font-semibold">Free</span>
           </div>
-          <p className="text-xs text-white text-opacity-60">
-            {LEGALIZATION_FEE_RATE_PERCENT}% of {formatNaira(agreement.annual_rent)} annual rent ={' '}
-            {formatNaira(pricing.moveInFee)}
-          </p>
           {pricing.lawyerReviewFee > 0 && (
             <div className="flex justify-between">
-              <span>Lawyer review</span>
+              <span>Lawyer review (optional, requested by your landlord)</span>
               <span>{formatNaira(pricing.lawyerReviewFee)}</span>
             </div>
           )}
           <div className="border-t border-white border-opacity-20 pt-2 flex justify-between font-display text-xl font-bold">
-            <span>Total</span>
+            <span>Total due now</span>
             <span>{formatNaira(pricing.total)}</span>
           </div>
+          {pricing.lawyerReviewFee > 0 && (
+            <p className="text-xs text-white text-opacity-60">
+              Reviewed by our in-house legal team — a flat, fixed fee, not a marketplace bid.
+            </p>
+          )}
         </div>
       </Card>
 
@@ -160,28 +165,44 @@ function ReviewContent() {
         <div className="font-body text-sm text-white text-opacity-90 space-y-1">
           <p>Typical agent fee: {formatNaira(pricing.savings.vsAgentFee)}</p>
           <p>Typical legal fee: {formatNaira(pricing.savings.vsLegalFee)}</p>
-          <p>BeyondAgency fee: {formatNaira(pricing.total)}</p>
+          <p>BeyondAgency base fee: ₦0</p>
           <p className="font-semibold">Your saving: {formatNaira(pricing.savings.totalSavings)}</p>
         </div>
       </Card>
 
       <Card>
-        <label className="flex items-start gap-3 cursor-pointer font-body">
-          <input
-            type="checkbox"
-            checked={wantsInsurance}
-            onChange={(e) => setWantsInsurance(e.target.checked)}
-            className="w-4 h-4 mt-1"
-          />
-          <span>
-            <span className="block font-semibold text-charcoal">
-              I'm interested in rent-protection insurance
+        {agreement.property?.requires_insurance ? (
+          <div className="flex items-start gap-3 font-body">
+            <Shield size={18} className="text-forest flex-shrink-0 mt-0.5" />
+            <span>
+              <span className="block font-semibold text-charcoal">
+                Rent-protection insurance required for this property
+              </span>
+              <span className="block text-sm text-muted mt-1">
+                Your landlord requires this as a condition of tenancy. It's underwritten by a
+                licensed insurer and paid by your landlord — not you. We'll post this to our
+                insurer network as soon as you accept.
+              </span>
             </span>
-            <span className="block text-sm text-muted mt-1">
-              A partner will contact you. Optional — no obligation.
+          </div>
+        ) : (
+          <label className="flex items-start gap-3 cursor-pointer font-body">
+            <input
+              type="checkbox"
+              checked={wantsInsurance}
+              onChange={(e) => setWantsInsurance(e.target.checked)}
+              className="w-4 h-4 mt-1"
+            />
+            <span>
+              <span className="block font-semibold text-charcoal">
+                I'm interested in rent-protection insurance
+              </span>
+              <span className="block text-sm text-muted mt-1">
+                Optional — no obligation. We'll post it to our insurer network for a quote.
+              </span>
             </span>
-          </span>
-        </label>
+          </label>
+        )}
       </Card>
 
       <Card>
@@ -230,7 +251,7 @@ function ReviewContent() {
           loading={accepting}
           onClick={handleAccept}
         >
-          Accept &amp; Pay {formatNaira(pricing.total)}
+          {pricing.total > 0 ? `Accept & Pay ${formatNaira(pricing.total)}` : 'Accept — Free'}
         </Button>
       </div>
 
