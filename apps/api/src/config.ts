@@ -25,6 +25,16 @@ export const config = {
 
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
 
+  // No dedicated ADMIN role exists in the schema — admin-only marketplace
+  // routes (provider verification, internal staff onboarding) gate on this
+  // allowlist instead. See ADMIN_EMAILS in .env.example.
+  admin: {
+    emails: (process.env.ADMIN_EMAILS || '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean),
+  },
+
   cors: {
     allowedOrigins:
       process.env.NODE_ENV === 'production'

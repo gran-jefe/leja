@@ -98,6 +98,7 @@ Keep fee/product logic (e.g. `calculateLegalizationFee`, insurance interest capt
    - `FRONTEND_URL` — Web app base URL, used by the API to build tenant invite/redirect links (e.g., `http://localhost:3000`)
    - `NODE_ENV` — development/production
    - `PORT` — API port (default 5000)
+   - `ADMIN_EMAILS` — comma-separated allowlist; there is no dedicated ADMIN role in the schema, so admin-only marketplace routes (provider verification, internal staff onboarding at `/admin`) gate on whether the authenticated user's email is in this list
 
 ## File Structure
 
