@@ -1,81 +1,9 @@
-import axios from 'axios';
-import { config } from '../config';
-
-const flw = axios.create({
-  baseURL: config.flutterwave.baseUrl,
-  headers: {
-    Authorization: `Bearer ${config.flutterwave.secretKey}`,
-    'Content-Type': 'application/json',
-  },
-});
-
-interface InitializePaymentParams {
-  email: string;
-  amount: number;
-  reference: string;
-  name: string;
-  phone?: string;
-  redirectUrl: string;
-  meta?: Record<string, any>;
-}
-
-export async function initializePayment({
-  email,
-  amount,
-  reference,
-  name,
-  phone,
-  redirectUrl,
-  meta,
-}: InitializePaymentParams): Promise<{ paymentLink: string; reference: string }> {
-  try {
-    const { data } = await flw.post('/payments', {
-      tx_ref: reference,
-      amount,
-      currency: 'NGN',
-      redirect_url: redirectUrl,
-      customer: { email, name, phonenumber: phone },
-      customizations: {
-        title: 'BeyondAgency',
-        description: 'Tenancy Agreement Payment',
-        // TODO(MIGRATION_NOTES): logo asset still lives on the old domain
-        logo: 'https://leja.ng/logo.png',
-      },
-      meta: meta || {},
-    });
-
-    return { paymentLink: data.data.link, reference };
-  } catch (err: any) {
-    throw new Error(
-      `Flutterwave payment initialization failed: ${err.response?.data?.message || err.message}`
-    );
-  }
-}
-
-export async function verifyPayment(transactionId: string) {
-  try {
-    const { data } = await flw.get(`/transactions/${transactionId}/verify`);
-
-    return {
-      status: data.data.status,
-      amount: data.data.amount,
-      currency: data.data.currency,
-      reference: data.data.tx_ref,
-      customer: data.data.customer,
-      meta: data.data.meta,
-      flwRef: data.data.flw_ref,
-    };
-  } catch (err: any) {
-    throw new Error(
-      `Flutterwave payment verification failed: ${err.response?.data?.message || err.message}`
-    );
-  }
-}
-
-export function verifyWebhookSignature(requestHash: string): boolean {
-  return requestHash === config.flutterwave.webhookHash;
-}
-
-export function generateReference(prefix: string = 'BEYOND'): string {
-  return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-}
+// DEPRECATED — Flutterwave has been replaced by eTranzact as the payment
+// rail. Nothing in the codebase imports this file anymore; payments now go
+// through the provider-agnostic layer at ../lib/payments (see
+// lib/payments/types.ts, lib/payments/etranzact.ts, lib/payments/index.ts).
+//
+// Left in place (rather than deleted) only because this environment could
+// not remove the file; safe to delete manually. Do not add new imports of
+// this file — use ../lib/payments instead.
+export {};

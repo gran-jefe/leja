@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { FileText, History, Star } from 'lucide-react';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -10,12 +10,10 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { PayButton } from '@/components/shared/PayButton';
-import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/Button';
 import { useRentalHistory } from '@/hooks/useRentalHistory';
-import api from '@/lib/api';
 import { UserRole, BEYOND_PRICING } from '@beyond/shared';
-import { formatDate, formatNaira, getErrorMessage } from '@/lib/utils';
+import { formatDate, formatNaira } from '@/lib/utils';
 
 const historyStatusVariant = (status: string) => {
   switch (status) {
@@ -29,32 +27,15 @@ const historyStatusVariant = (status: string) => {
 };
 
 export default function RentalHistoryPage() {
-  const { user } = useAuth();
   const { history, loading, error, refetch } = useRentalHistory();
   const [exportError, setExportError] = useState('');
-  const reference = useMemo(() => `BEYOND_RHX_${Date.now()}`, []);
 
-  const handleExportSuccess = async (response: any) => {
-    setExportError('');
-    try {
-      const { data } = await api.post('/rental-history/export', {
-        flutterwaveReference: response.tx_ref,
-        transactionId: response.transaction_id,
-      });
-
-      const downloadUrl = data?.data?.downloadUrl;
-      if (downloadUrl) {
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = 'rental-history.pdf';
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-      }
-    } catch (err) {
-      setExportError(getErrorMessage(err, 'Payment succeeded but we could not generate your report. Please contact support.'));
-    }
-  };
+  // This export flow predates the eTranzact integration and was never
+  // fully wired to a real payment call (the backend endpoint it hit only
+  // ever returned a placeholder). Rather than pretend it works with the new
+  // rail, it's disabled here pending a real implementation against
+  // /lib/payments — same account-transfer pattern as the agreement and
+  // provider-subscription payment flows.
 
   return (
     <ProtectedPageWrapper requiredRole={UserRole.TENANT}>
@@ -65,16 +46,9 @@ export default function RentalHistoryPage() {
               subtitle="Your verified tenancy record"
               icon={History}
               action={
-                <PayButton
-                  amount={BEYOND_PRICING.RENTAL_HISTORY_EXPORT}
-                  email={user?.email || ''}
-                  name={user?.name || ''}
-                  reference={reference}
-                  description="Rental History Export"
-                  label={`Export Verified Report — ${formatNaira(BEYOND_PRICING.RENTAL_HISTORY_EXPORT)}`}
-                  onSuccess={handleExportSuccess}
-                  disabled={history.length === 0}
-                />
+                <Button variant="primary" disabled title="Coming soon">
+                  {`Export Verified Report — ${formatNaira(BEYOND_PRICING.RENTAL_HISTORY_EXPORT)}`}
+                </Button>
               }
             />
 

@@ -21,11 +21,17 @@ export const config = {
     jwtExpiresIn: '7d' as const,
   },
 
-  flutterwave: {
-    secretKey: (process.env.FLW_SECRET_KEY || '').trim(),
-    publicKey: (process.env.FLW_PUBLIC_KEY || '').trim(),
-    webhookHash: (process.env.FLW_WEBHOOK_HASH || '').trim(),
-    baseUrl: 'https://api.flutterwave.com/v3',
+  // Payment rail: eTranzact, replacing Flutterwave (removed) as of the
+  // payments-layer swap. See apps/api/src/lib/payments/ for the
+  // provider-agnostic interface this backs — routes/queries never import
+  // this config or an SDK directly, only ../lib/payments.
+  etranzact: {
+    secretKey: (process.env.ETRANZACT_SECRET_KEY || '').trim(),
+    productCode: (process.env.ETRANZACT_PRODUCT_CODE || '').trim(),
+    webhookSecret: (process.env.ETRANZACT_WEBHOOK_SECRET || '').trim(),
+    // eTranzact's docs reference a demo host (demo.etranzact.com); override
+    // via env once production credentials/host are issued.
+    baseUrl: (process.env.ETRANZACT_BASE_URL || 'https://demo.etranzact.com/virtual-funding').trim(),
   },
 
   frontendUrl: (process.env.FRONTEND_URL || 'http://localhost:3000').trim(),
@@ -75,10 +81,10 @@ export const validateConfig = () => {
     ['auth.jwtSecret', config.auth.jwtSecret],
   ];
 
-  // Flutterwave is required only in production
+  // Payment rail credentials are required only in production
   if (config.isProduction) {
-    requiredFields.push(['flutterwave.secretKey', config.flutterwave.secretKey]);
-    requiredFields.push(['flutterwave.webhookHash', config.flutterwave.webhookHash]);
+    requiredFields.push(['etranzact.secretKey', config.etranzact.secretKey]);
+    requiredFields.push(['etranzact.productCode', config.etranzact.productCode]);
   }
 
   const missing = requiredFields

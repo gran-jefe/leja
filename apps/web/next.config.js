@@ -3,7 +3,9 @@ const nextConfig = {
   output: 'standalone',
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    NEXT_PUBLIC_FLW_PUBLIC_KEY: process.env.NEXT_PUBLIC_FLW_PUBLIC_KEY,
+    // No client-side payment SDK key needed — eTranzact's virtual-account
+    // model is server-initiated only (see PaymentInstructions component),
+    // unlike the removed Flutterwave inline-modal integration.
   },
 };
 

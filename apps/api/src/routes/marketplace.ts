@@ -20,7 +20,7 @@ import {
 import { findAgreementById } from '../db/queries/agreements';
 import { findUserByEmail } from '../db/queries/users';
 import { createPendingPayment } from '../db/queries/payments';
-import { initializePayment, generateReference } from '../lib/flutterwave';
+import { initializePayment, generateReference } from '../lib/payments';
 import { PaymentType, BEYOND_PRICING } from '@beyond/shared';
 import { config } from '../config';
 import { isAdmin } from '../lib/admin';
@@ -329,7 +329,7 @@ router.post(
       const amount = BEYOND_PRICING.PROVIDER_PRIORITY_SUBSCRIPTION;
       const reference = generateReference('BEYOND_PROVIDER_SUB');
 
-      const { paymentLink } = await initializePayment({
+      const payment = await initializePayment({
         email: req.user!.email,
         amount,
         reference,
@@ -351,7 +351,7 @@ router.post(
 
       return res.json({
         success: true,
-        data: { paymentLink, reference, amount },
+        data: { payment, reference, amount },
         message: 'Subscription payment initiated',
       });
     } catch (error) {

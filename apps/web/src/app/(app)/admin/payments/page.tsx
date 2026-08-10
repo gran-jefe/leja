@@ -17,7 +17,7 @@ interface AdminPayment {
   type: string;
   amount: number;
   status: 'PENDING' | 'SUCCESS' | 'FAILED';
-  paystack_reference: string;
+  payment_reference: string;
   created_at: string;
   user: { name: string; email: string } | null;
 }
@@ -112,7 +112,7 @@ function PaymentsContent() {
                     <p className="text-xs text-muted font-body">
                       {p.user?.name || 'Unknown'} ({p.user?.email}) · {formatDate(p.created_at)}
                     </p>
-                    <p className="text-xs text-muted font-body">Ref: {p.paystack_reference}</p>
+                    <p className="text-xs text-muted font-body">Ref: {p.payment_reference}</p>
                   </div>
                   <Badge variant={statusVariant[p.status]}>{p.status}</Badge>
                 </div>

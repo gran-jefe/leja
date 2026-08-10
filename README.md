@@ -7,7 +7,7 @@ Nigeria's trust platform for direct deals. Phase 1: residential rentals — land
 - **Node.js** 18+ (verify with `node --version`)
 - **npm** 10+ (verify with `npm --version`)
 - PostgreSQL database (Supabase or local instance)
-- Paystack account (for payments)
+- eTranzact merchant account (for payments)
 
 ## Getting Started
 
@@ -34,9 +34,9 @@ cp apps/api/.env.example apps/api/.env
 - `SUPABASE_ANON_KEY` — Supabase anonymous key
 - `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key
 - `JWT_SECRET` — Secret for JWT signing (generate a random string)
-- `PAYSTACK_SECRET_KEY` — Paystack secret key
-- `PAYSTACK_PUBLIC_KEY` — Paystack public key
-- `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` — Frontend Paystack key
+- `PAYMENT_PROVIDER` — active payment rail, defaults to `etranzact`
+- `ETRANZACT_SECRET_KEY` — eTranzact API secret key
+- `ETRANZACT_PRODUCT_CODE` — eTranzact-issued product code
 - `NEXT_PUBLIC_API_URL` — Frontend API URL (e.g., `http://localhost:5000/api/v1`)
 - `NODE_ENV` — `development` or `production`
 - `PORT` — API port (default `5000`)
@@ -85,7 +85,7 @@ Express.js backend with PostgreSQL. Runs on port 5000.
 **Key directories:**
 - `src/routes/` — API endpoint handlers
 - `src/middleware/` — Auth, rate limiting, validation
-- `src/lib/` — JWT, Paystack integrations
+- `src/lib/` — JWT, payments (eTranzact — see `lib/payments/`)
 - `src/db/` — Database schema and seed data
 
 **Start with:** `npm run dev` (from root)
@@ -156,8 +156,8 @@ All routes are prefixed with `/api/v1`.
 - `PATCH /:id/status` — Update agreement status
 
 ### Payments Routes (`/api/v1/payments`)
-- `POST /webhook` — Paystack webhook handler
-- `POST /verify/:reference` — Verify payment
+- `POST /webhook` — payment provider notification handler (eTranzact)
+- `POST /verify/:reference` — verify payment by internal reference
 
 ### Rental History Routes (`/api/v1/rental-history`)
 - `GET /mine` — Get own rental history (tenant only)
@@ -167,7 +167,7 @@ All routes are prefixed with `/api/v1`.
 
 ### Money
 - Stored in database as **Naira** (₦) with 2 decimal places
-- Converted to **kobo** (₦ × 100) when calling Paystack API
+- Never converted to kobo — eTranzact amounts are in Naira, same as the database
 - Displayed to users in Naira format
 
 ### Authentication
@@ -178,7 +178,7 @@ All routes are prefixed with `/api/v1`.
 ### Agreement Workflow
 1. Landlord creates agreement draft (₦3,500)
 2. Optional lawyer review upgrade (₦12,000 total)
-3. Paystack payment processed
+3. eTranzact payment processed
 4. Webhook confirms payment
 5. Agreement status changes to ACTIVE
 6. Both parties can view agreement
@@ -188,7 +188,7 @@ All routes are prefixed with `/api/v1`.
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Express Documentation](https://expressjs.com/)
 - [Tailwind CSS](https://tailwindcss.com/)
-- [Paystack Integration](https://paystack.com/docs/)
+- [eTranzact API Docs](https://developers.etranzactng.com/)
 - [Supabase](https://supabase.com/docs/)
 
 ## Troubleshooting

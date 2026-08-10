@@ -18,6 +18,13 @@ CREATE TABLE IF NOT EXISTS users (
   phone TEXT,
   role TEXT NOT NULL CHECK (role IN ('LANDLORD', 'TENANT', 'PROVIDER')),
   is_verified BOOLEAN DEFAULT false,
+  -- Phase 2 (property verification/escrow): single, category-agnostic
+  -- verification tier that travels with the user across every role/vertical
+  -- — never re-verified per category. 0 = unverified, 1 = Tier 1 (phone +
+  -- BVN/NIN), 2 = Tier 2 (liveness + document, required for escrow-backed
+  -- activity). is_verified above is kept for backward compatibility with
+  -- existing checks and is derived as (verification_tier >= 1).
+  verification_tier SMALLINT NOT NULL DEFAULT 0 CHECK (verification_tier IN (0, 1, 2)),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -58,6 +65,14 @@ CREATE TABLE IF NOT EXISTS properties (
   -- badge ("Insured Tenancy").
   requires_insurance BOOLEAN DEFAULT false,
   is_deleted BOOLEAN DEFAULT false,
+  -- Phase 2 (property verification/escrow) — independent of the rental
+  -- flow above; NULL/UNVERIFIED for every existing rental listing. Set by
+  -- the verification/review operator (see verifications table) after a
+  -- Land Registry search and, where applicable, a field check.
+  title_verification_status TEXT NOT NULL DEFAULT 'UNVERIFIED' CHECK (title_verification_status IN ('UNVERIFIED','PENDING','VERIFIED','REJECTED')),
+  title_document_url TEXT,
+  title_verified_at TIMESTAMPTZ,
+  title_verified_by UUID REFERENCES users(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -112,13 +127,36 @@ CREATE TABLE IF NOT EXISTS payments (
   type TEXT NOT NULL CHECK (type IN ('TENANT_MOVE_IN_FEE','TENANT_LAWYER_REVIEW','RENTAL_HISTORY_EXPORT','LANDLORD_SUBSCRIPTION','PROVIDER_SUBSCRIPTION')),
   amount NUMERIC(12,2) NOT NULL,
   status TEXT DEFAULT 'PENDING' CHECK (status IN ('PENDING','SUCCESS','FAILED')),
-  paystack_reference TEXT UNIQUE NOT NULL, -- legacy column name, now stores the Flutterwave tx_ref
+  payment_reference TEXT UNIQUE NOT NULL, -- our internal reference; stores the eTranzact customerID/session reference (previously the Flutterwave tx_ref, previously named paystack_reference)
   metadata JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_payments_paystack_reference ON payments(paystack_reference);
+CREATE INDEX idx_payments_payment_reference ON payments(payment_reference);
 CREATE INDEX idx_payments_user_id ON payments(user_id);
+
+-- Verifications table (Phase 2 groundwork) — one row per verification
+-- attempt/check, not per user, so the history of tier upgrades and any
+-- rejected attempts is auditable. See apps/api/src/lib/identity/ for the
+-- provider-agnostic interface this backs (mirrors lib/payments/) — no real
+-- KYC provider is wired up yet, this is schema + interface only.
+CREATE TABLE IF NOT EXISTS verifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  tier SMALLINT NOT NULL CHECK (tier IN (1, 2)),
+  status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','APPROVED','REJECTED')),
+  -- Tier 1: phone + BVN/NIN. Tier 2: liveness + document. Kept generic
+  -- (JSONB) since the exact fields depend on which KYC provider is chosen.
+  method TEXT NOT NULL,
+  provider_reference TEXT,
+  metadata JSONB DEFAULT '{}',
+  reviewed_by UUID REFERENCES users(id),
+  reviewed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_verifications_user_id ON verifications(user_id);
+CREATE INDEX idx_verifications_status ON verifications(status);
 
 -- Rental History table
 CREATE TABLE IF NOT EXISTS rental_history (

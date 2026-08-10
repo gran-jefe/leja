@@ -130,7 +130,7 @@ function AgreementContent() {
           )}
           {justPaid && agreement.status !== 'ACTIVE' && (
             <div className="mb-6 p-4 bg-forest bg-opacity-10 border border-forest rounded-button font-body text-sm text-forest">
-              Payment received — confirming with Flutterwave now. This page will update automatically.
+              Payment received — confirming now. This page will update automatically.
             </div>
           )}
 

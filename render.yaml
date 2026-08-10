@@ -20,11 +20,15 @@ services:
         sync: false
       - key: JWT_SECRET
         sync: false
-      - key: FLW_SECRET_KEY
+      - key: PAYMENT_PROVIDER
+        value: etranzact
+      - key: ETRANZACT_SECRET_KEY
         sync: false
-      - key: FLW_PUBLIC_KEY
+      - key: ETRANZACT_PRODUCT_CODE
         sync: false
-      - key: FLW_WEBHOOK_HASH
+      - key: ETRANZACT_WEBHOOK_SECRET
+        sync: false
+      - key: ETRANZACT_BASE_URL
         sync: false
       - key: FRONTEND_URL
         sync: false

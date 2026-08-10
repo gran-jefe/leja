@@ -16,6 +16,7 @@ import contactRoutes from './routes/contact';
 import marketplaceRoutes from './routes/marketplace';
 import adminRoutes from './routes/admin';
 import messagesRoutes from './routes/messages';
+import verificationRoutes from './routes/verification';
 
 // Validate config before starting
 validateConfig();
@@ -68,6 +69,7 @@ app.use('/api/v1/contact', contactRoutes);
 app.use('/api/v1/marketplace', marketplaceRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/messages', messagesRoutes);
+app.use('/api/v1/verification', verificationRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken, requireRole } from '../middleware/auth';
 import { agreementRateLimit } from '../middleware/rateLimit';
-import { initializePayment, generateReference } from '../lib/flutterwave';
+import { initializePayment, generateReference } from '../lib/payments';
 import { createPendingPayment } from '../db/queries/payments';
 import { UserRole, PaymentType, BEYOND_PRICING } from '@beyond/shared';
 import { config } from '../config';
@@ -32,8 +32,11 @@ const triggerAgreementPDF = (agreementId: string) => {
 
 const router = Router();
 
-// Landlord creates a free draft agreement. No payment at this step — the
-// tenant pays the Legalization & Protection fee later, when they accept.
+// Landlord creates a free draft agreement. No payment at this step, and none
+// when the tenant accepts either — accepting is always free and goes ACTIVE
+// immediately. The only tenant-side payment anywhere in this flow is the
+// *optional* lawyer-review add-on (see /accept below), which never blocks
+// or gates acceptance.
 router.post(
   '/',
   authenticateToken,
@@ -241,7 +244,7 @@ router.post(
       const lawyerReviewFee = BEYOND_PRICING.LAWYER_REVIEW_ADDON;
       const reference = generateReference('BEYOND_LAWYER_REVIEW');
 
-      const { paymentLink } = await initializePayment({
+      const payment = await initializePayment({
         email: req.user!.email,
         amount: lawyerReviewFee,
         reference,
@@ -267,7 +270,10 @@ router.post(
         success: true,
         data: {
           agreement: activated,
-          paymentLink,
+          // `payment` carries whichever shape the active provider returns —
+          // a redirect link or (with eTranzact today) an account_transfer
+          // instruction. See @beyond/shared PaymentInitiationResult.
+          payment,
           reference,
           total: lawyerReviewFee,
           breakdown: { lawyerReviewFee, total: lawyerReviewFee },

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { authenticateToken } from '../middleware/auth';
-import { verifyPayment, verifyWebhookSignature } from '../lib/flutterwave';
+import { verifyPayment, verifyWebhookSignature } from '../lib/payments';
 import { markPaymentSuccessful } from '../db/queries/payments';
 import { generateAndSaveAgreementPDF } from '../lib/pdf';
 import { findAgreementById } from '../db/queries/agreements';
@@ -46,7 +46,8 @@ const postLawyerReviewJobAndAward = async (agreementId: string) => {
 
 const triggerAgreementPDF = (agreementId: string) => {
   // Don't await — let it run in the background so the webhook responds fast.
-  // Flutterwave requires a 200 within 30s; Chromium cold start alone can take 10-15s.
+  // Chromium cold start alone can take 10-15s; keep the response under
+  // whatever timeout the active payment provider enforces.
   generateAndSaveAgreementPDF(agreementId)
     .then((pdfUrl) => {
       console.log(`[PDF] Agreement ${agreementId} PDF generated: ${pdfUrl}`);
@@ -56,35 +57,47 @@ const triggerAgreementPDF = (agreementId: string) => {
     });
 };
 
+// eTranzact's documented API (as of integration time) doesn't expose a
+// confirmed merchant-facing webhook payload schema for "virtual account
+// funded" events the way Flutterwave's `charge.completed` was documented.
+// Rather than trust an unverified body shape, this handler treats any hit
+// to this endpoint as a signal to re-verify the referenced transaction
+// directly against eTranzact (verifyPayment → GET /transaction/verify)
+// before marking anything successful. Update this once eTranzact's actual
+// webhook contract is confirmed with their support/account team, and the
+// shared-secret check in verifyWebhookSignature can be tightened alongside it.
 router.post('/webhook', async (req: Request, res: Response) => {
-  const hash = req.headers['verif-hash'] as string;
+  const secret = req.headers['x-etranzact-signature'] as string | undefined;
 
-  if (!verifyWebhookSignature(hash)) {
+  if (!verifyWebhookSignature(secret)) {
     return res.status(401).json({
       success: false,
       message: 'Invalid webhook signature',
     });
   }
 
-  const { event, data } = req.body;
+  const reference: string | undefined = req.body?.reference || req.body?.customerID || req.body?.tranSessionID;
+
+  if (!reference) {
+    console.error('[WEBHOOK] eTranzact notification received with no identifiable reference', req.body);
+    return res.sendStatus(200);
+  }
 
   try {
-    if (event === 'charge.completed') {
-      if (data?.status === 'successful') {
-        const payment = await markPaymentSuccessful(data.tx_ref);
+    const result = await verifyPayment(reference);
 
-        if (payment?.agreement_id) {
-          console.log(`[WEBHOOK] Payment confirmed for agreement ${payment.agreement_id} (${payment.type})`);
-          triggerAgreementPDF(payment.agreement_id);
-          if (payment.type === PaymentType.TENANT_LAWYER_REVIEW) {
-            void postLawyerReviewJobAndAward(payment.agreement_id);
-          }
-        } else if (payment?.type === PaymentType.PROVIDER_SUBSCRIPTION) {
-          void handleProviderSubscriptionPayment(payment);
+    if (result.status === 'successful') {
+      const payment = await markPaymentSuccessful(reference);
+
+      if (payment?.agreement_id) {
+        console.log(`[WEBHOOK] Payment confirmed for agreement ${payment.agreement_id} (${payment.type})`);
+        triggerAgreementPDF(payment.agreement_id);
+        if (payment.type === PaymentType.TENANT_LAWYER_REVIEW) {
+          void postLawyerReviewJobAndAward(payment.agreement_id);
         }
+      } else if (payment?.type === PaymentType.PROVIDER_SUBSCRIPTION) {
+        void handleProviderSubscriptionPayment(payment);
       }
-    } else {
-      console.log('Unhandled Flutterwave webhook event', { event });
     }
   } catch (error) {
     console.error('Webhook processing error:', error);
@@ -93,11 +106,14 @@ router.post('/webhook', async (req: Request, res: Response) => {
   return res.sendStatus(200);
 });
 
-router.post('/verify/:transactionId', authenticateToken, async (req: Request, res: Response) => {
+// :reference is our own internal payment reference (see generateReference in
+// lib/payments/types.ts), not a provider-specific transaction ID — matches
+// what verifyPayment() now expects across every provider implementation.
+router.post('/verify/:reference', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const { transactionId } = req.params;
+    const { reference } = req.params;
 
-    const result = await verifyPayment(transactionId);
+    const result = await verifyPayment(reference);
 
     if (result.status === 'successful') {
       const payment = await markPaymentSuccessful(result.reference);

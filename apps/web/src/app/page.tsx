@@ -115,7 +115,7 @@ const trustPoints = [
   {
     icon: CreditCard,
     title: 'Secure payments',
-    body: 'All payments processed via Flutterwave — never handled off-platform.',
+    body: 'All payments processed through our secure payment partner — never handled off-platform.',
   },
 ];
 

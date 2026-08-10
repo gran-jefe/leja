@@ -5,6 +5,14 @@ intentionally **not** a code change — either it's an infrastructure/account
 setting outside this repo, or it's a deliberate scope decision. Work through
 this before or shortly after the rebrand ships.
 
+> **Superseded note (payments):** the Flutterwave references below (account
+> settings, `lib/flutterwave.ts` TODOs) describe the payment rail as it stood
+> at rebrand time. Flutterwave has since been fully replaced by eTranzact —
+> see the "Payment Rail: eTranzact" section in `CLAUDE.md` and
+> `apps/api/src/lib/payments/` for the current setup. The Flutterwave-specific
+> action items below no longer apply; kept here as history, not as a live
+> checklist.
+
 ## Urgent — base deal is now fully free (no more legalization fee)
 
 - [ ] **Revenue model changed.** The tenant-facing "Legalization & Protection

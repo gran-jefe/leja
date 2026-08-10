@@ -15,7 +15,6 @@
     "@beyond/shared": "*",
     "axios": "^1.6.5",
     "clsx": "^2.0.0",
-    "flutterwave-react-v3": "^1.3.3",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.292.0",
     "next": "^14.0.0",

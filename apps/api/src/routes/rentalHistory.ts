@@ -34,7 +34,10 @@ router.get(
     return res.json({
       success: true,
       data: {
-        paymentLink: 'https://flutterwave.com/pay/placeholder',
+        // TODO: not yet wired to lib/payments — this endpoint predates the
+        // eTranzact integration and still returns a placeholder rather than
+        // an actual initializePayment() call.
+        payment: null,
         amount: BEYOND_PRICING.RENTAL_HISTORY_EXPORT,
       },
       message: 'Rental history export initiated',

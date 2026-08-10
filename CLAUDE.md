@@ -12,7 +12,7 @@
 - **Frontend (apps/web):** Next.js 14, TypeScript, Tailwind CSS, App Router, react-hook-form, axios, zod
 - **Backend (apps/api):** Node.js, Express, TypeScript, PostgreSQL (Supabase), Zod validation
 - **Shared types (packages/shared):** @beyond/shared
-- **Payments:** Flutterwave (all amounts in Naira — never convert to kobo; stored in Naira in DB)
+- **Payments:** eTranzact (all amounts in Naira — never convert to kobo; stored in Naira in DB)
 - **Auth:** JWT stored in httpOnly cookies (frontend uses js-cookie)
 - **Deployment:** Vercel (web), Render (api)
 
@@ -52,27 +52,32 @@
 - **Pricing constants:** all prices/rates live in `BEYOND_PRICING` (`packages/shared/src/constants/pricing.ts`) — never hardcode a Naira amount or a fee rate in a route handler or component
 - **Payment timing:** there is no payment at agreement acceptance. The only tenant-side payment is the optional lawyer-review add-on, initiated at accept time but independent of the ACTIVE status change.
 - **Rental history export:** ₦5,000
-- **Bid award:** a job's winning bid is awarded automatically right after its associated payment is confirmed via the Flutterwave webhook (`awardJob()` in `apps/api/src/db/queries/marketplace.ts`) — picks the lowest qualifying bid unless a preferred provider is specified. No cron/retry exists yet for jobs that receive zero bids before the award attempt.
+- **Bid award:** a job's winning bid is awarded automatically right after its associated payment is confirmed via the payments webhook (`awardJob()` in `apps/api/src/db/queries/marketplace.ts`) — picks the lowest qualifying bid unless a preferred provider is specified. No cron/retry exists yet for jobs that receive zero bids before the award attempt.
 - **Agreement visibility:** Only visible to the two parties involved (landlord + tenant)
 - **Property deletion:** Soft delete only (is_deleted flag, never hard delete)
-- **Monetary storage:** All values stored in **Naira** (2 decimal places) in DB; Flutterwave amounts are in Naira — never convert to kobo
+- **Monetary storage:** All values stored in **Naira** (2 decimal places) in DB; eTranzact amounts are in Naira — never convert to kobo
 
 ## Future Phases
 
-BeyondAgency is a multi-sector trust platform, not a single-purpose rental tool — architecture should not hardcode assumptions that would block later phases:
+BeyondAgency is a multi-sector trust platform, not a single-purpose rental tool — architecture should not hardcode assumptions that would block later phases. Current direction (see `docs/BeyondAgency_Vision_and_Strategy.docx`, `docs/BeyondAgency_Execution_Roadmap.docx`): the reusable core is verified party + enforceable agreement + staged settlement, not "marketplace" — each phase applies that same mechanism to a new domain rather than opening the platform to arbitrary categories.
 
-- **Phase 2:** Insurance comparison (multiple insurer partners, not just one)
-- **Phase 3:** Legal marketplace (lawyers beyond the single deep-review add-on)
-- **Phase 4:** Tech services marketplace
+- **Phase 2 (current):** Property verification & escrow for remote/absentee buyers — domestic Nigerians are the primary market (largest, fastest to prove, no cross-border complexity), diaspora buyers are an addition layered on once the domestic flow works, not the initial target. Groundwork in progress: a single, category-agnostic user `verification_tier` (Tier 1 = phone + BVN/NIN, Tier 2 = liveness + document) at `apps/api/src/lib/identity/` (mirrors `lib/payments/` — provider-agnostic interface, no real KYC provider wired up yet, `stub` auto-approves for dev/testing only), plus `properties.title_verification_status` and a `verifications` audit table. Escrow itself (staged fund release tied to verified milestones) is not yet built — payments still go through the ACTIVE-immediately rental flow.
+- **Phase 3:** SME-bankable agreements — package the enforceable-agreement mechanism as a credit-reference product lenders recognize.
+- **Phase 4:** Equipment/energy asset leasing (lease-to-own), insurance comparison (multiple insurer partners), legal marketplace beyond the single deep-review add-on.
+
+Barter-as-a-service was evaluated and explicitly deferred — real regulatory risk (valuation/credit-instrument exposure) and no evidenced demand signal, see the Vision & Strategy doc.
 
 Keep fee/product logic (e.g. `calculateLegalizationFee`, insurance interest capture) generic enough to extend rather than rewrite when these land.
 
-## Flutterwave Integration Notes
+## Payment Rail: eTranzact
 
-- Flutterwave amounts are in Naira — never convert to kobo
-- Webhook verification uses `verif-hash` header, not HMAC body signature
-- Successful payment status string is `'successful'` not `'success'`
-- `verifyPayment()` takes a transaction ID (integer), not a `tx_ref` string
+Flutterwave has been fully removed and replaced by eTranzact. Payments go through a provider-agnostic layer at `apps/api/src/lib/payments/` (`types.ts` defines the `PaymentProvider` interface; `etranzact.ts` implements it; `index.ts` is the single switch point) — route/query files import from `../lib/payments`, never a provider SDK directly. Adding a future rail means writing one new file there, not touching every route that collects money.
+
+- eTranzact amounts are in Naira — never convert to kobo
+- Collection model is fundamentally different from Flutterwave's hosted checkout: eTranzact's **Virtual Account** product generates a dedicated, per-transaction bank account (`POST /account`, `accountType: 0` = dynamic); the payer transfers into it directly. There is no redirect/hosted-checkout page and no card/USSD-in-browser modal — `initializePayment()` returns `{ mode: 'account_transfer', accountNumber, bankName, accountName, ... }` rather than a `paymentLink`. The frontend renders this via `@/components/shared/PaymentInstructions`.
+- `verifyPayment(reference)` takes our own internal reference (same one passed into `initializePayment`), not a provider transaction ID — it queries `GET /transaction/verify` / `GET /transaction/all` filtered by that reference (used as eTranzact's `customerID`).
+- **Open item:** eTranzact's documented API doesn't expose a confirmed merchant webhook payload schema for "account funded" events (unlike Flutterwave's documented `charge.completed`). The `/payments/webhook` route currently treats any inbound hit as a signal to re-verify via `verifyPayment()` rather than trusting the body directly — confirm the real webhook contract with eTranzact support before relaxing this.
+- The `payments.payment_reference` column (formerly `paystack_reference`, which itself never actually stored a Paystack value — see `supabase/migrations/20260810000000_rename_paystack_reference.sql`) holds this internal reference for every provider.
 
 ## API Base URL
 
@@ -90,10 +95,11 @@ Keep fee/product logic (e.g. `calculateLegalizationFee`, insurance interest capt
    - `SUPABASE_ANON_KEY` — Supabase anonymous key
    - `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key
    - `JWT_SECRET` — Secret for JWT signing
-   - `FLW_SECRET_KEY` — Flutterwave secret key
-   - `FLW_PUBLIC_KEY` — Flutterwave public key
-   - `FLW_WEBHOOK_HASH` — Flutterwave webhook verification hash
-   - `NEXT_PUBLIC_FLW_PUBLIC_KEY` — Frontend Flutterwave key
+   - `PAYMENT_PROVIDER` — active payment rail, defaults to `etranzact` (see apps/api/src/lib/payments/)
+   - `ETRANZACT_SECRET_KEY` — eTranzact API secret key
+   - `ETRANZACT_PRODUCT_CODE` — eTranzact-issued product code
+   - `ETRANZACT_WEBHOOK_SECRET` — shared secret for validating inbound eTranzact notifications
+   - `ETRANZACT_BASE_URL` — eTranzact API host (defaults to their demo host; override for production)
    - `NEXT_PUBLIC_API_URL` — Frontend API URL (e.g., `http://localhost:5000/api/v1`)
    - `FRONTEND_URL` — Web app base URL, used by the API to build tenant invite/redirect links (e.g., `http://localhost:3000`)
    - `NODE_ENV` — development/production
@@ -243,16 +249,15 @@ See `apps/api/src/db/seed.sql` for sample data:
 
 - **Root .env.example** — template only, commit this
 - **apps/api/.env** — never commit, copy from .env.example and fill values
-- **apps/web/.env.local** — never commit, set NEXT_PUBLIC_API_URL and NEXT_PUBLIC_FLW_PUBLIC_KEY
+- **apps/web/.env.local** — never commit, set NEXT_PUBLIC_API_URL. No client-side payment SDK key is needed — unlike the old Flutterwave inline-modal integration, eTranzact's virtual-account model is server-initiated only (see PaymentInstructions component); there is nothing equivalent to `NEXT_PUBLIC_FLW_PUBLIC_KEY` to set.
 
 ## Production Environment Variables
 
 **Set on Render dashboard (apps/api):**
 - DATABASE_URL, SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
-- JWT_SECRET, FLW_SECRET_KEY, FLW_PUBLIC_KEY, FLW_WEBHOOK_HASH
+- JWT_SECRET, PAYMENT_PROVIDER, ETRANZACT_SECRET_KEY, ETRANZACT_PRODUCT_CODE, ETRANZACT_WEBHOOK_SECRET, ETRANZACT_BASE_URL
 - FRONTEND_URL=https://leja.ng (or the Vercel URL, used for tenant invite/redirect links)
 - NODE_ENV=production, PORT=5000
 
 **Set on Vercel dashboard (apps/web):**
 - NEXT_PUBLIC_API_URL=https://leja-api.onrender.com/api/v1
-- NEXT_PUBLIC_FLW_PUBLIC_KEY=pk_live_xxxx

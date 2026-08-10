@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
 import { Button } from '@/components/ui/Button';
@@ -39,6 +40,7 @@ interface ProviderProfile {
 }
 
 function ProviderDashboardContent() {
+  const router = useRouter();
   const [bids, setBids] = useState<ServiceBid[]>([]);
   const [profile, setProfile] = useState<ProviderProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,7 +74,22 @@ function ProviderDashboardContent() {
     setSubscribeError('');
     try {
       const res = await api.post('/marketplace/providers/subscribe');
-      window.location.href = res.data.data.paymentLink;
+      const payment = res.data.data.payment;
+      if (payment?.mode === 'redirect') {
+        window.location.href = payment.paymentLink;
+        return;
+      }
+      // eTranzact (account_transfer) — send to the instructions page instead
+      // of a hosted redirect. See lib/payments/types.ts for why this differs
+      // by provider.
+      const params = new URLSearchParams({
+        reference: payment.reference,
+        accountNumber: payment.accountNumber,
+        accountName: payment.accountName,
+        bankName: payment.bankName,
+        amount: String(payment.amount),
+      });
+      router.push(`/provider/dashboard/pay?${params.toString()}`);
     } catch (err) {
       setSubscribeError(getErrorMessage(err, 'Failed to start subscription'));
       setSubscribing(false);

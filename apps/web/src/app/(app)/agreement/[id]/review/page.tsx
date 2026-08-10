@@ -71,10 +71,24 @@ function ReviewContent() {
     const result = await acceptAgreement(id);
     if (!result) return;
 
-    // Base acceptance is free — only redirect to a payment page if the
-    // tenant opted into the paid lawyer-review add-on.
-    if (result.paymentLink) {
-      window.location.href = result.paymentLink;
+    // Base acceptance is free — only send the tenant to a payment step if
+    // they opted into the paid lawyer-review add-on. What that step looks
+    // like depends on the active payment provider: a redirect link (hosted
+    // checkout) or account-transfer instructions (eTranzact) — see the
+    // /pay page, which reads `mode` to decide.
+    if (result.payment?.mode === 'redirect') {
+      window.location.href = result.payment.paymentLink;
+    } else if (result.payment?.mode === 'account_transfer') {
+      const p = result.payment;
+      const params = new URLSearchParams({
+        reference: p.reference,
+        accountNumber: p.accountNumber,
+        accountName: p.accountName,
+        bankName: p.bankName,
+        amount: String(p.amount),
+        ...(p.expiresAt ? { expiresAt: p.expiresAt } : {}),
+      });
+      router.push(`/agreement/${id}/pay?${params.toString()}`);
     } else {
       router.push(`/agreement/${id}?created=1`);
     }

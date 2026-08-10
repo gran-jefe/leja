@@ -133,8 +133,11 @@ export function useCreateAgreement() {
   return { createAgreement, loading, error };
 }
 
-// Tenant accepts a DRAFT agreement — POST /agreements/:id/accept, which
-// returns a Flutterwave hosted payment link rather than charging inline.
+// Tenant accepts a DRAFT agreement — POST /agreements/:id/accept. Base
+// acceptance is always free; `payment` is only present when the tenant
+// opted into the paid lawyer-review add-on, and its shape depends on the
+// active payment provider (see @beyond/shared PaymentInitiationResult) —
+// eTranzact returns account-transfer instructions, not a redirect link.
 export function useAcceptAgreement() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -146,7 +149,7 @@ export function useAcceptAgreement() {
       const { data: response } = await api.post(`/agreements/${id}/accept`);
       return response.data as {
         agreement: any;
-        paymentLink: string | null;
+        payment: import('@beyond/shared').PaymentInitiationResult | null;
         reference?: string;
         total: number;
         breakdown?: any;

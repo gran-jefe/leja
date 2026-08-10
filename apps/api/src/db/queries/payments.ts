@@ -16,7 +16,7 @@ export const createPendingPayment = async (data: {
       type: data.type,
       amount: data.amount,
       status: 'PENDING',
-      paystack_reference: data.reference,
+      payment_reference: data.reference,
       metadata: data.metadata || {},
     })
     .select('*')
@@ -27,11 +27,10 @@ export const createPendingPayment = async (data: {
 };
 
 export const findPaymentByReference = async (reference: string) => {
-  // paystack_reference is a legacy column name; it now stores the Flutterwave tx_ref
   const { data: payment, error } = await supabase
     .from('payments')
     .select('id, agreement_id, status, type, metadata')
-    .eq('paystack_reference', reference)
+    .eq('payment_reference', reference)
     .single();
 
   if (error) {
