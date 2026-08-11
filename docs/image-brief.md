@@ -42,116 +42,126 @@ tooling for that was available locally.
 
 ---
 
-## Priority 2 — the hero
+## Copy-paste prompts
 
-`HeroBackdrop` already accepts a `src` prop and renders a geometric brass-seal
-treatment when it's absent. Dropping the photo in is a one-line change:
+Each is complete — the grade and negative prompt are already baked in, so
+nothing needs assembling. Generate the four marked ESSENTIAL first; they
+carry most of the visual lift.
 
-```tsx
-// apps/web/src/app/page.tsx:163
-<HeroBackdrop src="/hero-lagos-residence.jpg" alt="" />
+Save every file into `apps/web/public/`.
+
+### 01 · `hero-lagos-residence.jpg` · 2400×1600 (16:9) · **ESSENTIAL**
+
+```
+Wide editorial photograph of a modern mid-rise residential apartment building in Lekki, Lagos, Nigeria, late afternoon golden light raking across the facade, terracotta and cream rendered walls, dark window frames, one warmly lit window, mature palm and frangipani trees in the foreground softly out of focus, deep navy-blue sky at the top of the frame, quiet and unpeopled, generous empty space across the left third of the frame, warm afternoon light, soft directional shadows, slightly desaturated with warm golden highlights and deep cool navy-blue shadows, brass and terracotta tones in the midtones, no green cast, subtle 35mm film grain, natural colour, no HDR, no blue-teal colour grading, documentary photography, shot on 35mm lens f/2.8, no text, no logos, no watermarks
+
+--ar 16:9 --style raw
+Negative: text, letters, words, watermark, logo, signage, distorted hands, extra fingers, plastic skin, stock-photo smile, looking at camera, corporate handshake cliché, blue-teal grading, HDR, oversaturated, cluttered
 ```
 
-| File | Size | Constraint |
-|---|---|---|
-| `apps/web/public/hero-lagos-residence.jpg` | 2400×1600 | **Left third must be visually quiet** — the headline sits there behind a navy scrim |
+### 02 · `letting-interior.jpg` · 1400×1750 (4:5) · **ESSENTIAL**
 
-> Wide editorial photograph of a modern mid-rise residential apartment building
-> in Lekki, Lagos, Nigeria, late afternoon golden light raking across the
-> facade, terracotta and cream rendered walls, dark window frames, a single lit
-> window, mature palm and frangipani trees in the foreground softly out of
-> focus, deep navy-blue sky at the top of the frame, quiet and unpeopled,
-> generous negative space on the left third of the frame.
+```
+Interior photograph of a bright empty Nigerian apartment living room, polished concrete or warm terrazzo floor, tall windows with sheer curtains diffusing afternoon light, a single tan leather mid-century armchair, warm off-white walls with one deep navy accent wall, a slim brass floor lamp, a set of keys and a document folder on a low side table, calm and aspirational but modest and real, no clutter, warm afternoon light, soft directional shadows, slightly desaturated with warm golden highlights and deep cool navy-blue shadows, brass and terracotta tones in the midtones, no green cast, subtle 35mm film grain, natural colour, no HDR, no blue-teal colour grading, documentary photography, shot on 35mm lens f/2.8, no text, no logos, no watermarks
 
----
+--ar 4:5 --style raw
+Negative: text, letters, words, watermark, logo, signage, distorted hands, extra fingers, plastic skin, stock-photo smile, looking at camera, corporate handshake cliché, blue-teal grading, HDR, oversaturated, cluttered
+```
 
-## Priority 3 — section photography
+### 03 · `renting-moving-in.jpg` · 1400×1750 (4:5) · **ESSENTIAL**
 
-These slots don't exist yet and need small markup additions where noted.
+```
+Documentary photograph of a young Nigerian woman seen from behind and slightly to the side, standing in the doorway of a newly rented apartment holding a cardboard moving box, warm afternoon light streaming past her into the empty room, her face not visible, unstyled everyday clothing, hopeful and quiet, shallow depth of field, warm afternoon light, soft directional shadows, slightly desaturated with warm golden highlights and deep cool navy-blue shadows, brass and terracotta tones in the midtones, no green cast, subtle 35mm film grain, natural colour, no HDR, no blue-teal colour grading, documentary photography, shot on 35mm lens f/2.8, no text, no logos, no watermarks
 
-**`trust-handover.jpg`** · 1600×1200 · trust section (`page.tsx`, Trust block)
-> Close documentary photograph of two pairs of hands across a wooden table, one
-> hand passing a set of house keys to another, a printed tenancy agreement and a
-> pen resting beside them, warm window light from the right, faces out of frame,
-> cropped at the forearms, intimate and calm.
+--ar 4:5 --style raw
+Negative: text, letters, words, watermark, logo, signage, distorted hands, extra fingers, plastic skin, stock-photo smile, looking at camera, corporate handshake cliché, blue-teal grading, HDR, oversaturated, cluttered
+```
 
-**`letting-interior.jpg`** · 1400×1750 portrait · "When you're letting" column
-> Interior photograph of a bright empty Nigerian apartment living room, polished
-> concrete or warm terrazzo floor, tall windows with sheer curtains diffusing
-> afternoon light, a single tan leather mid-century armchair, warm off-white
-> walls with one deep navy accent wall, a brass floor lamp, keys and a document
-> folder on a low side table, calm and modest, no clutter.
+### 04 · `trust-handover.jpg` · 1600×1200 (4:3) · **ESSENTIAL**
 
-**`renting-moving-in.jpg`** · 1400×1750 portrait · "When you're renting" column
-> Documentary photograph of a young Nigerian woman seen from behind and slightly
-> to the side, standing in the doorway of a newly rented apartment holding a
-> cardboard moving box, warm afternoon light streaming past her into the room,
-> her face not visible, unstyled everyday clothing, hopeful and quiet, shallow
-> depth of field.
+```
+Close documentary photograph of two pairs of hands across a wooden table, one hand passing a set of house keys to another, a printed tenancy agreement and a pen resting beside them, warm window light from the right, faces entirely out of frame, cropped at the forearms, intimate and calm, warm afternoon light, soft directional shadows, slightly desaturated with warm golden highlights and deep cool navy-blue shadows, brass and terracotta tones in the midtones, no green cast, subtle 35mm film grain, natural colour, no HDR, no blue-teal colour grading, documentary photography, shot on 35mm lens f/2.8, no text, no logos, no watermarks
 
-**`verification-desk.jpg`** · 1600×1000 · Phase 2 / verification messaging
-> Overhead flat-lay on a dark walnut desk: a Nigerian property title document,
-> an embossed brass notary seal catching the light, a brass fountain pen, a pair
-> of reading glasses, warm lamplight from the upper left casting long soft
-> shadows, deep navy desk mat beneath, warm off-white paper.
+--ar 4:3 --style raw
+Negative: text, letters, words, watermark, logo, signage, distorted hands, extra fingers, plastic skin, stock-photo smile, looking at camera, corporate handshake cliché, blue-teal grading, HDR, oversaturated, cluttered
+```
 
-**`legal-team.jpg`** · 1600×1000 · in-house legal team trust point
-> Environmental documentary photograph inside a modern Lagos law office, a
-> Nigerian lawyer at a desk reviewing a printed document, seen in three-quarter
-> profile from a distance, large window with warm afternoon light behind,
-> bookshelf softly out of focus, natural unposed posture, muted navy and warm
-> wood tones.
+### 05 · `verification-desk.jpg` · 1600×1000 (16:10) · **OPTIONAL**
 
----
+```
+Overhead flat-lay photograph on a dark walnut desk: a Nigerian property title document, an embossed brass notary seal catching the light, a brass fountain pen, a pair of reading glasses, warm lamplight from the upper left casting long soft shadows, a deep navy desk mat beneath, warm off-white paper, warm afternoon light, soft directional shadows, slightly desaturated with warm golden highlights and deep cool navy-blue shadows, brass and terracotta tones in the midtones, no green cast, subtle 35mm film grain, natural colour, no HDR, no blue-teal colour grading, documentary photography, shot on 35mm lens f/2.8, no text, no logos, no watermarks
 
-## Priority 4 — illustration & texture
+--ar 16:10 --style raw
+Negative: text, letters, words, watermark, logo, signage, distorted hands, extra fingers, plastic skin, stock-photo smile, looking at camera, corporate handshake cliché, blue-teal grading, HDR, oversaturated, cluttered
+```
 
-**How it works trio** · 1200×1200 each, transparent · one consistent camera and
-light rig across all three. Would replace the current `IconTile` glyphs in the
-`steps` block.
+### 06 · `legal-team.jpg` · 1600×1000 (16:10) · **OPTIONAL**
 
-> Isometric 3D render, matte clay materials with one polished brass element per
-> scene, soft studio lighting from upper left, deep navy `#0B1620` base forms
-> with warm brass `#B8862B` accents and warm off-white `#FAF6EE` surfaces,
-> subtle contact shadow, transparent background, no green, no text —
-> **(a) Connect:** two simple house forms on separate navy platforms joined by a
-> single clean brass arc.
-> **(b) Agree:** a warm off-white document sheet floating above a navy platform,
-> a brass signature line and a brass check mark rising off it.
-> **(c) Protect:** a navy house form enclosed inside a translucent shield, a
-> polished brass seal at the shield's base.
+```
+Environmental documentary photograph inside a modern Lagos law office, a Nigerian lawyer at a desk reviewing a printed document, seen in three-quarter profile from a distance, large window with warm afternoon light behind, bookshelf softly out of focus, natural unposed posture, muted navy and warm wood tones, warm afternoon light, soft directional shadows, slightly desaturated with warm golden highlights and deep cool navy-blue shadows, brass and terracotta tones in the midtones, no green cast, subtle 35mm film grain, natural colour, no HDR, no blue-teal colour grading, documentary photography, shot on 35mm lens f/2.8, no text, no logos, no watermarks
 
-**`property-placeholder.jpg`** · 1200×900 · fallback for listings with no photo
-(`PropertyCard` currently falls back to a `Building2` glyph on `ink-100`)
-> Minimal architectural detail photograph, a warm cream rendered wall meeting a
-> dark window reveal at an angle, raking afternoon light, abstract and
-> unidentifiable as any specific building, mostly negative space.
+--ar 16:10 --style raw
+Negative: text, letters, words, watermark, logo, signage, distorted hands, extra fingers, plastic skin, stock-photo smile, looking at camera, corporate handshake cliché, blue-teal grading, HDR, oversaturated, cluttered
+```
 
-**`seal-motif.svg`** · 1000×1000 transparent · reusable brand ornament
-> Minimal vector illustration of an embossed circular verification seal,
-> concentric fine-line rings with a subtle radial guilloche pattern like a
-> banknote, a simple house silhouette at the centre, brass and deep gold
-> monochrome, flat with subtle emboss shadow, engraved certificate aesthetic,
-> transparent background, no text.
+### 07 · `property-placeholder.jpg` · 1200×900 (4:3) · **OPTIONAL**
 
----
+```
+Minimal architectural detail photograph, a warm cream rendered wall meeting a dark window reveal at an angle, raking afternoon light, abstract and unidentifiable as any specific building, mostly negative space, warm afternoon light, soft directional shadows, slightly desaturated with warm golden highlights and deep cool navy-blue shadows, brass and terracotta tones in the midtones, no green cast, subtle 35mm film grain, natural colour, no HDR, no blue-teal colour grading, documentary photography, shot on 35mm lens f/2.8, no text, no logos, no watermarks
 
-## Append to every photographic prompt
+--ar 4:3 --style raw
+Negative: text, letters, words, watermark, logo, signage, distorted hands, extra fingers, plastic skin, stock-photo smile, looking at camera, corporate handshake cliché, blue-teal grading, HDR, oversaturated, cluttered
+```
 
-`warm afternoon light, soft directional shadows, slightly desaturated with warm
-golden highlights and deep cool navy-blue shadows, brass and terracotta tones in
-the midtones, no green cast, subtle 35mm film grain, natural colour, no HDR, no
-blue-teal colour grading, documentary photography, shot on 35mm lens f/2.8, no
-text, no logos, no watermarks`
+### 08–10 · How-it-works trio · 1200×1200 each, transparent PNG · **OPTIONAL**
 
-> "No green cast" matters — generative models default hard to lush foliage in
-> African architectural scenes, and green now reads as a *status* colour.
+Generate all three in one session so the camera angle and lighting match —
+they sit side by side and any drift between them is obvious.
 
-## Negative prompt
+**08 · `step-connect.png` — Connect**
 
-`text, letters, words, watermark, logo, signage, distorted hands, extra fingers,
-plastic skin, stock-photo smile, looking at camera, corporate handshake cliché,
-blue-teal grading, HDR, oversaturated, cluttered`
+```
+Isometric 3D render of two simple house forms on separate navy platforms joined by a single clean brass arc. Matte clay materials with one polished brass element, soft studio lighting from the upper left, deep navy #0B1620 base forms with warm brass #B8862B accents and warm off-white #FAF6EE surfaces, subtle contact shadow, transparent background, no green, no text, centred in frame
+
+--ar 1:1
+Negative: text, letters, logo, watermark, green, busy background, drop shadow on backdrop
+```
+
+**09 · `step-agree.png` — Agree**
+
+```
+Isometric 3D render of a warm off-white document sheet floating above a navy platform, a brass signature line and a brass check mark rising off it. Matte clay materials with one polished brass element, soft studio lighting from the upper left, deep navy #0B1620 base forms with warm brass #B8862B accents and warm off-white #FAF6EE surfaces, subtle contact shadow, transparent background, no green, no text, centred in frame
+
+--ar 1:1
+Negative: text, letters, logo, watermark, green, busy background, drop shadow on backdrop
+```
+
+**10 · `step-protect.png` — Protect**
+
+```
+Isometric 3D render of a navy house form enclosed inside a translucent shield, a polished brass seal at the shield's base. Matte clay materials with one polished brass element, soft studio lighting from the upper left, deep navy #0B1620 base forms with warm brass #B8862B accents and warm off-white #FAF6EE surfaces, subtle contact shadow, transparent background, no green, no text, centred in frame
+
+--ar 1:1
+Negative: text, letters, logo, watermark, green, busy background, drop shadow on backdrop
+```
+
+### 11 · `seal-motif.svg` · 1000×1000 transparent · **OPTIONAL**
+
+Vector — generate as PNG then trace, or draw directly.
+
+```
+Minimal vector illustration of an embossed circular verification seal, concentric fine-line rings with a subtle radial guilloche pattern like a banknote, a simple house silhouette at the centre, brass and deep gold monochrome, flat with a subtle emboss shadow, engraved certificate aesthetic, transparent background, no text
+
+--ar 1:1
+Negative: text, letters, photorealism, gradient mesh, 3D, drop shadow
+```
+
+### Export notes
+
+- **WebP or AVIF** for the photographs, not JPEG. The hero is the page's LCP
+  element and the single biggest Lighthouse lever.
+- Keep the filenames exactly as given — the slots will be wired to them.
+- The hero's left third must stay quiet; the headline sits there behind a scrim.
 
 ---
 
