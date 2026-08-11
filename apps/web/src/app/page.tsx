@@ -289,7 +289,7 @@ export default function Home() {
             <Reveal>
               <IconTile icon={Building2} tone="navy" size="lg" className="mb-5" />
               <h3 className="font-display text-display-sm font-semibold text-navy-900 mb-2">
-                For landlords
+                When you&apos;re letting
               </h3>
               <p className="font-body text-ink-500 mb-7">
                 Keep control of your property after the keys change hands.
@@ -320,7 +320,7 @@ export default function Home() {
             <Reveal delay={0.08}>
               <IconTile icon={HomeIcon} tone="brass" size="lg" className="mb-5" />
               <h3 className="font-display text-display-sm font-semibold text-navy-900 mb-2">
-                For tenants
+                When you&apos;re renting
               </h3>
               <p className="font-body text-ink-500 mb-7">
                 Stop paying {formatNaira(BEYOND_PRICING.TYPICAL_AGENT_FEE)} to someone for handing
@@ -440,7 +440,7 @@ export default function Home() {
           {/* Landlord */}
           <Reveal>
             <div className="bg-white border border-ink-200 rounded-card p-8 h-full">
-              <Eyebrow className="mb-5">For landlords</Eyebrow>
+              <Eyebrow className="mb-5">Letting a property</Eyebrow>
               <p className="font-display text-display-md font-semibold text-navy-900 leading-none mb-2">
                 ₦0
               </p>
@@ -474,7 +474,7 @@ export default function Home() {
                 Replaces your agency fee
               </span>
               <Eyebrow onDark className="mb-5">
-                For tenants
+                Renting a home
               </Eyebrow>
               <p className="font-display text-display-lg font-semibold text-brass-500 leading-none mb-2">
                 ₦0
@@ -585,7 +585,7 @@ export default function Home() {
               {[
                 { icon: Calendar, text: '30-minute session, no commitment' },
                 { icon: Video, text: 'Over Google Meet or a phone call' },
-                { icon: Users, text: 'For landlords, tenants and investors' },
+                { icon: Users, text: 'Whether you’re letting, renting or investing' },
               ].map(({ icon: Icon, text }) => (
                 <li key={text} className="flex items-center gap-3">
                   <Icon className="text-brass-600 flex-shrink-0" size={19} aria-hidden />

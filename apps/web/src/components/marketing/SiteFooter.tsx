@@ -9,8 +9,11 @@ const columns = [
     links: [
       { href: '/#how-it-works', label: 'How it works' },
       { href: '/#pricing', label: 'Pricing' },
-      { href: '/#for-landlords', label: 'For landlords' },
-      { href: '/#for-tenants', label: 'For tenants' },
+      // Anchor ids stay as-is so existing inbound links keep working; the
+      // labels describe the activity rather than an account type, since one
+      // account covers both.
+      { href: '/#for-landlords', label: 'Letting a property' },
+      { href: '/#for-tenants', label: 'Renting a home' },
       { href: '/provider/apply', label: 'For providers' },
     ],
   },
