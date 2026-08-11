@@ -22,7 +22,7 @@ const button = cva(
       variant: {
         primary: 'bg-brass-500 text-ink-950 shadow-xs hover:bg-brass-600 hover:shadow-brass',
         secondary: 'border border-ink-300 text-ink-800 bg-transparent hover:bg-ink-100 hover:border-ink-400',
-        tertiary: 'bg-navy-900 text-on-dark hover:bg-navy-800 shadow-xs',
+        tertiary: 'bg-navy-900 !text-white hover:bg-navy-800 shadow-xs hover:shadow-navy-900',
         danger: 'bg-danger-600 text-white shadow-xs hover:bg-danger-700',
         ghost: 'bg-transparent text-current hover:bg-ink-900/5',
         link: 'bg-transparent text-brass-700 underline underline-offset-4 hover:text-brass-600 px-0 py-0 h-auto',
