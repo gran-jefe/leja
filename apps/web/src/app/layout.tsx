@@ -50,6 +50,11 @@ export const metadata: Metadata = {
     'escrow Nigeria',
     'rent without an agent',
   ],
+  // No `images` or `icons` keys here on purpose. Next's file-based metadata
+  // picks up `app/opengraph-image.tsx`, `app/apple-icon.tsx` and `app/icon.svg`
+  // automatically and emits correctly-hashed URLs. The previous hand-written
+  // entries pointed at /og.jpg, /favicon.ico and /apple-touch-icon.png — none
+  // of which existed, so every share card and touch icon 404'd.
   openGraph: {
     type: 'website',
     locale: 'en_NG',
@@ -57,20 +62,11 @@ export const metadata: Metadata = {
     siteName: 'BeyondAgency',
     title,
     description,
-    images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'BeyondAgency' }],
   },
   twitter: {
     card: 'summary_large_image',
     title,
     description,
-    images: ['/og.jpg'],
-  },
-  icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icon.svg', type: 'image/svg+xml' },
-    ],
-    apple: '/apple-touch-icon.png',
   },
   robots: { index: true, follow: true },
 };
