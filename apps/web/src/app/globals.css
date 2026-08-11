@@ -1,24 +1,171 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz@9..144&family=DM+Sans:wght@400;500;700&display=swap');
 @import 'nprogress/nprogress.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-html {
-  font-family: 'DM Sans', sans-serif;
-  scroll-behavior: smooth;
+/* ---------------------------------------------------------------------------
+   Design tokens — "Warm Institution" (Navy + Brass)
+
+   Colors are stored as space-separated RGB channels so Tailwind can apply
+   opacity modifiers via `rgb(var(--x) / <alpha-value>)`. Never redeclare a
+   raw hex in a component; add a token here instead.
+   --------------------------------------------------------------------------- */
+
+@layer base {
+  :root {
+    /* -- Brand: navy ------------------------------------------------------ */
+    --navy-950: 6 12 18;
+    --navy-900: 11 22 32; /* primary dark surface */
+    --navy-800: 21 35 48;
+    --navy-700: 28 44 58;
+    --navy-600: 44 78 104;
+
+    /* -- Brand: brass (primary accent + CTA) ------------------------------ */
+    --brass-50: 251 244 228;
+    --brass-100: 242 228 196;
+    --brass-300: 220 190 120;
+    --brass-500: 184 134 43; /* hero accent */
+    --brass-600: 150 108 32;
+    --brass-700: 114 82 24;
+
+    /* -- Semantic: success (forest — status only, no longer brand) -------- */
+    --forest-50: 232 245 238;
+    --forest-100: 199 232 214;
+    --forest-500: 26 122 74;
+    --forest-600: 20 97 59;
+    --forest-700: 15 74 45;
+
+    /* -- Semantic: warning (ember — repurposed from brand accent) --------- */
+    --ember-50: 252 239 233;
+    --ember-100: 246 213 198;
+    --ember-500: 196 82 42;
+    --ember-600: 163 65 32;
+    --ember-700: 126 50 24;
+
+    /* -- Semantic: danger (crimson) --------------------------------------- */
+    --crimson-50: 251 235 235;
+    --crimson-100: 244 207 207;
+    --crimson-500: 184 42 46;
+    --crimson-600: 155 34 38;
+    --crimson-700: 122 27 30;
+
+    /* -- Neutral: warm ink ramp ------------------------------------------- */
+    --ink-950: 23 20 15;
+    --ink-900: 33 28 22;
+    --ink-800: 42 37 33;
+    --ink-700: 58 52 45; /* body text — 11.4:1 on paper */
+    --ink-600: 78 70 60;
+    --ink-500: 110 101 90; /* secondary text — 5.3:1 on paper */
+    --ink-400: 138 128 115; /* placeholder / disabled */
+    --ink-300: 176 166 151; /* on-dark muted — 7.6:1 on navy-900 */
+    --ink-200: 227 220 208; /* hairline / border */
+    --ink-100: 239 233 222;
+    --ink-50: 245 241 232;
+    --paper: 250 246 238; /* page ground */
+
+    /* -- On-dark ---------------------------------------------------------- */
+    --on-dark: 255 255 255;
+    --on-dark-muted: var(--ink-300);
+    --on-dark-border: 255 255 255;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: rgb(var(--paper));
+    color: rgb(var(--ink-700));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Fraunces reads best with a touch of optical softening at display sizes.
+     Without this the `SOFT` axis stays at 0 and the face turns brittle. */
+  .font-display {
+    font-variation-settings: 'SOFT' 12, 'WONK' 0;
+  }
+
+  /* A single visible focus treatment for the whole app. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--brass-500));
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background-color: rgb(var(--brass-100));
+    color: rgb(var(--ink-900));
+  }
 }
 
-body {
-  background-color: #F7F9FC;
+@layer utilities {
+  /* Film grain. Applied by <Section tone="dark"> — the single largest
+     "not a flat template" delta in the system, for ~400 bytes. */
+  .bg-grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Hairline rules — the replacement for bordered card soup. */
+  .rule {
+    border-top: 1px solid rgb(var(--ink-200));
+  }
+  .rule-dark {
+    border-top: 1px solid rgb(var(--on-dark-border) / 0.12);
+  }
+  .rule-brass {
+    border-top: 1px solid rgb(var(--brass-500) / 0.35);
+  }
+
+  .skeleton-shimmer {
+    background-image: linear-gradient(
+      90deg,
+      rgb(var(--ink-100)) 0%,
+      rgb(var(--ink-50)) 50%,
+      rgb(var(--ink-100)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Route progress bar — brass, matching the CTA. */
 #nprogress .bar {
-  background: #1A7A4A;
+  background: rgb(var(--brass-500));
   height: 3px;
 }
 
 #nprogress .peg {
-  box-shadow: 0 0 10px #1A7A4A, 0 0 5px #1A7A4A;
+  box-shadow:
+    0 0 10px rgb(var(--brass-500)),
+    0 0 5px rgb(var(--brass-500));
+}
+
+/* Global reduced-motion kill switch. Covers Framer Motion, the shimmer,
+   nprogress, and any CSS transition without per-component opt-in. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

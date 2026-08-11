@@ -77,3 +77,27 @@ export const formatDate = (value?: string | Date | null): string => {
     day: 'numeric',
   });
 };
+
+/** Time only, for chat bubbles — formatDate alone made every message in a
+ *  thread read "Aug 10, 2026" with no way to tell them apart. */
+export const formatTime = (value?: string | Date | null): string => {
+  if (!value) return '';
+  return new Date(value).toLocaleTimeString('en-NG', {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+};
+
+/** Day separator label for message threads. */
+export const formatDayLabel = (value?: string | Date | null): string => {
+  if (!value) return '';
+  const d = new Date(value);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+  if (sameDay(d, today)) return 'Today';
+  if (sameDay(d, yesterday)) return 'Yesterday';
+  return formatDate(d);
+};

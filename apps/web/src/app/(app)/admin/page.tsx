@@ -2,13 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { DashboardShell } from '@/components/layout/DashboardShell';
-import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
 import { AdminGate } from '@/components/admin/AdminGate';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Card } from '@/components/ui/Card';
+import { StatCard } from '@/components/ui/StatCard';
+import { ListRow } from '@/components/ui/ListRow';
 import { Spinner } from '@/components/ui/Spinner';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { Users, Building2, FileText, ShieldCheck, Wallet, ArrowRight } from 'lucide-react';
+import {
+  Users,
+  Building2,
+  FileText,
+  ShieldCheck,
+  Wallet,
+  ArrowRight,
+  LayoutDashboard,
+} from 'lucide-react';
 import api from '@/lib/api';
 import { formatNaira, getErrorMessage } from '@/lib/utils';
 
@@ -23,28 +32,6 @@ interface AdminStats {
   activeProviders: number;
   successfulPayments: number;
   totalRevenue: number;
-}
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string;
-  value: string | number;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-}) {
-  return (
-    <Card>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-muted font-body">{label}</p>
-          <p className="font-display text-2xl font-bold text-navy">{value}</p>
-        </div>
-        <Icon size={22} className="text-forest" />
-      </div>
-    </Card>
-  );
 }
 
 function OverviewContent() {
@@ -77,8 +64,8 @@ function OverviewContent() {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <h1 className="font-display text-2xl font-bold text-navy">Admin overview</h1>
+    <div className="max-w-wide mx-auto space-y-6">
+      <PageHeader title="Admin overview" icon={LayoutDashboard} />
 
       {loading ? (
         <div className="flex justify-center py-16">
@@ -88,7 +75,7 @@ function OverviewContent() {
         <ErrorState message={error} onRetry={fetchStats} />
       ) : stats ? (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard label="Total users" value={stats.totalUsers} icon={Users} />
             <StatCard label="Landlords" value={stats.totalLandlords} icon={Users} />
             <StatCard label="Tenants" value={stats.totalTenants} icon={Users} />
@@ -99,17 +86,21 @@ function OverviewContent() {
             <StatCard label="Active providers" value={stats.activeProviders} icon={ShieldCheck} />
           </div>
 
-          <Card>
-            <div className="flex items-center justify-between">
+          <Card tone="dark" className="bg-grain">
+            <div className="relative flex flex-wrap items-end justify-between gap-6">
               <div>
-                <p className="text-sm text-muted font-body">Total platform revenue</p>
-                <p className="font-display text-3xl font-bold text-forest">
+                <p className="font-mono text-label uppercase text-on-dark-muted mb-2">
+                  Total platform revenue
+                </p>
+                <p className="font-mono tabular-nums text-display-md font-medium text-brass-500">
                   {formatNaira(stats.totalRevenue)}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-muted font-body">Successful payments</p>
-                <p className="font-display text-xl font-semibold text-navy">
+                <p className="font-mono text-label uppercase text-on-dark-muted mb-2">
+                  Successful payments
+                </p>
+                <p className="font-mono tabular-nums text-display-sm text-on-dark">
                   {stats.successfulPayments}
                 </p>
               </div>
@@ -117,20 +108,10 @@ function OverviewContent() {
           </Card>
 
           <div>
-            <h2 className="font-display text-lg font-semibold text-navy mb-3">Quick links</h2>
+            <h2 className="font-display text-title font-semibold text-navy-900 mb-3">Quick links</h2>
             <div className="grid sm:grid-cols-2 gap-3">
               {quickLinks.map(({ href, label, icon: Icon }) => (
-                <Link key={href} href={href}>
-                  <Card className="hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Icon size={18} className="text-forest" />
-                        <span className="font-body text-sm font-semibold text-charcoal">{label}</span>
-                      </div>
-                      <ArrowRight size={16} className="text-muted" />
-                    </div>
-                  </Card>
-                </Link>
+                <ListRow key={href} href={href} icon={Icon} iconTone="brass" title={label} />
               ))}
             </div>
           </div>
@@ -142,12 +123,8 @@ function OverviewContent() {
 
 export default function AdminOverviewPage() {
   return (
-    <ProtectedPageWrapper>
-      <DashboardShell>
-        <AdminGate>
-          <OverviewContent />
-        </AdminGate>
-      </DashboardShell>
-    </ProtectedPageWrapper>
+    <AdminGate>
+      <OverviewContent />
+    </AdminGate>
   );
 }

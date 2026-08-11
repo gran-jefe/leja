@@ -1,118 +1,82 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, Building2, Bed, Bath } from 'lucide-react';
-import { DashboardShell } from '@/components/layout/DashboardShell';
+import { Home, Building2, PlusCircle } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/layout/EmptyState';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { PropertyCard } from '@/components/ui/PropertyCard';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useProperties } from '@/hooks/useProperties';
 import { UserRole } from '@beyond/shared';
-import { formatNaira } from '@/lib/utils';
-import { PROPERTY_TYPE_LABELS } from '@/lib/constants';
 
-export default function PropertiesPage() {
+function PropertiesContent() {
   const { properties, loading, error, refetch } = useProperties();
 
+  const addButton = (
+    <Link href="/properties/new">
+      <Button leadingIcon={<PlusCircle size={17} />}>Add property</Button>
+    </Link>
+  );
+
+  return (
+    <div className="max-w-wide mx-auto">
+      <PageHeader
+        title="My properties"
+        subtitle="Manage your listings and track availability."
+        icon={Building2}
+        action={addButton}
+      />
+
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <SkeletonCard key={i} lines={3} />
+          ))}
+        </div>
+      ) : error ? (
+        <ErrorState message={error} onRetry={refetch} size="page" />
+      ) : properties.length === 0 ? (
+        <EmptyState
+          icon={Home}
+          title="No properties yet"
+          description="Add your first property to start connecting with tenants."
+          action={addButton}
+        />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          {properties.map((property, i) => (
+            <PropertyCard
+              key={property.id}
+              href={`/properties/${property.id}`}
+              address={property.address}
+              city={property.city}
+              state={property.state}
+              propertyType={property.property_type}
+              annualRent={property.annual_rent}
+              bedrooms={property.bedrooms}
+              bathrooms={property.bathrooms}
+              imageUrl={property.images?.[0]}
+              aspect="video"
+              priority={i < 3}
+              status={{
+                label: property.is_available ? 'Available' : 'Occupied',
+                tone: property.is_available ? 'success' : 'neutral',
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function PropertiesPage() {
   return (
     <ProtectedPageWrapper requiredRole={UserRole.LANDLORD}>
-      <DashboardShell>
-        <div className="max-w-4xl mx-auto">
-            <PageHeader
-              title="My Properties"
-              subtitle="Manage your listings and track availability"
-              icon={Building2}
-              action={
-                <Link href="/properties/new">
-                  <Button variant="primary">Add Property</Button>
-                </Link>
-              }
-            />
-
-            {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[1, 2, 3].map((i) => (
-                  <Card key={i}>
-                    <Skeleton height="1.5rem" className="mb-3" />
-                    <Skeleton height="1rem" className="mb-2" width="70%" />
-                    <Skeleton height="1rem" width="50%" />
-                  </Card>
-                ))}
-              </div>
-            ) : error ? (
-              <ErrorState message={error} onRetry={refetch} />
-            ) : properties.length === 0 ? (
-              <EmptyState
-                icon={Home}
-                title="No properties yet"
-                description="Add your first property to get started"
-                action={
-                  <Link href="/properties/new">
-                    <Button variant="primary">Add Property</Button>
-                  </Link>
-                }
-              />
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {properties.map((property) => (
-                  <Link key={property.id} href={`/properties/${property.id}`}>
-                    <Card className="h-full p-0 overflow-hidden hover:shadow-md hover:border-forest transition-all cursor-pointer">
-                      <div className="relative w-full aspect-[16/9] bg-cream">
-                        {property.images?.[0] ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={property.images[0]}
-                            alt={property.address}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-muted">
-                            <Building2 size={28} />
-                          </div>
-                        )}
-                        <div className="absolute top-2 right-2">
-                          <Badge variant={property.is_available ? 'success' : 'default'}>
-                            {property.is_available ? 'Available' : 'Occupied'}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="p-6">
-                        <h3 className="font-display text-lg font-semibold text-navy mb-2">
-                          {property.address}
-                        </h3>
-                        <p className="font-body text-sm text-muted mb-3">
-                          {property.city}, {property.state}
-                        </p>
-                        <div className="flex items-center gap-4 font-body text-sm text-charcoal mb-3">
-                          <span>
-                            {PROPERTY_TYPE_LABELS[property.property_type] || property.property_type}
-                          </span>
-                          <span className="flex items-center gap-1 text-muted">
-                            <Bed size={14} />
-                            {property.bedrooms}
-                          </span>
-                          <span className="flex items-center gap-1 text-muted">
-                            <Bath size={14} />
-                            {property.bathrooms}
-                          </span>
-                        </div>
-                        <p className="font-display text-lg font-bold text-forest">
-                          {formatNaira(property.annual_rent)}
-                          <span className="text-sm font-body text-muted">/year</span>
-                        </p>
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            )}
-        </div>
-      </DashboardShell>
+      <PropertiesContent />
     </ProtectedPageWrapper>
   );
 }

@@ -1,22 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { DashboardShell } from '@/components/layout/DashboardShell';
-import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ScrollText } from 'lucide-react';
 import { AdminGate } from '@/components/admin/AdminGate';
-import { Card } from '@/components/ui/Card';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { EmptyState } from '@/components/layout/EmptyState';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { Spinner } from '@/components/ui/Spinner';
+import { DataTable, FilterChips, type Column } from '@/components/ui/DataTable';
+import { Pagination } from '@/components/ui/Pagination';
+import { SkeletonList } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
-import api from '@/lib/api';
-import {
-  formatDate,
-  formatNaira,
-  getAgreementStatusLabel,
-  getAgreementStatusVariant,
-  getErrorMessage,
-} from '@/lib/utils';
+import { ADMIN_PAGE_SIZE, useAdminList } from '@/hooks/useAdminList';
+import { formatDate, formatNaira } from '@/lib/utils';
+import { getStatus } from '@/lib/status';
 
 interface AdminAgreement {
   id: string;
@@ -28,116 +25,105 @@ interface AdminAgreement {
   tenant: { name: string; email: string } | null;
 }
 
-const STATUSES = ['', 'DRAFT', 'ACTIVE', 'PENDING_PAYMENT', 'EXPIRED', 'DISPUTED', 'TERMINATED'];
-const PAGE_SIZE = 50;
+const STATUS_OPTIONS = [
+  { value: '', label: 'All' },
+  { value: 'DRAFT', label: 'Draft' },
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'PENDING_PAYMENT', label: 'Awaiting payment' },
+  { value: 'EXPIRED', label: 'Expired' },
+  { value: 'DISPUTED', label: 'Disputed' },
+  { value: 'TERMINATED', label: 'Terminated' },
+];
+
+const columns: Column<AdminAgreement>[] = [
+  {
+    header: 'Landlord',
+    primary: true,
+    cell: (a) => (
+      <span className="min-w-0 block">
+        <span className="block truncate">{a.landlord?.name || 'Unknown'}</span>
+        <span className="block font-mono text-body-sm text-ink-400 truncate">
+          {a.landlord?.email}
+        </span>
+      </span>
+    ),
+  },
+  {
+    header: 'Tenant',
+    cell: (a) => (
+      <span className="min-w-0 block">
+        <span className="block truncate">{a.tenant?.name || 'Unknown'}</span>
+        <span className="block font-mono text-body-sm text-ink-400 truncate">
+          {a.tenant?.email}
+        </span>
+      </span>
+    ),
+  },
+  {
+    header: 'Annual rent',
+    align: 'right',
+    cell: (a) => <span className="font-mono tabular-nums">{formatNaira(a.annual_rent)}</span>,
+  },
+  {
+    header: 'Monthly',
+    align: 'right',
+    secondary: true,
+    cell: (a) => <span className="font-mono tabular-nums">{formatNaira(a.monthly_rent)}</span>,
+  },
+  {
+    header: 'Status',
+    cell: (a) => {
+      const s = getStatus('agreement', a.status);
+      return (
+        <Badge tone={s.tone} dot>
+          {s.label}
+        </Badge>
+      );
+    },
+  },
+  {
+    header: 'Created',
+    align: 'right',
+    cell: (a) => <span className="font-mono whitespace-nowrap">{formatDate(a.created_at)}</span>,
+  },
+];
 
 function AgreementsContent() {
-  const [agreements, setAgreements] = useState<AdminAgreement[]>([]);
-  const [total, setTotal] = useState(0);
+  const router = useRouter();
   const [status, setStatus] = useState('');
-  const [offset, setOffset] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
-  const fetchAgreements = async (statusValue: string, offsetValue: number) => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await api.get('/admin/agreements', {
-        params: { status: statusValue || undefined, limit: PAGE_SIZE, offset: offsetValue },
-      });
-      setAgreements(res.data.data.agreements || []);
-      setTotal(res.data.data.total || 0);
-    } catch (err) {
-      setError(getErrorMessage(err, 'Failed to load agreements'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAgreements(status, offset);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, offset]);
+  const { items, total, page, setPage, loading, error, refetch } = useAdminList<AdminAgreement>(
+    '/admin/agreements',
+    'agreements',
+    { status: status || undefined }
+  );
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <h1 className="font-display text-2xl font-bold text-navy">Agreements</h1>
+    <div className="max-w-wide mx-auto space-y-6">
+      <PageHeader title="Agreements" subtitle={`${total} on record`} icon={ScrollText} />
 
-      <div className="flex flex-wrap gap-2">
-        {STATUSES.map((s) => (
-          <button
-            key={s || 'ALL'}
-            onClick={() => {
-              setStatus(s);
-              setOffset(0);
-            }}
-            className={`px-3 py-1.5 rounded-button text-sm font-body border ${
-              status === s
-                ? 'bg-navy text-white border-navy'
-                : 'bg-white text-charcoal border-border hover:bg-cream'
-            }`}
-          >
-            {s ? getAgreementStatusLabel(s) : 'All'}
-          </button>
-        ))}
-      </div>
+      <FilterChips options={STATUS_OPTIONS} value={status} onChange={setStatus} />
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Spinner size="lg" />
-        </div>
+        <SkeletonList count={5} lines={1} />
       ) : error ? (
-        <ErrorState message={error} onRetry={() => fetchAgreements(status, offset)} />
-      ) : agreements.length === 0 ? (
-        <Card>
-          <p className="font-body text-sm text-muted text-center py-6">No agreements found.</p>
-        </Card>
+        <ErrorState message={error} onRetry={refetch} size="page" />
+      ) : items.length === 0 ? (
+        <EmptyState
+          icon={ScrollText}
+          title="No agreements found"
+          description={status ? 'Try a different status filter.' : 'Agreements will appear here.'}
+        />
       ) : (
         <>
-          <div className="space-y-2">
-            {agreements.map((a) => (
-              <Card key={a.id}>
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div>
-                    <p className="font-body font-semibold text-charcoal">
-                      {a.landlord?.name || 'Unknown landlord'} → {a.tenant?.name || 'Unknown tenant'}
-                    </p>
-                    <p className="text-xs text-muted font-body">
-                      {formatNaira(a.monthly_rent)}/mo · Created {formatDate(a.created_at)}
-                    </p>
-                  </div>
-                  <Badge variant={getAgreementStatusVariant(a.status)}>
-                    {getAgreementStatusLabel(a.status)}
-                  </Badge>
-                </div>
-              </Card>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-between font-body text-sm text-muted">
-            <span>
-              Showing {offset + 1}–{Math.min(offset + PAGE_SIZE, total)} of {total}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={offset === 0}
-                onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={offset + PAGE_SIZE >= total}
-                onClick={() => setOffset(offset + PAGE_SIZE)}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+          <DataTable
+            columns={columns}
+            rows={items}
+            rowKey={(a) => a.id}
+            caption="Agreements"
+            onRowClick={(a) => router.push(`/agreement/${a.id}`)}
+          />
+          <Pagination page={page} pageSize={ADMIN_PAGE_SIZE} total={total} onPageChange={setPage} />
         </>
       )}
     </div>
@@ -146,12 +132,8 @@ function AgreementsContent() {
 
 export default function AdminAgreementsPage() {
   return (
-    <ProtectedPageWrapper>
-      <DashboardShell>
-        <AdminGate>
-          <AgreementsContent />
-        </AdminGate>
-      </DashboardShell>
-    </ProtectedPageWrapper>
+    <AdminGate>
+      <AgreementsContent />
+    </AdminGate>
   );
 }

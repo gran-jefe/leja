@@ -16,22 +16,35 @@
 - **Auth:** JWT stored in httpOnly cookies (frontend uses js-cookie)
 - **Deployment:** Vercel (web), Render (api)
 
-## Design Tokens
+## Design Tokens — "Warm Institution" (Navy + Brass)
 
-**Primary font:** Fraunces (display/headings), DM Sans (body)
+Tokens are defined once as RGB channels in `apps/web/src/app/globals.css` (`@layer base :root`) and consumed by `apps/web/tailwind.config.ts` via `rgb(var(--x) / <alpha-value>)`. **Never write a raw hex in a component** — add a token instead. Full rationale in `docs/landing-copy-audit.md` and the design plan.
 
-**Colors:**
-- Navy: `#0D1B2A` (primary brand)
-- Forest: `#1A7A4A` (primary action/success)
-- Ember: `#C4522A` (accent/warning/CTA)
-- Cream: `#F7F9FC` (background)
-- Charcoal: `#2D3748` (body text)
-- Muted: `#718096` (secondary text)
-- Border: `#E2E8F0` (borders)
+**Fonts — tri-stack, loaded via `next/font` in `app/layout.tsx`:**
+- `font-display` — **Fraunces**, variable, axes `SOFT`/`WONK`/`opsz`. The axes are mandatory: loading Fraunces without them (as the old Google Fonts `@import` did) leaves the weight axis unavailable and every bold heading gets faux-bolded by the browser.
+- `font-body` — **DM Sans**
+- `font-mono` — **DM Mono**. The "ledger voice": eyebrows, statuses, reference numbers, dates, and ₦ amounts in tables.
 
-**Border Radius:**
-- Card: 12px
-- Button: 8px
+**Brand colors:**
+- `navy-950/900/800/700/600` — `#060C12` `#0B1620` `#152330` `#1C2C3A` `#2C4E68`. `navy-900` is the primary dark surface.
+- `brass-50/100/300/500/600/700` — `#FBF4E4` `#F2E4C4` `#DCBE78` `#B8862B` `#966C20` `#725218`. **`brass-500` is the primary accent and CTA color.**
+
+**Semantic colors** (status only — these are *not* brand colors):
+- `success` = forest `#1A7A4A` · `warning` = ember `#C4522A` · `danger` = crimson `#9B2226` · `info` = `navy-600`
+- Forest was demoted from brand to status, and ember from brand accent to warning. Previously `Badge`'s `warning` and `danger` both rendered `bg-ember`, so "Awaiting Payment" and "Disputed" were indistinguishable.
+
+**Neutrals — warm ink ramp** (replaces the Tailwind blue-gray defaults, which were the main source of the generic feel):
+`ink-950 #17140F` · `ink-900 #211C16` · `ink-800 #2A2521` · `ink-700 #3A342D` (body text) · `ink-600` · `ink-500 #6E655A` (secondary text) · `ink-400` (placeholder) · `ink-300 #B0A697` (on-dark muted) · `ink-200 #E3DCD0` (hairline/border) · `ink-100` · `ink-50` · `paper #FAF6EE` (page ground)
+
+**⚠️ Contrast rule — brass takes dark text.** White on `brass-500` is **3.24:1 and fails WCAG AA**; `ink-950` on `brass-500` is **5.67:1 and passes**. `Button variant="primary"` encodes this. Do not "fix" it to white. Brass *text* on `navy-900` is 5.64:1 and passes, so brass links/CTAs on dark sections are fine.
+
+**Legacy aliases:** `navy`, `forest`, `ember`, `cream`, `charcoal`, `muted`, `border` still resolve (mapped onto the new scale) so unmigrated markup compiles. Prefer the new names in all new code.
+
+**Other scales:** radius `sm 6` / `button 8` / `card 12` / `xl 16` / `2xl 24` / `chat`; shadows `xs`–`xl` plus `ring` and `brass`, all warm-tinted `rgba(33,28,22,…)`; fluid type `display-xl`→`display-sm`, `title`, `body-lg`/`body`/`body-sm`, `label`; widths `form`/`content`/`wide`/`shell` via `<Container>`; durations `fast 150` / `base 220` / `slow 320` / `deliberate 480`.
+
+**Motion:** Framer Motion only, via `components/motion/` (`Reveal`, `RevealGroup`, `AnimatedNumber`). A global `prefers-reduced-motion` kill switch lives in `globals.css`, and the Framer components also check `useReducedMotion()` because inline transforms aren't neutralized by CSS alone.
+
+**Texture:** `.bg-grain` (inline `feTurbulence` SVG at 3.5%) — applied automatically by `<Section tone="dark">`. This is what keeps dark bands from reading as flat fill.
 
 ## Roles
 

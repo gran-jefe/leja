@@ -1,35 +1,35 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import {
-  Shield,
-  FileCheck,
-  Users,
+  ArrowRight,
   Building2,
-  Home as HomeIcon,
-  CheckCircle,
-  CheckCircle2,
-  FileText,
-  ShieldCheck,
-  Scale,
-  CreditCard,
-  Link2,
   Calendar,
+  CheckCircle2,
+  CreditCard,
+  FileText,
+  Home as HomeIcon,
+  Landmark,
+  Link2,
+  Scale,
+  Shield,
+  ShieldCheck,
+  Users,
   Video,
-  Twitter,
-  Linkedin,
-  Instagram,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
+import { Section, Eyebrow } from '@/components/layout/Section';
+import { Container } from '@/components/layout/Container';
+import { Reveal, RevealGroup } from '@/components/motion/Reveal';
+import { AnimatedNumber } from '@/components/motion/AnimatedNumber';
+import { HeroBackdrop } from '@/components/marketing/HeroBackdrop';
+import { AgreementArtifact } from '@/components/marketing/AgreementArtifact';
+import { DemoContactForm } from '@/components/marketing/DemoContactForm';
+import { SiteFooter } from '@/components/marketing/SiteFooter';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Textarea } from '@/components/ui/Textarea';
-import api from '@/lib/api';
-import { cn, getErrorMessage, formatNaira } from '@/lib/utils';
+import { Badge } from '@/components/ui/Badge';
+import { IconTile } from '@/components/ui/IconTile';
+import { formatNaira } from '@/lib/utils';
 import { BEYOND_PRICING } from '@beyond/shared';
 
 const landlordBenefits = [
@@ -51,721 +51,545 @@ const steps = [
     number: '01',
     icon: Link2,
     title: 'Connect',
-    body: 'Browse verified listings and connect directly with a landlord or tenant — no agent fee, ever.',
+    body: 'Browse verified listings and connect directly with a landlord or tenant. No agent stands between you, and no agent takes a cut.',
   },
   {
     number: '02',
     icon: FileText,
     title: 'Agree',
-    body: 'Fill in the tenancy terms together. We generate a standardized digital tenancy agreement instantly.',
+    body: 'Fill in the tenancy terms together. We generate a standardized, state-compliant agreement instantly — at no charge.',
   },
   {
     number: '03',
     icon: ShieldCheck,
     title: 'Protect',
-    body: 'Legalized for free — standardized agreement included. Optional lawyer review and rent-protection insurance available if you want them.',
+    body: 'Your agreement is on record from the moment it’s accepted. Add a lawyer’s review or rent-protection cover only if you want them.',
   },
 ];
 
-const stats = [
-  { value: '₦180B+', label: 'paid in agent fees annually in Lagos alone' },
-  { value: '65%', label: 'of Lagos tenant complaints involve landlord misconduct' },
-  { value: '22M', label: 'unit housing deficit across Nigeria' },
-  { value: '48hrs', label: 'average time to get a lawyer-reviewed agreement on BeyondAgency' },
-  { value: '₦105,000', label: 'saved per tenant vs using an agent' },
+// Market context, not our own performance. Kept separate from any
+// BeyondAgency metric — see docs/landing-copy-audit.md §9: stating a
+// projection in the visual language of a measured statistic is the kind of
+// thing that surfaces in diligence.
+const marketStats = [
+  { value: 180, prefix: '₦', suffix: 'B+', label: 'paid in agent fees every year in Lagos alone' },
+  { value: 65, suffix: '%', label: 'of Lagos tenant complaints involve landlord misconduct' },
+  { value: 22, suffix: 'M', label: 'unit housing deficit across Nigeria' },
 ];
 
-const landlordPricingFeatures = [
-  'List unlimited properties',
-  'Generate tenancy agreements',
-  'Verified tenant matching',
-  'Agreement tracking dashboard',
-];
-
-const tenantPricingFeatures = [
-  'Proper state-compliant agreement',
-  'No agent involved',
-  'Verified rental history record',
-  'Legal protection if things go wrong',
-];
-
-const lawyerReviewFeatures = [
-  'Lawyer reviews your agreement',
-  'Stamped within 48 hours',
-  'Legal practitioner certified',
-  'Priority dispute support',
+const platformSectors = [
+  {
+    name: 'Residential rentals',
+    status: 'Live now',
+    tone: 'success' as const,
+    body: 'Landlords and tenants connect, agree and legalize directly — free. Optional lawyer review and rent cover on top.',
+  },
+  {
+    name: 'Property purchase',
+    status: 'In build',
+    tone: 'brand' as const,
+    body: 'Verified titles and staged escrow for buyers who can’t stand in the room. Domestic Nigeria first, diaspora next.',
+  },
+  {
+    name: 'Business agreements',
+    status: 'Next',
+    tone: 'neutral' as const,
+    body: 'Agreements strong enough for a lender to underwrite against — turning a track record into credit.',
+  },
+  {
+    name: 'Insurance & services',
+    status: 'Bid marketplace',
+    tone: 'neutral' as const,
+    body: 'Licensed insurers and vetted providers compete for optional jobs. We take a commission, never a fee from you.',
+  },
 ];
 
 const trustPoints = [
   {
     icon: ShieldCheck,
-    title: 'Verified landlords',
-    body: 'Ownership documents checked before a property can be listed.',
+    title: 'Identity-verified parties',
+    // Deliberately narrower than the previous "ownership documents checked"
+    // claim — title verification is Phase 2 groundwork with no provider wired
+    // up yet (apps/api/src/lib/identity is a stub). See copy audit §2.
+    body: 'Every landlord and tenant confirms who they are with BVN or NIN before an agreement can go live. Title verification arrives with escrow.',
   },
   {
     icon: Scale,
     title: 'In-house legal team',
-    body: 'Optional lawyer review is handled by our own salaried legal team, not a stranger from an open marketplace — one flat price, assigned fast.',
+    body: 'Lawyer review is handled by our own salaried legal team, not a stranger from an open marketplace. One flat price, assigned immediately.',
   },
   {
     icon: Shield,
-    title: 'Insurance-backed protection',
-    body: 'Optional rent-protection insurance, matched through competitive bidding among licensed insurer partners once they\'re live.',
+    title: 'Insurance-backed cover',
+    body: 'Optional rent protection, matched through competitive bidding among licensed insurer partners once they’re live.',
   },
   {
-    icon: CreditCard,
-    title: 'Secure payments',
-    body: 'All payments processed through our secure payment partner — never handled off-platform.',
+    icon: Landmark,
+    title: 'Money you can trace',
+    body: 'Every payment runs through a dedicated bank account generated for that transaction. Nothing is handled off-platform, and nothing touches our hands.',
   },
 ];
 
-function SavingsComparison() {
-  const agentTotal = BEYOND_PRICING.TYPICAL_AGENT_FEE + BEYOND_PRICING.TYPICAL_LEGAL_FEE;
+const landlordFeatures = [
+  'List properties and connect with tenants',
+  'Generate tenancy agreements',
+  'Verified tenant matching',
+  'Agreement tracking dashboard',
+];
 
-  return (
-    <div className="bg-white bg-opacity-5 rounded-button p-4 mb-6 font-body text-sm">
-      <div className="flex justify-between text-white text-opacity-60">
-        <span>Typical agent + legal fee elsewhere</span>
-        <span className="line-through">{formatNaira(agentTotal)}</span>
-      </div>
-      <div className="flex justify-between text-white">
-        <span>BeyondAgency base fee</span>
-        <span>₦0 ✓</span>
-      </div>
-      <div className="border-t border-white border-opacity-20 mt-2 pt-2 flex justify-between font-semibold text-ember">
-        <span>You save</span>
-        <span>{formatNaira(agentTotal)}</span>
-      </div>
-    </div>
-  );
-}
+const tenantFeatures = [
+  'Proper state-compliant agreement',
+  'No agent involved, no agent fee',
+  'Verified rental history record',
+  'Legal protection if things go wrong',
+];
 
-const contactSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Invalid email'),
-  phone: z.string().min(1, 'Phone number is required'),
-  role: z.enum(['LANDLORD', 'TENANT', 'INVESTOR', 'OTHER']),
-  message: z.string().optional(),
-});
-
-type ContactFormData = z.infer<typeof contactSchema>;
-
-function DemoContactForm() {
-  const [submitted, setSubmitted] = useState<{ name: string } | null>(null);
-  const [submitError, setSubmitError] = useState('');
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<ContactFormData>({
-    resolver: zodResolver(contactSchema),
-    defaultValues: { role: 'LANDLORD' },
-  });
-
-  const onSubmit = async (data: ContactFormData) => {
-    setSubmitError('');
-    try {
-      await api.post('/contact', data);
-      setSubmitted({ name: data.name });
-    } catch (err) {
-      setSubmitError(getErrorMessage(err, 'Something went wrong. Please try again.'));
-    }
-  };
-
-  if (submitted) {
-    return (
-      <div className="bg-cream rounded-card p-8 border border-border text-center py-16">
-        <CheckCircle2 className="text-forest mx-auto mb-4" size={48} />
-        <p className="font-body text-charcoal text-lg">
-          Thanks {submitted.name}! We&apos;ll be in touch within 24 hours.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-cream rounded-card p-8 border border-border">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <Input label="Full name" {...register('name')} error={errors.name?.message} />
-        <Input
-          label="Email address"
-          type="email"
-          {...register('email')}
-          error={errors.email?.message}
-        />
-        <Input label="Phone number" {...register('phone')} error={errors.phone?.message} />
-        <div>
-          <label className="block text-sm font-semibold text-charcoal mb-2 font-body">
-            I am a:
-          </label>
-          <select
-            className="w-full px-4 py-2 border border-border rounded-button focus:outline-none focus:ring-2 focus:ring-forest font-body"
-            {...register('role')}
-          >
-            <option value="LANDLORD">Landlord</option>
-            <option value="TENANT">Tenant</option>
-            <option value="INVESTOR">Investor</option>
-            <option value="OTHER">Other</option>
-          </select>
-        </div>
-        <Textarea label="Message / questions" rows={4} {...register('message')} />
-        {submitError && <p className="text-sm text-ember font-body">{submitError}</p>}
-        <Button variant="primary" className="w-full" loading={isSubmitting}>
-          Book My Demo
-        </Button>
-      </form>
-    </div>
-  );
-}
+const lawyerReviewFeatures = [
+  'A qualified lawyer reads your agreement',
+  'Returned within 48 hours',
+  'Handled by salaried staff, not a bidder',
+  'Priority dispute support',
+];
 
 export default function Home() {
+  const agentTotal = BEYOND_PRICING.TYPICAL_AGENT_FEE + BEYOND_PRICING.TYPICAL_LEGAL_FEE;
+
   return (
     <>
       <Navbar />
 
-      {/* Hero */}
-      <section className="relative min-h-screen bg-navy overflow-hidden flex items-center pt-24 pb-16">
-        <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-5 gap-12 items-center">
-          <div className="md:col-span-3">
-            <span className="inline-block bg-forest text-white text-xs font-semibold px-4 py-1.5 rounded-full font-body mb-6">
-              Now available in Lagos & Abuja
-            </span>
-            <h1 className="font-display text-white font-bold text-[36px] md:text-[56px] leading-tight mb-6">
-              Beyond agents.
-              <br />
-              Beyond fees. Beyond risk.
-            </h1>
-            <p className="font-body text-white text-opacity-90 text-xl mb-4">
-              Landlords and tenants connect directly, free.
-            </p>
-            <p className="font-body text-[#A0AEC0] text-base mb-8 max-w-xl">
-              We make the deal legal and protected — with a standardized tenancy agreement,
-              optional lawyer review, and rent-protection insurance.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 mb-10">
-              <Link href="/signup" className="w-full sm:w-auto">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="bg-ember hover:bg-opacity-90 w-full sm:w-auto"
-                >
-                  List your property — free
-                </Button>
-              </Link>
-              <Link href="/signup" className="w-full sm:w-auto">
-                <Button
-                  variant="ghost"
-                  size="lg"
-                  className="w-full border-2 border-white text-white hover:bg-white hover:bg-opacity-10"
-                >
-                  Find a home
-                </Button>
-              </Link>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 text-sm text-[#A0AEC0] font-body">
-              <div className="flex items-center gap-2">
-                <Shield size={16} />
-                Bank-grade security
-              </div>
-              <div className="flex items-center gap-2">
-                <FileCheck size={16} />
-                State-compliant agreements
-              </div>
-              <div className="flex items-center gap-2">
-                <Users size={16} />
-                No agent fees
-              </div>
-            </div>
-          </div>
+      {/* ---------------------------------------------------------- Hero -- */}
+      <section className="relative min-h-[92vh] flex items-center pt-28 pb-20 overflow-hidden">
+        <HeroBackdrop />
 
-          <div className="hidden md:block md:col-span-2">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-card border-2 border-forest animate-pulse pointer-events-none" />
-              <div className="relative bg-white rounded-card shadow-2xl p-6 overflow-hidden">
-                <div className="absolute -bottom-4 -right-4 font-display font-bold text-4xl text-forest opacity-5 rotate-[-30deg] select-none pointer-events-none whitespace-nowrap">
-                  BEYONDAGENCY
+        <Container className="relative">
+          <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+            <div className="lg:col-span-7">
+              <Reveal>
+                <Eyebrow onDark className="mb-5">
+                  Nigeria&apos;s trust platform
+                </Eyebrow>
+              </Reveal>
+
+              <Reveal delay={0.05}>
+                <h1 className="font-display text-display-xl font-semibold text-on-dark mb-6">
+                  Deal directly.
+                  <br />
+                  <span className="text-brass-300">Without the risk</span> of
+                  <br className="hidden sm:block" /> dealing directly.
+                </h1>
+              </Reveal>
+
+              <Reveal delay={0.1}>
+                <p className="font-body text-body-lg text-on-dark-muted mb-9 max-w-prose">
+                  We verify both sides, generate an agreement that holds up, and make sure money
+                  only moves when the terms are met. Starting with Nigerian rentals.
+                </p>
+              </Reveal>
+
+              <Reveal delay={0.15}>
+                <div className="flex flex-col sm:flex-row gap-3 mb-10">
+                  <Link href="/signup">
+                    <Button size="lg" fullWidth trailingIcon={<ArrowRight size={18} />}>
+                      Start free
+                    </Button>
+                  </Link>
+                  <Link href="/#how-it-works">
+                    <Button size="lg" variant="secondary" onDark fullWidth>
+                      See how it works
+                    </Button>
+                  </Link>
                 </div>
-                <p className="font-display text-navy font-bold text-sm uppercase tracking-wide mb-4">
-                  Tenancy Agreement
-                </p>
-                <div className="space-y-2 mb-4 font-body text-sm">
-                  <p className="text-charcoal">
-                    <span className="text-muted">Landlord:</span> Adebayo Okafor
-                  </p>
-                  <p className="text-charcoal">
-                    <span className="text-muted">Tenant:</span> Chioma Ezeh
-                  </p>
-                </div>
-                <p className="font-body text-sm text-charcoal mb-4">
-                  3 Bedroom Flat, Lekki Phase 1, Lagos
-                </p>
-                <p className="font-display text-forest font-bold text-2xl mb-4">
-                  ₦2,400,000{' '}
-                  <span className="text-sm font-body text-muted font-normal">/ year</span>
-                </p>
-                <span className="inline-block bg-forest text-white text-xs font-semibold px-3 py-1 rounded-full font-body">
-                  ACTIVE
-                </span>
-              </div>
+              </Reveal>
+
+              <Reveal delay={0.2}>
+                <ul className="flex flex-col sm:flex-row gap-3 sm:gap-7 font-body text-body-sm text-on-dark-muted">
+                  {[
+                    'No fee on the deal itself',
+                    'Verified identities',
+                    'Agreements that stand up',
+                  ].map((item) => (
+                    <li key={item} className="flex items-center gap-2">
+                      <CheckCircle2 size={16} className="text-brass-500 flex-shrink-0" aria-hidden />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </Reveal>
+            </div>
+
+            {/* Visible on mobile now — this was `hidden md:block`, so the
+                mobile hero was text on a flat navy field. */}
+            <div className="lg:col-span-5">
+              <Reveal delay={0.25}>
+                <AgreementArtifact />
+              </Reveal>
             </div>
           </div>
-        </div>
+        </Container>
       </section>
 
-      {/* Platform identity — BeyondAgency is a multi-sector trust PaaS;
-          residential rentals is Phase 1, not the whole company. Placed
-          right after the hero so this reads first, not as a footnote. */}
-      <section id="platform" className="bg-navy py-16 border-t border-white border-opacity-10">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-            <div>
-              <span className="font-body text-xs uppercase tracking-wider text-forest font-semibold mb-3 block">
-                The platform
-              </span>
-              <h2 className="font-display text-white font-bold text-[28px] md:text-[36px] max-w-2xl">
-                One trust platform. Every deal, eventually.
-              </h2>
-              <p className="font-body text-[#A0AEC0] mt-3 max-w-2xl">
-                BeyondAgency is a Platform-as-a-Service: we connect the two sides of a deal for
-                free, then earn from a marketplace of vetted providers who compete for the
-                optional work around it. Residential rentals is where we started — not where we
-                stop.
-              </p>
-            </div>
-            <a
-              href="/provider/apply"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-button border-2 border-white text-white font-body font-semibold text-sm hover:bg-white hover:bg-opacity-10 transition whitespace-nowrap"
-            >
-              I'm a licensed provider
-            </a>
+      {/* ------------------------------------------------------ Platform -- */}
+      <Section id="platform" tone="dark" divided>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <div className="max-w-2xl">
+            <Eyebrow onDark className="mb-4">
+              The platform
+            </Eyebrow>
+            <h2 className="font-display text-display-md font-semibold text-on-dark mb-4">
+              One mechanism. Every deal that needs trust.
+            </h2>
+            <p className="font-body text-on-dark-muted">
+              Every deal needs the same three things: parties who are who they say they are, an
+              agreement that holds up, and money that moves only when the terms are met.
+              BeyondAgency provides all three. Rentals is where we started — not where we stop.
+            </p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white bg-opacity-5 border border-white border-opacity-10 rounded-card p-5">
-              <p className="font-display text-white font-bold mb-1">Real Estate</p>
-              <span className="inline-block bg-forest text-white text-xs font-semibold px-3 py-1 rounded-full font-body">
-                Live now
-              </span>
-              <p className="font-body text-[#A0AEC0] text-sm mt-3">
-                Free landlord/tenant connection, in-house legal review, insurance bidding.
-              </p>
-            </div>
-            <div className="bg-white bg-opacity-5 border border-white border-opacity-10 rounded-card p-5">
-              <p className="font-display text-white font-bold mb-1">Insurance</p>
-              <span className="inline-block bg-white bg-opacity-10 text-white text-xs font-semibold px-3 py-1 rounded-full font-body">
-                Bid marketplace
-              </span>
-              <p className="font-body text-[#A0AEC0] text-sm mt-3">
-                Licensed insurers compete for rent-protection jobs — same engine, own category.
-              </p>
-            </div>
-            <div className="bg-white bg-opacity-5 border border-white border-opacity-10 rounded-card p-5">
-              <p className="font-display text-white font-bold mb-1">Legal</p>
-              <span className="inline-block bg-white bg-opacity-10 text-white text-xs font-semibold px-3 py-1 rounded-full font-body">
-                In-house
-              </span>
-              <p className="font-body text-[#A0AEC0] text-sm mt-3">
-                Salaried team today; opens to vetted external firms as volume grows.
-              </p>
-            </div>
-            <div className="bg-white bg-opacity-5 border border-white border-opacity-10 rounded-card p-5">
-              <p className="font-display text-white font-bold mb-1">Technology</p>
-              <span className="inline-block bg-white bg-opacity-10 text-white text-xs font-semibold px-3 py-1 rounded-full font-body">
-                Coming soon
-              </span>
-              <p className="font-body text-[#A0AEC0] text-sm mt-3">
-                Startups and SMEs source vetted service providers the same way.
-              </p>
-            </div>
-          </div>
+          <Link href="/provider/apply" className="flex-shrink-0">
+            <Button variant="secondary" onDark>
+              I&apos;m a licensed provider
+            </Button>
+          </Link>
         </div>
-      </section>
 
-      {/* Split value proposition */}
-      <section id="for-landlords" className="bg-cream py-24">
-        <div className="max-w-7xl mx-auto px-4">
-          <p className="text-center font-body text-xs uppercase tracking-wider text-muted mb-16">
-            Built for both sides of the rental market
-          </p>
-          <div className="grid md:grid-cols-2 gap-16 md:gap-0 relative">
-            <div className="md:pr-12">
-              <Building2 className="text-navy mb-4" size={40} />
-              <h3 className="font-display text-2xl font-bold text-navy mb-2">For Landlords</h3>
-              <p className="font-body text-muted mb-6">
-                Stop relying on agents who disappear after handing over a key.
+        <RevealGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-white/10 rounded-card overflow-hidden">
+          {platformSectors.map((sector) => (
+            <div key={sector.name} className="bg-navy-900 p-6 h-full">
+              <Badge tone={sector.tone} size="sm" dot className="mb-4">
+                {sector.status}
+              </Badge>
+              <p className="font-display text-title font-semibold text-on-dark mb-2">
+                {sector.name}
               </p>
-              <ul className="space-y-4 mb-8">
+              <p className="font-body text-body-sm text-on-dark-muted">{sector.body}</p>
+            </div>
+          ))}
+        </RevealGroup>
+      </Section>
+
+      {/* ------------------------------------------- Landlords / Tenants -- */}
+      <Section id="for-landlords" tone="paper">
+        <Reveal>
+          <Eyebrow className="text-center mb-14">Built for both sides of the deal</Eyebrow>
+        </Reveal>
+
+        <div className="grid md:grid-cols-2 gap-14 md:gap-0 relative">
+          <div className="md:pr-14">
+            <Reveal>
+              <IconTile icon={Building2} tone="navy" size="lg" className="mb-5" />
+              <h3 className="font-display text-display-sm font-semibold text-navy-900 mb-2">
+                For landlords
+              </h3>
+              <p className="font-body text-ink-500 mb-7">
+                Keep control of your property after the keys change hands.
+              </p>
+              <ul className="space-y-0 mb-8">
                 {landlordBenefits.map((benefit) => (
-                  <li key={benefit} className="flex items-start gap-3">
-                    <CheckCircle className="text-forest flex-shrink-0 mt-0.5" size={20} />
-                    <span className="font-body text-charcoal">{benefit}</span>
+                  <li
+                    key={benefit}
+                    className="flex items-start gap-3 py-3.5 border-t border-ink-200 last:border-b"
+                  >
+                    <CheckCircle2 className="text-brass-600 flex-shrink-0 mt-0.5" size={18} aria-hidden />
+                    <span className="font-body text-ink-700">{benefit}</span>
                   </li>
                 ))}
               </ul>
               <Link href="/signup">
-                <Button variant="primary">List your property free</Button>
+                <Button trailingIcon={<ArrowRight size={17} />}>List a property</Button>
               </Link>
-            </div>
+            </Reveal>
+          </div>
 
-            <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-border -translate-x-1/2" />
+          <div
+            aria-hidden
+            className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-ink-200 -translate-x-1/2"
+          />
 
-            <div id="for-tenants" className="md:pl-12">
-              <HomeIcon className="text-forest mb-4" size={40} />
-              <h3 className="font-display text-2xl font-bold text-navy mb-2">For Tenants</h3>
-              <p className="font-body text-muted mb-6">
-                Stop paying agents ₦100,000 for handing over a key.
+          <div id="for-tenants" className="md:pl-14">
+            <Reveal delay={0.08}>
+              <IconTile icon={HomeIcon} tone="brass" size="lg" className="mb-5" />
+              <h3 className="font-display text-display-sm font-semibold text-navy-900 mb-2">
+                For tenants
+              </h3>
+              <p className="font-body text-ink-500 mb-7">
+                Stop paying {formatNaira(BEYOND_PRICING.TYPICAL_AGENT_FEE)} to someone for handing
+                over a key.
               </p>
-              <ul className="space-y-4 mb-8">
+              <ul className="space-y-0 mb-8">
                 {tenantBenefits.map((benefit) => (
-                  <li key={benefit} className="flex items-start gap-3">
-                    <CheckCircle className="text-ember flex-shrink-0 mt-0.5" size={20} />
-                    <span className="font-body text-charcoal">{benefit}</span>
+                  <li
+                    key={benefit}
+                    className="flex items-start gap-3 py-3.5 border-t border-ink-200 last:border-b"
+                  >
+                    <CheckCircle2 className="text-brass-600 flex-shrink-0 mt-0.5" size={18} aria-hidden />
+                    <span className="font-body text-ink-700">{benefit}</span>
                   </li>
                 ))}
               </ul>
               <Link href="/signup">
-                <Button variant="primary">Find a property</Button>
+                <Button trailingIcon={<ArrowRight size={17} />}>Find a home</Button>
               </Link>
-            </div>
+            </Reveal>
           </div>
         </div>
-      </section>
+      </Section>
 
-      {/* How it works */}
-      <section id="how-it-works" className="bg-white py-24">
-        <div className="max-w-7xl mx-auto px-4">
-          <p className="text-center font-body text-xs uppercase tracking-wider text-muted mb-4">
-            Simple by design
-          </p>
-          <h2 className="text-center font-display text-navy font-bold text-[32px] md:text-[40px] mb-16">
-            Three steps. One agreement. Zero agents.
+      {/* -------------------------------------------------- How it works -- */}
+      <Section id="how-it-works" tone="white">
+        <Reveal>
+          <Eyebrow className="text-center mb-4">Simple by design</Eyebrow>
+          <h2 className="text-center font-display text-display-md font-semibold text-navy-900 mb-16 max-w-2xl mx-auto">
+            Three steps. One agreement. Nothing hidden.
           </h2>
-          <div className="grid md:grid-cols-3 gap-10">
-            {steps.map((step) => (
-              <div key={step.number}>
-                <span className="font-display text-5xl font-bold text-ember">{step.number}</span>
-                <step.icon className="text-navy my-4" size={32} />
-                <h3 className="font-display text-xl font-bold text-navy mb-2">{step.title}</h3>
-                <p className="font-body text-muted">{step.body}</p>
-              </div>
-            ))}
-          </div>
-          <div className="border-t border-border mt-16 pt-8 flex flex-col sm:flex-row items-center justify-center gap-2 text-center">
-            <Scale className="text-muted flex-shrink-0" size={18} />
-            <p className="font-body text-muted text-sm">
-              Need a lawyer to review the agreement? Add one for {formatNaira(BEYOND_PRICING.LAWYER_REVIEW_ADDON)} — reviewed within 48
-              hours.
+        </Reveal>
+
+        <RevealGroup className="grid md:grid-cols-3 gap-10 md:gap-8">
+          {steps.map((step) => (
+            <div key={step.number} className="border-t-2 border-brass-500 pt-6">
+              <span className="font-display text-display-md font-semibold text-brass-500 leading-none">
+                {step.number}
+              </span>
+              <IconTile icon={step.icon} tone="navy" className="my-5" />
+              <h3 className="font-display text-title font-semibold text-navy-900 mb-2">
+                {step.title}
+              </h3>
+              <p className="font-body text-ink-500">{step.body}</p>
+            </div>
+          ))}
+        </RevealGroup>
+
+        <Reveal>
+          <div className="border-t border-ink-200 mt-16 pt-8 flex flex-col sm:flex-row items-center justify-center gap-3 text-center">
+            <Scale className="text-ink-400 flex-shrink-0" size={18} aria-hidden />
+            <p className="font-body text-body-sm text-ink-500">
+              Want a lawyer to read it first? Add one for{' '}
+              <span className="font-mono text-ink-700">
+                {formatNaira(BEYOND_PRICING.LAWYER_REVIEW_ADDON)}
+              </span>{' '}
+              — returned within 48 hours by our own legal team.
             </p>
           </div>
-        </div>
-      </section>
+        </Reveal>
+      </Section>
 
-      {/* Social proof / stats */}
-      <section className="bg-navy py-16">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
-            {stats.map((stat, i) => (
-              <div
-                key={stat.label}
-                className={cn(
-                  'text-center px-4',
-                  i > 0 && 'md:border-l md:border-white md:border-opacity-10'
-                )}
-              >
-                <p className="font-display text-ember font-bold text-4xl mb-2">{stat.value}</p>
-                <p className="font-body text-[#A0AEC0] text-sm">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* ------------------------------------------------- Market stats -- */}
+      <Section tone="darker" size="sm">
+        <Reveal>
+          <Eyebrow onDark className="text-center mb-10">
+            The problem
+          </Eyebrow>
+        </Reveal>
+        <RevealGroup className="grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-0">
+          {marketStats.map((stat, i) => (
+            <div key={stat.label} className={i > 0 ? 'sm:border-l sm:border-white/10 sm:pl-8' : ''}>
+              <p className="font-display text-display-md font-semibold text-brass-500 mb-2">
+                <AnimatedNumber value={stat.value} prefix={stat.prefix} suffix={stat.suffix} />
+              </p>
+              <p className="font-body text-body-sm text-on-dark-muted max-w-xs">{stat.label}</p>
+            </div>
+          ))}
+        </RevealGroup>
+      </Section>
 
-      {/* Trust */}
-      <section className="bg-white py-24">
-        <div className="max-w-7xl mx-auto px-4">
-          <p className="text-center font-body text-xs uppercase tracking-wider text-muted mb-4">
-            Why trust the platform
-          </p>
-          <h2 className="text-center font-display text-navy font-bold text-[32px] md:text-[40px] mb-16">
+      {/* -------------------------------------------------------- Trust -- */}
+      <Section tone="white">
+        <Reveal>
+          <Eyebrow className="text-center mb-4">Why trust the platform</Eyebrow>
+          <h2 className="text-center font-display text-display-md font-semibold text-navy-900 mb-16">
             Trust, built in — not bolted on.
           </h2>
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-10">
-            {trustPoints.map((point) => (
-              <div key={point.title}>
-                <point.icon className="text-forest mb-4" size={32} />
-                <h3 className="font-display text-lg font-bold text-navy mb-2">{point.title}</h3>
-                <p className="font-body text-muted text-sm">{point.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        </Reveal>
+        <RevealGroup className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
+          {trustPoints.map((point) => (
+            <div key={point.title}>
+              <IconTile icon={point.icon} tone="brass" className="mb-5" />
+              <h3 className="font-display text-title font-semibold text-navy-900 mb-2">
+                {point.title}
+              </h3>
+              <p className="font-body text-body-sm text-ink-500">{point.body}</p>
+            </div>
+          ))}
+        </RevealGroup>
+      </Section>
 
-      {/* Pricing */}
-      <section id="pricing" className="bg-cream py-24">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-center font-display text-navy font-bold text-[32px] md:text-[40px] mb-3">
-            Free to connect. Free to legalize.
+      {/* ------------------------------------------------------ Pricing -- */}
+      <Section id="pricing" tone="paper">
+        <Reveal>
+          <h2 className="text-center font-display text-display-md font-semibold text-navy-900 mb-3">
+            Free to connect. Free to agree.
           </h2>
-          <p className="text-center font-body text-muted mb-16">
-            No agent fee, no platform fee — pay only if you choose an optional add-on.
+          <p className="text-center font-body text-ink-500 mb-16 max-w-xl mx-auto">
+            No agent fee and no platform fee on the deal itself. You pay only if you choose an
+            optional extra.
           </p>
-          <div className="grid md:grid-cols-3 gap-8 md:items-center">
-            {/* For Landlords — free */}
-            <div className="bg-forest bg-opacity-5 border-2 border-forest rounded-card p-8">
-              <p className="font-body text-xs uppercase tracking-wider text-forest font-semibold mb-4">
-                For Landlords
+        </Reveal>
+
+        <div className="grid lg:grid-cols-3 gap-8 lg:items-center">
+          {/* Landlord */}
+          <Reveal>
+            <div className="bg-white border border-ink-200 rounded-card p-8 h-full">
+              <Eyebrow className="mb-5">For landlords</Eyebrow>
+              <p className="font-display text-display-md font-semibold text-navy-900 leading-none mb-2">
+                ₦0
               </p>
-              <p className="font-display text-forest font-bold text-4xl mb-1">FREE</p>
-              <p className="font-body text-muted text-sm mb-6">Always. No hidden fees.</p>
+              {/* Honest per the copy audit: the subscription tier is planned but
+                  unbuilt, and the threshold now comes from a constant. */}
+              <p className="font-body text-body-sm text-ink-500 mb-7">
+                To list, connect and agree — for your first{' '}
+                {BEYOND_PRICING.LANDLORD_FREE_PROPERTY_LIMIT} properties. Beyond that,{' '}
+                {formatNaira(BEYOND_PRICING.LANDLORD_SUBSCRIPTION)}/month.
+              </p>
               <ul className="space-y-3 mb-8">
-                {landlordPricingFeatures.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2">
-                    <CheckCircle className="text-forest flex-shrink-0 mt-0.5" size={18} />
-                    <span className="font-body text-charcoal text-sm">{feature}</span>
+                {landlordFeatures.map((f) => (
+                  <li key={f} className="flex items-start gap-2.5">
+                    <CheckCircle2 className="text-brass-600 flex-shrink-0 mt-0.5" size={17} aria-hidden />
+                    <span className="font-body text-body-sm text-ink-700">{f}</span>
                   </li>
                 ))}
               </ul>
               <Link href="/signup" className="block">
-                <Button variant="secondary" className="w-full">
-                  List your property free
+                <Button variant="secondary" fullWidth>
+                  List a property
                 </Button>
               </Link>
             </div>
+          </Reveal>
 
-            {/* For Tenants — also free */}
-            <div className="relative bg-navy text-white rounded-card p-8 shadow-xl md:scale-105">
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-ember text-white text-xs font-semibold px-4 py-1 rounded-full font-body whitespace-nowrap">
+          {/* Tenant — the emphasised tier */}
+          <Reveal delay={0.08}>
+            <div className="relative bg-navy-900 bg-grain rounded-card p-8 shadow-xl overflow-hidden">
+              <span className="absolute top-0 right-0 bg-brass-500 text-ink-950 font-mono text-label uppercase px-4 py-1.5 rounded-bl-card">
                 Replaces your agency fee
               </span>
-              <p className="font-body text-xs uppercase tracking-wider text-white text-opacity-70 font-semibold mb-4">
-                For Tenants
+              <Eyebrow onDark className="mb-5">
+                For tenants
+              </Eyebrow>
+              <p className="font-display text-display-lg font-semibold text-brass-500 leading-none mb-2">
+                ₦0
               </p>
-              <p className="font-display text-white font-bold text-4xl mb-1">FREE</p>
-              <p className="font-body text-white text-opacity-70 text-sm mb-6">
-                Connecting, browsing, and your standardized tenancy agreement — ₦0. No percentage
-                of rent, no platform fee.
+              <p className="font-body text-body-sm text-on-dark-muted mb-7">
+                Browsing, connecting and your standardized tenancy agreement. No percentage of
+                rent, no platform fee.
               </p>
 
-              <SavingsComparison />
+              <dl className="rounded-button bg-white/5 border border-white/10 p-4 mb-7 font-body text-body-sm space-y-2">
+                <div className="flex justify-between gap-4 text-on-dark-muted">
+                  <dt>Agent + legal fee elsewhere</dt>
+                  <dd className="font-mono line-through">{formatNaira(agentTotal)}</dd>
+                </div>
+                <div className="flex justify-between gap-4 text-on-dark">
+                  <dt>BeyondAgency</dt>
+                  <dd className="font-mono">₦0</dd>
+                </div>
+                <div className="flex justify-between gap-4 pt-2 border-t border-white/15 font-semibold text-brass-300">
+                  <dt>You keep</dt>
+                  <dd className="font-mono">{formatNaira(agentTotal)}</dd>
+                </div>
+              </dl>
 
               <ul className="space-y-3 mb-8">
-                {tenantPricingFeatures.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2">
-                    <CheckCircle className="text-forest flex-shrink-0 mt-0.5" size={18} />
-                    <span className="font-body text-white text-sm">{feature}</span>
+                {tenantFeatures.map((f) => (
+                  <li key={f} className="flex items-start gap-2.5">
+                    <CheckCircle2 className="text-brass-500 flex-shrink-0 mt-0.5" size={17} aria-hidden />
+                    <span className="font-body text-body-sm text-on-dark">{f}</span>
                   </li>
                 ))}
               </ul>
               <Link href="/signup" className="block">
-                <Button variant="primary" className="w-full bg-ember hover:bg-opacity-90">
-                  Find a property
-                </Button>
+                <Button fullWidth>Find a home</Button>
               </Link>
             </div>
+          </Reveal>
 
-            {/* Lawyer review add-on — the only thing that can cost anything */}
-            <div className="bg-white border-2 border-ember rounded-card p-8">
-              <p className="font-body text-xs uppercase tracking-wider text-ember font-semibold mb-4">
-                Lawyer Review
-              </p>
-              <p className="font-display text-ember font-bold text-4xl mb-1">
+          {/* Lawyer review */}
+          <Reveal delay={0.16}>
+            <div className="bg-white border border-ink-200 rounded-card p-8 h-full">
+              <Eyebrow className="mb-5">Optional — lawyer review</Eyebrow>
+              <p className="font-mono tabular-nums text-display-md font-medium text-navy-900 leading-none mb-2">
                 {formatNaira(BEYOND_PRICING.LAWYER_REVIEW_ADDON)}
               </p>
-              <p className="font-body text-muted text-sm mb-6">
-                Optional. Handled by our own in-house, salaried legal team — one flat price, no
-                stranger bidding for your business.
+              <p className="font-body text-body-sm text-ink-500 mb-7">
+                One flat price, handled by our own salaried legal team — nobody bids for your
+                business.
               </p>
               <ul className="space-y-3 mb-8">
-                {lawyerReviewFeatures.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2">
-                    <CheckCircle className="text-forest flex-shrink-0 mt-0.5" size={18} />
-                    <span className="font-body text-charcoal text-sm">{feature}</span>
+                {lawyerReviewFeatures.map((f) => (
+                  <li key={f} className="flex items-start gap-2.5">
+                    <CheckCircle2 className="text-brass-600 flex-shrink-0 mt-0.5" size={17} aria-hidden />
+                    <span className="font-body text-body-sm text-ink-700">{f}</span>
                   </li>
                 ))}
               </ul>
-              <Button variant="secondary" className="w-full" disabled>
-                Add when accepting agreement
+              <Button variant="secondary" fullWidth disabled>
+                Added when you accept
               </Button>
             </div>
-          </div>
+          </Reveal>
+        </div>
 
-          <p className="text-center font-body text-muted text-lg mt-16">
-            Landlords pay nothing. Tenants pay nothing to connect or legalize. That&apos;s the
-            deal — we earn from the marketplace of providers who compete for optional work, not
-            from you.
+        <Reveal>
+          <p className="text-center font-body text-ink-500 mt-14 max-w-2xl mx-auto">
+            Tenants pay nothing to connect or agree. That&apos;s the deal — we earn from the
+            marketplace of providers competing for optional work, not from the deal itself.
           </p>
-        </div>
-      </section>
+          <p className="text-center font-body text-body-sm text-ink-400 mt-3">
+            A verified, exportable rental-history report is{' '}
+            {formatNaira(BEYOND_PRICING.RENTAL_HISTORY_EXPORT)} if you ever need one. Building the
+            record is free.
+          </p>
+        </Reveal>
+      </Section>
 
-      {/* Become a provider — second acquisition funnel. Legal review is
-          in-house/salaried (not applied for here), so this now targets
-          insurers and future external categories only. */}
-      <section className="bg-cream py-10 border-t border-border">
-        <div className="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-between gap-4">
+      {/* ---------------------------------------------------- Provider -- */}
+      <Section tone="accent" size="sm">
+        <div className="flex flex-wrap items-center justify-between gap-5">
           <div>
-            <p className="font-display text-navy font-bold text-lg">
-              Licensed insurer?
+            <p className="font-display text-title font-semibold text-navy-900">
+              Licensed insurer or service provider?
             </p>
-            <p className="font-body text-muted text-sm">
-              Join the bid pool — rent-protection insurance jobs come to you, no cold outreach.
+            <p className="font-body text-body-sm text-ink-600">
+              Join the bid pool — jobs come to you, with no cold outreach.
             </p>
           </div>
-          <a
-            href="/provider/apply"
-            className="inline-flex items-center px-6 py-3 rounded-button bg-navy text-white font-body font-semibold text-sm hover:bg-opacity-90 transition"
-          >
-            Become a provider
-          </a>
+          <Link href="/provider/apply">
+            <Button variant="tertiary">Become a provider</Button>
+          </Link>
         </div>
-      </section>
+      </Section>
 
-      {/* Demo booking / contact form */}
-      <section id="book-demo" className="bg-white py-24">
-        <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-start">
-          <div>
-            <h2 className="font-display text-navy font-bold text-[32px] md:text-[40px] mb-4">
+      {/* -------------------------------------------------------- Demo -- */}
+      <Section id="book-demo" tone="white" width="wide">
+        <div className="grid md:grid-cols-2 gap-14 items-start">
+          <Reveal>
+            <Eyebrow className="mb-4">Book a demo</Eyebrow>
+            <h2 className="font-display text-display-md font-semibold text-navy-900 mb-4">
               See BeyondAgency in action.
             </h2>
-            <p className="font-body text-muted mb-8">
-              We&apos;ll walk you through the platform, answer your questions, and show you how
-              to close your first deal on BeyondAgency.
+            <p className="font-body text-ink-500 mb-8">
+              We&apos;ll walk you through the platform, answer your questions, and show you how to
+              close your first deal on BeyondAgency.
             </p>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Calendar className="text-forest flex-shrink-0" size={20} />
-                <span className="font-body text-charcoal text-sm">
-                  30-minute session, no commitment
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Video className="text-forest flex-shrink-0" size={20} />
-                <span className="font-body text-charcoal text-sm">
-                  Done over Google Meet or phone call
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Users className="text-forest flex-shrink-0" size={20} />
-                <span className="font-body text-charcoal text-sm">
-                  Available for landlords, tenants, and investors
-                </span>
-              </div>
-            </div>
-          </div>
+            <ul className="space-y-4">
+              {[
+                { icon: Calendar, text: '30-minute session, no commitment' },
+                { icon: Video, text: 'Over Google Meet or a phone call' },
+                { icon: Users, text: 'For landlords, tenants and investors' },
+              ].map(({ icon: Icon, text }) => (
+                <li key={text} className="flex items-center gap-3">
+                  <Icon className="text-brass-600 flex-shrink-0" size={19} aria-hidden />
+                  <span className="font-body text-body-sm text-ink-700">{text}</span>
+                </li>
+              ))}
+            </ul>
+          </Reveal>
 
-          <DemoContactForm />
+          <Reveal delay={0.08}>
+            <DemoContactForm />
+          </Reveal>
         </div>
-      </section>
+      </Section>
 
-      {/* Footer */}
-      <footer id="footer" className="bg-navy py-16">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-10 mb-12">
-            <div>
-              <p className="font-display text-white font-bold text-2xl mb-3">BEYONDAGENCY</p>
-              <p className="font-body text-[#A0AEC0] text-sm mb-4">
-                Bridging Trust. Simplifying Deals.
-              </p>
-              <p className="font-body text-[#A0AEC0] text-xs">
-                © 2026 Gran Jefe Technical Solutions. RC 9529101.
-              </p>
-            </div>
-            <div>
-              <p className="font-body text-white font-semibold mb-4">Product</p>
-              <ul className="space-y-2">
-                <li>
-                  <a
-                    href="#how-it-works"
-                    className="font-body text-[#A0AEC0] text-sm hover:text-white transition-colors"
-                  >
-                    How it works
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#pricing"
-                    className="font-body text-[#A0AEC0] text-sm hover:text-white transition-colors"
-                  >
-                    Pricing
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#for-landlords"
-                    className="font-body text-[#A0AEC0] text-sm hover:text-white transition-colors"
-                  >
-                    For Landlords
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#for-tenants"
-                    className="font-body text-[#A0AEC0] text-sm hover:text-white transition-colors"
-                  >
-                    For Tenants
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <p className="font-body text-white font-semibold mb-4">Company</p>
-              <ul className="space-y-2">
-                <li>
-                  <a
-                    href="#footer"
-                    className="font-body text-[#A0AEC0] text-sm hover:text-white transition-colors"
-                  >
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#book-demo"
-                    className="font-body text-[#A0AEC0] text-sm hover:text-white transition-colors"
-                  >
-                    Contact
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="font-body text-[#A0AEC0] text-sm hover:text-white transition-colors"
-                  >
-                    Privacy Policy
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="font-body text-[#A0AEC0] text-sm hover:text-white transition-colors"
-                  >
-                    Terms of Service
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <p className="font-body text-white font-semibold mb-4">Contact</p>
-              <p className="font-body text-[#A0AEC0] text-sm mb-2">Lagos & Abuja, Nigeria</p>
-              <p className="font-body text-[#A0AEC0] text-sm mb-4">support@leja.ng</p>
-              <div className="flex gap-4">
-                <a href="#" aria-label="Twitter">
-                  <Twitter className="text-[#A0AEC0] hover:text-white transition-colors" size={20} />
-                </a>
-                <a href="#" aria-label="LinkedIn">
-                  <Linkedin className="text-[#A0AEC0] hover:text-white transition-colors" size={20} />
-                </a>
-                <a href="#" aria-label="Instagram">
-                  <Instagram className="text-[#A0AEC0] hover:text-white transition-colors" size={20} />
-                </a>
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-white border-opacity-10 pt-8 text-center">
-            <p className="font-body text-muted text-sm">Built in Nigeria 🇳🇬</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </>
   );
 }

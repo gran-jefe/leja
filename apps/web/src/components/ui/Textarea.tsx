@@ -1,32 +1,37 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { FieldShell, fieldControl, useFieldIds, type FieldOwnProps } from './FieldShell';
 
-interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  label?: string;
-  error?: string;
-}
+export interface TextareaProps
+  extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'required'>,
+    FieldOwnProps {}
 
 export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, label, error, ...props }, ref) => (
-    <div className="w-full">
-      {label && (
-        <label className="block text-sm font-semibold text-charcoal mb-2 font-body">
-          {label}
-        </label>
-      )}
-      <textarea
-        ref={ref}
-        className={cn(
-          'w-full px-4 py-2 font-body border border-border rounded-button',
-          'focus:outline-none focus:ring-2 focus:ring-forest',
-          error && 'border-ember focus:ring-ember',
-          className
-        )}
-        {...props}
-      />
-      {error && <p className="text-sm text-ember mt-1 font-body">{error}</p>}
-    </div>
-  )
+  ({ className, label, error, helperText, required, hideLabel, id: idProp, rows = 4, ...props }, ref) => {
+    const { id, errorId, helpId, ariaProps } = useFieldIds(error, helperText, idProp);
+
+    return (
+      <FieldShell
+        id={id}
+        errorId={errorId}
+        helpId={helpId}
+        label={label}
+        error={error}
+        helperText={helperText}
+        required={required}
+        hideLabel={hideLabel}
+      >
+        <textarea
+          ref={ref}
+          rows={rows}
+          required={required}
+          className={fieldControl(error, cn('resize-y leading-relaxed', className))}
+          {...ariaProps}
+          {...props}
+        />
+      </FieldShell>
+    );
+  }
 );
 
 Textarea.displayName = 'Textarea';

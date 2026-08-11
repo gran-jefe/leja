@@ -1,105 +1,80 @@
 'use client';
 
 import Link from 'next/link';
-import { FileText } from 'lucide-react';
-import { DashboardShell } from '@/components/layout/DashboardShell';
+import { FileText, PlusCircle } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/layout/EmptyState';
-import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { ListRow } from '@/components/ui/ListRow';
+import { SkeletonList } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgreements } from '@/hooks/useAgreements';
 import { UserRole } from '@beyond/shared';
-import { formatDate, getAgreementStatusVariant } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
+import { getStatus } from '@/lib/status';
 
 export default function AgreementsPage() {
   const { user } = useAuth();
   const { agreements, loading, error, refetch } = useAgreements();
   const isLandlord = user?.role === UserRole.LANDLORD;
 
-  return (
-    <ProtectedPageWrapper>
-      <DashboardShell>
-        <div className="max-w-4xl mx-auto">
-            <PageHeader
-              title="My Agreements"
-              subtitle="Track every tenancy agreement in one place"
-              icon={FileText}
-              action={
-                isLandlord ? (
-                  <Link href="/agreement/new">
-                    <Button variant="primary">New Agreement</Button>
-                  </Link>
-                ) : undefined
-              }
-            />
+  const newAgreementButton = isLandlord ? (
+    <Link href="/agreement/new">
+      <Button leadingIcon={<PlusCircle size={17} />}>New agreement</Button>
+    </Link>
+  ) : undefined;
 
-            {loading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <Card key={i}>
-                    <Skeleton height="1.25rem" className="mb-2" width="50%" />
-                    <Skeleton height="1rem" width="30%" />
-                  </Card>
-                ))}
-              </div>
-            ) : error ? (
-              <ErrorState message={error} onRetry={refetch} />
-            ) : agreements.length === 0 ? (
-              <EmptyState
+  return (
+    <div className="max-w-wide mx-auto">
+      <PageHeader
+        title={isLandlord ? 'Agreements' : 'My agreements'}
+        subtitle="Every tenancy agreement in one place."
+        icon={FileText}
+        action={newAgreementButton}
+      />
+
+      {loading ? (
+        <SkeletonList count={4} lines={1} />
+      ) : error ? (
+        <ErrorState message={error} onRetry={refetch} size="page" />
+      ) : agreements.length === 0 ? (
+        <EmptyState
+          icon={FileText}
+          title="No agreements yet"
+          description={
+            isLandlord
+              ? 'Create your first tenancy agreement to get started.'
+              : 'Agreements your landlord sends will appear here.'
+          }
+          action={newAgreementButton}
+        />
+      ) : (
+        <div className="space-y-3">
+          {agreements.map((agreement) => {
+            const status = getStatus('agreement', agreement.status);
+            return (
+              <ListRow
+                key={agreement.id}
+                href={`/agreement/${agreement.id}`}
                 icon={FileText}
-                title="No agreements yet"
-                description={
+                title={agreement.property?.address || 'Unknown property'}
+                meta={`${
                   isLandlord
-                    ? 'Create your first rental agreement to get started'
-                    : 'Your rental agreements will appear here'
-                }
-                action={
-                  isLandlord ? (
-                    <Link href="/agreement/new">
-                      <Button variant="primary">New Agreement</Button>
-                    </Link>
-                  ) : undefined
+                    ? agreement.tenant?.name || 'Unknown tenant'
+                    : agreement.landlord?.name || 'Unknown landlord'
+                } · ${formatDate(agreement.start_date)} – ${formatDate(agreement.end_date)}`}
+                trailing={
+                  <Badge tone={status.tone} dot>
+                    {status.label}
+                  </Badge>
                 }
               />
-            ) : (
-              <div className="space-y-4">
-                {agreements.map((agreement) => (
-                  <Link key={agreement.id} href={`/agreement/${agreement.id}`}>
-                    <Card className="hover:shadow-md hover:border-forest transition-all cursor-pointer">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-button bg-navy bg-opacity-5 flex items-center justify-center flex-shrink-0">
-                            <FileText className="text-navy" size={18} />
-                          </div>
-                          <div>
-                            <h3 className="font-display text-lg font-semibold text-navy mb-1">
-                              {agreement.property?.address || 'Unknown property'}
-                            </h3>
-                            <p className="font-body text-sm text-muted">
-                              {isLandlord
-                                ? agreement.tenant?.name || 'Unknown tenant'
-                                : agreement.landlord?.name || 'Unknown landlord'}
-                              {' · '}
-                              {formatDate(agreement.start_date)} – {formatDate(agreement.end_date)}
-                            </p>
-                          </div>
-                        </div>
-                        <Badge variant={getAgreementStatusVariant(agreement.status)}>
-                          {agreement.status}
-                        </Badge>
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            )}
+            );
+          })}
         </div>
-      </DashboardShell>
-    </ProtectedPageWrapper>
+      )}
+    </div>
   );
 }

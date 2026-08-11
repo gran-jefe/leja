@@ -6,20 +6,21 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
-import Cookies from 'js-cookie';
 import NProgress from 'nprogress';
-import { Shield, FileCheck, Users } from 'lucide-react';
 import api from '@/lib/api';
-import { Navbar } from '@/components/layout/Navbar';
+import { AuthLayout } from '@/components/marketing/AuthLayout';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Card } from '@/components/ui/Card';
+import { Alert } from '@/components/ui/Alert';
+import { ChoiceCard } from '@/components/ui/Choice';
+import { getErrorMessage } from '@/lib/utils';
+import { landingRouteFor, persistSession } from '@/lib/session';
 
 const signupSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Invalid email'),
-  phone: z.string().min(11, 'Phone must be at least 11 digits'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  email: z.string().email('Enter a valid email address'),
+  phone: z.string().min(11, 'Phone number must be at least 11 digits'),
+  password: z.string().min(8, 'Use at least 8 characters'),
   role: z.enum(['LANDLORD', 'TENANT']),
 });
 
@@ -29,17 +30,15 @@ export default function SignupPage() {
   const router = useRouter();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
-    watch,
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
     defaultValues: { role: 'TENANT' },
   });
-
-  const role = watch('role');
 
   const onSubmit = async (data: SignupFormData) => {
     NProgress.start();
@@ -48,122 +47,114 @@ export default function SignupPage() {
     try {
       const response = await api.post('/auth/register', data);
       const { token, user } = response.data.data;
-      Cookies.set('leja_token', token, { expires: 7 });
-      localStorage.setItem('leja_user', JSON.stringify(user));
-      router.push(user?.isAdmin ? '/admin' : '/dashboard');
-    } catch (err: any) {
+      persistSession(token, user);
+      router.push(landingRouteFor(user));
+    } catch (err) {
       NProgress.done();
-      if (!err.response) {
-        setError('Unable to connect. Please try again.');
-      } else {
-        const errors = err.response.data?.errors;
-        setError(
-          Array.isArray(errors) ? errors.join(' ') : err.response.data?.message || 'Signup failed'
-        );
-      }
+      setError(getErrorMessage(err, 'We couldn’t create your account. Please try again.'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <>
-      <Navbar />
-      <div className="min-h-screen bg-navy flex flex-col items-center justify-center p-4 py-20">
-        <p className="font-body text-xs uppercase tracking-wider text-forest font-semibold mb-3">
-          Get started free
-        </p>
-        <Card className="w-full max-w-md shadow-2xl">
-          <h1 className="font-display text-2xl font-bold text-navy mb-6">Create your account</h1>
+    <AuthLayout
+      eyebrow="Get started — free"
+      title="Create your account"
+      subtitle="No agent, no fee on the deal itself."
+      footer={
+        <>
+          Already have an account?{' '}
+          <Link href="/login" className="text-brass-700 font-semibold hover:underline underline-offset-4">
+            Log in
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+        {error && <Alert tone="error">{error}</Alert>}
 
-          {error && (
-            <div className="mb-4 p-3 bg-ember bg-opacity-10 text-ember rounded-button text-sm">
-              {error}
-            </div>
+        {/* Role is the most consequential choice on this page; it was two bare
+            radios. ChoiceCard also keeps the input in the tab order. */}
+        <fieldset>
+          <legend className="font-body text-body-sm font-semibold text-ink-800 mb-2">
+            I am a
+            <span className="text-danger-600 ml-0.5" aria-hidden>
+              *
+            </span>
+          </legend>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <ChoiceCard
+              value="TENANT"
+              label="Tenant"
+              description="Looking for a home"
+              {...register('role')}
+            />
+            <ChoiceCard
+              value="LANDLORD"
+              label="Landlord"
+              description="Listing a property"
+              {...register('role')}
+            />
+          </div>
+          {errors.role?.message && (
+            <p className="mt-1.5 font-body text-body-sm text-danger-600">{errors.role.message}</p>
           )}
+        </fieldset>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input
-              label="Full Name"
-              placeholder="John Doe"
-              {...register('name')}
-              error={errors.name?.message}
-            />
-            <Input
-              label="Email"
-              type="email"
-              placeholder="you@example.com"
-              {...register('email')}
-              error={errors.email?.message}
-            />
-            <Input
-              label="Phone"
-              placeholder="+2348012345678"
-              {...register('phone')}
-              error={errors.phone?.message}
-            />
-            <Input
-              label="Password"
-              type="password"
-              placeholder="••••••"
-              {...register('password')}
-              error={errors.password?.message}
-            />
+        <Input
+          label="Full name"
+          autoComplete="name"
+          placeholder="Chioma Ezeh"
+          required
+          {...register('name')}
+          error={errors.name?.message}
+        />
+        <Input
+          label="Email address"
+          type="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+          required
+          {...register('email')}
+          error={errors.email?.message}
+        />
+        <Input
+          label="Phone number"
+          type="tel"
+          autoComplete="tel"
+          placeholder="+234 801 234 5678"
+          required
+          {...register('phone')}
+          error={errors.phone?.message}
+        />
+        <Input
+          label="Password"
+          type="password"
+          autoComplete="new-password"
+          placeholder="••••••••"
+          required
+          helperText="At least 8 characters."
+          {...register('password')}
+          error={errors.password?.message}
+        />
 
-            <div>
-              <label className="block text-sm font-semibold text-charcoal mb-2 font-body">
-                I am a:
-              </label>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 font-body">
-                  <input
-                    type="radio"
-                    value="TENANT"
-                    {...register('role')}
-                    className="w-4 h-4"
-                  />
-                  <span>Tenant</span>
-                </label>
-                <label className="flex items-center gap-2 font-body">
-                  <input
-                    type="radio"
-                    value="LANDLORD"
-                    {...register('role')}
-                    className="w-4 h-4"
-                  />
-                  <span>Landlord</span>
-                </label>
-              </div>
-            </div>
+        <Button type="submit" fullWidth size="lg" loading={loading}>
+          Create account
+        </Button>
 
-            <Button variant="primary" className="w-full" loading={loading}>
-              Sign Up
-            </Button>
-          </form>
-
-          <p className="mt-4 text-sm text-muted text-center font-body">
-            Already have an account?{' '}
-            <Link href="/login" className="text-forest font-semibold hover:underline">
-              Login
-            </Link>
-          </p>
-        </Card>
-
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 text-sm text-[#A0AEC0] font-body mt-8">
-          <div className="flex items-center gap-2">
-            <Shield size={16} />
-            Bank-grade security
-          </div>
-          <div className="flex items-center gap-2">
-            <FileCheck size={16} />
-            State-compliant agreements
-          </div>
-          <div className="flex items-center gap-2">
-            <Users size={16} />
-            No agent fees
-          </div>
-        </div>
-      </div>
-    </>
+        <p className="font-body text-body-sm text-ink-400 text-center">
+          By creating an account you agree to our{' '}
+          <Link href="/terms" className="text-brass-700 hover:underline underline-offset-4">
+            Terms
+          </Link>{' '}
+          and{' '}
+          <Link href="/privacy" className="text-brass-700 hover:underline underline-offset-4">
+            Privacy Policy
+          </Link>
+          .
+        </p>
+      </form>
+    </AuthLayout>
   );
 }

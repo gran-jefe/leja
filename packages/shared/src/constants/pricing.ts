@@ -25,7 +25,17 @@ export const BEYOND_PRICING = {
   LAWYER_REVIEW_ADDON: 20000,       // Naira — flat price for in-house lawyer review
 
   RENTAL_HISTORY_EXPORT: 5000,      // Naira
-  LANDLORD_SUBSCRIPTION: 20000,     // Naira/month
+
+  // Landlords list free up to LANDLORD_FREE_PROPERTY_LIMIT properties; the
+  // subscription applies from the next one onward.
+  //
+  // NOT YET ENFORCED — nothing in apps/api charges LANDLORD_SUBSCRIPTION and
+  // no property-count check exists, so every landlord is currently free
+  // regardless of portfolio size. The threshold lives here (rather than only
+  // in CLAUDE.md prose) so marketing copy and the eventual enforcement read
+  // from one number instead of two.
+  LANDLORD_FREE_PROPERTY_LIMIT: 4,  // properties listed free
+  LANDLORD_SUBSCRIPTION: 20000,     // Naira/month, from property 5 onward
 
   // What connecting via BeyondAgency saves vs the informal market — used in
   // marketing comparisons (agent fee + informal legal cost vs ₦0 base fee).

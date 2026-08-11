@@ -1,10 +1,12 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { Card } from '@/components/ui/Card';
+import { Alert } from '@/components/ui/Alert';
+import { Spinner } from '@/components/ui/Spinner';
 import { PaymentInstructions } from '@/components/shared/PaymentInstructions';
 
-export default function AgreementPaymentPage() {
+function AgreementPayment() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const params = useSearchParams();
@@ -17,26 +19,38 @@ export default function AgreementPaymentPage() {
 
   if (!reference || !accountNumber) {
     return (
-      <div className="max-w-md mx-auto">
-        <Card>
-          <p className="font-body text-charcoal">
-            Missing payment details. Go back to the agreement and try again.
-          </p>
-        </Card>
-      </div>
+      <Alert tone="warning" title="Missing payment details">
+        Go back to the agreement and start the payment again.
+      </Alert>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto space-y-6">
-      <PaymentInstructions
-        reference={reference}
-        accountNumber={accountNumber}
-        accountName={accountName}
-        bankName={bankName}
-        amount={amount}
-        onConfirmed={() => router.push(`/agreement/${id}?payment=success`)}
-      />
+    <PaymentInstructions
+      reference={reference}
+      accountNumber={accountNumber}
+      accountName={accountName}
+      bankName={bankName}
+      amount={amount}
+      onConfirmed={() => router.push(`/agreement/${id}?payment=success`)}
+    />
+  );
+}
+
+export default function AgreementPaymentPage() {
+  return (
+    // useSearchParams needs a Suspense boundary; this page had none, unlike
+    // agreement/[id] which wraps it correctly.
+    <div className="max-w-form mx-auto space-y-6">
+      <Suspense
+        fallback={
+          <div className="flex justify-center py-12">
+            <Spinner size="lg" />
+          </div>
+        }
+      >
+        <AgreementPayment />
+      </Suspense>
     </div>
   );
 }

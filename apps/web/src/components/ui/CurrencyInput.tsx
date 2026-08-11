@@ -2,16 +2,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { FieldShell, fieldControl, useFieldIds, type FieldOwnProps } from './FieldShell';
 
-interface CurrencyInputProps {
-  label?: string;
-  error?: string;
+interface CurrencyInputProps extends FieldOwnProps {
   value: number | undefined;
   onValueChange?: (value: number) => void;
   placeholder?: string;
   readOnly?: boolean;
-  helperText?: string;
   className?: string;
+  id?: string;
 }
 
 const formatDigits = (digits: string) => (digits ? Number(digits).toLocaleString('en-NG') : '');
@@ -29,10 +28,14 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
   placeholder,
   readOnly,
   helperText,
+  required,
+  hideLabel,
   className,
+  id: idProp,
 }) => {
   const [display, setDisplay] = useState(value ? value.toLocaleString('en-NG') : '');
   const [focused, setFocused] = useState(false);
+  const { id, errorId, helpId, ariaProps } = useFieldIds(error, helperText, idProp);
 
   // Don't stomp on what the user is actively typing — only resync the
   // display from the external value when the field isn't focused (e.g. a
@@ -50,34 +53,44 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
   };
 
   return (
-    <div className="w-full">
-      {label && (
-        <label className="block text-sm font-semibold text-charcoal mb-2 font-body">{label}</label>
-      )}
+    <FieldShell
+      id={id}
+      errorId={errorId}
+      helpId={helpId}
+      label={label}
+      error={error}
+      helperText={helperText}
+      required={required}
+      hideLabel={hideLabel}
+    >
       <div className="relative">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted font-body pointer-events-none">
+        <span
+          aria-hidden
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-400 font-mono pointer-events-none"
+        >
           ₦
         </span>
         <input
           type="text"
           inputMode="numeric"
           readOnly={readOnly}
+          required={required}
           value={display}
           onChange={readOnly ? undefined : handleChange}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           placeholder={placeholder}
-          className={cn(
-            'w-full pl-8 pr-4 py-2 font-body border border-border rounded-button',
-            'focus:outline-none focus:ring-2 focus:ring-forest',
-            readOnly && 'bg-cream text-muted cursor-not-allowed',
-            error && 'border-ember focus:ring-ember',
-            className
+          className={fieldControl(
+            error,
+            cn(
+              'pl-9 font-mono tabular-nums',
+              readOnly && 'bg-ink-50 text-ink-500 cursor-not-allowed',
+              className
+            )
           )}
+          {...ariaProps}
         />
       </div>
-      {helperText && !error && <p className="text-xs text-muted mt-1 font-body">{helperText}</p>}
-      {error && <p className="text-sm text-ember mt-1 font-body">{error}</p>}
-    </div>
+    </FieldShell>
   );
 };

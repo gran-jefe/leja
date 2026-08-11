@@ -1,10 +1,12 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Card } from '@/components/ui/Card';
+import { Alert } from '@/components/ui/Alert';
+import { Spinner } from '@/components/ui/Spinner';
 import { PaymentInstructions } from '@/components/shared/PaymentInstructions';
 
-export default function ProviderSubscriptionPaymentPage() {
+function SubscriptionPayment() {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -16,26 +18,36 @@ export default function ProviderSubscriptionPaymentPage() {
 
   if (!reference || !accountNumber) {
     return (
-      <div className="max-w-md mx-auto">
-        <Card>
-          <p className="font-body text-charcoal">
-            Missing payment details. Go back to your dashboard and try again.
-          </p>
-        </Card>
-      </div>
+      <Alert tone="warning" title="Missing payment details">
+        Go back to your dashboard and start the subscription again.
+      </Alert>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto space-y-6">
-      <PaymentInstructions
-        reference={reference}
-        accountNumber={accountNumber}
-        accountName={accountName}
-        bankName={bankName}
-        amount={amount}
-        onConfirmed={() => router.push('/provider/dashboard?subscription=success')}
-      />
+    <PaymentInstructions
+      reference={reference}
+      accountNumber={accountNumber}
+      accountName={accountName}
+      bankName={bankName}
+      amount={amount}
+      onConfirmed={() => router.push('/provider/dashboard?subscription=success')}
+    />
+  );
+}
+
+export default function ProviderSubscriptionPaymentPage() {
+  return (
+    <div className="max-w-form mx-auto space-y-6">
+      <Suspense
+        fallback={
+          <div className="flex justify-center py-12">
+            <Spinner size="lg" />
+          </div>
+        }
+      >
+        <SubscriptionPayment />
+      </Suspense>
     </div>
   );
 }

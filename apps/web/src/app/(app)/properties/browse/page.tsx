@@ -2,20 +2,22 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Search, Home, Bed, Bath } from 'lucide-react';
+import { Search, Home, SlidersHorizontal } from 'lucide-react';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/layout/EmptyState';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Select } from '@/components/ui/Select';
+import { Checkbox, ChoiceChip } from '@/components/ui/Choice';
+import { SkeletonCard } from '@/components/ui/Skeleton';
+import { PropertyCard } from '@/components/ui/PropertyCard';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useProperties } from '@/hooks/useProperties';
 import { UserRole, PropertyType } from '@beyond/shared';
-import { formatNaira } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { PROPERTY_TYPE_LABELS } from '@/lib/constants';
 
 const STATES = ['Lagos', 'Abuja', 'Port Harcourt', 'Others'];
@@ -46,23 +48,11 @@ const emptyFilters: FilterState = {
   bedrooms: '',
 };
 
-const propertyLabel = (property: any) => {
-  const bedroomEncodedTypes = [
-    PropertyType.ONE_BEDROOM,
-    PropertyType.TWO_BEDROOM,
-    PropertyType.THREE_BEDROOM,
-  ];
-  if (bedroomEncodedTypes.includes(property.property_type)) {
-    return PROPERTY_TYPE_LABELS[property.property_type] || property.property_type;
-  }
-  const typeLabel = PROPERTY_TYPE_LABELS[property.property_type] || property.property_type;
-  return `${property.bedrooms} Bedroom ${typeLabel}`;
-};
-
 function BrowsePropertiesContent() {
   const [draft, setDraft] = useState<FilterState>(emptyFilters);
   const [applied, setApplied] = useState<FilterState>(emptyFilters);
   const [search, setSearch] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [appliedSearch, setAppliedSearch] = useState('');
 
   const queryFilters = useMemo(() => {
@@ -117,15 +107,34 @@ function BrowsePropertiesContent() {
     <DashboardShell>
       <div className="max-w-6xl mx-auto">
         <PageHeader
-          title="Browse Properties"
-          subtitle="Find your next home from verified listings"
+          title="Browse properties"
+          subtitle="Find your next home, direct from the landlord."
           icon={Home}
         />
 
+        {/* On small screens the filter panel was a full-width card stacked
+            above the results, pushing every listing below the fold. It now
+            collapses behind a toggle. */}
+        <div className="lg:hidden mb-4">
+          <Button
+            variant="secondary"
+            fullWidth
+            onClick={() => setFiltersOpen((v) => !v)}
+            leadingIcon={<SlidersHorizontal size={16} />}
+            aria-expanded={filtersOpen}
+            aria-controls="filter-panel"
+          >
+            {filtersOpen ? 'Hide filters' : 'Show filters'}
+          </Button>
+        </div>
+
         <div className="flex flex-col lg:flex-row gap-6">
-          <aside className="lg:w-72 flex-shrink-0">
-            <Card>
-              <h3 className="font-display text-lg font-semibold text-navy mb-4">Filters</h3>
+          <aside
+            id="filter-panel"
+            className={cn('lg:w-72 flex-shrink-0', !filtersOpen && 'hidden lg:block')}
+          >
+            <Card className="lg:sticky lg:top-8">
+              <h3 className="font-display text-title font-semibold text-navy-900 mb-5">Filters</h3>
 
               <div className="mb-4">
                 <Input
@@ -137,13 +146,10 @@ function BrowsePropertiesContent() {
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-semibold text-charcoal mb-2 font-body">
-                  State
-                </label>
-                <select
+                <Select
+                  label="State"
                   value={draft.state}
                   onChange={(e) => setDraft((prev) => ({ ...prev, state: e.target.value }))}
-                  className="w-full px-4 py-2 font-body border border-border rounded-button focus:outline-none focus:ring-2 focus:ring-forest"
                 >
                   <option value="">Any</option>
                   {STATES.map((s) => (
@@ -151,112 +157,99 @@ function BrowsePropertiesContent() {
                       {s}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-semibold text-charcoal mb-2 font-body">
-                  Property Type
-                </label>
-                <div className="space-y-2">
+              <fieldset className="mb-5">
+                <legend className="font-body text-body-sm font-semibold text-ink-800 mb-2.5">
+                  Property type
+                </legend>
+                <div className="space-y-2.5">
                   {Object.values(PropertyType).map((type) => (
-                    <label key={type} className="flex items-center gap-2 font-body text-sm text-charcoal">
-                      <input
-                        type="checkbox"
-                        checked={draft.propertyTypes.includes(type)}
-                        onChange={() => toggleType(type)}
-                        className="rounded border-border text-forest focus:ring-forest"
-                      />
-                      {PROPERTY_TYPE_LABELS[type] || type}
-                    </label>
+                    <Checkbox
+                      key={type}
+                      checked={draft.propertyTypes.includes(type)}
+                      onChange={() => toggleType(type)}
+                      label={PROPERTY_TYPE_LABELS[type] || type}
+                    />
                   ))}
                 </div>
-              </div>
+              </fieldset>
 
-              <div className="mb-4 grid grid-cols-2 gap-2">
+              <div className="mb-4 grid grid-cols-2 gap-3">
                 <Input
-                  label="Min Rent"
+                  label="Min rent"
                   type="number"
+                  inputMode="numeric"
                   placeholder="0"
                   value={draft.minRent}
                   onChange={(e) => setDraft((prev) => ({ ...prev, minRent: e.target.value }))}
                 />
                 <Input
-                  label="Max Rent"
+                  label="Max rent"
                   type="number"
+                  inputMode="numeric"
                   placeholder="Any"
                   value={draft.maxRent}
                   onChange={(e) => setDraft((prev) => ({ ...prev, maxRent: e.target.value }))}
                 />
               </div>
 
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-charcoal mb-2 font-body">
+              {/* Was radio inputs behind `className="hidden"`, so these pills
+                  could not be reached or toggled by keyboard. */}
+              <fieldset className="mb-6">
+                <legend className="font-body text-body-sm font-semibold text-ink-800 mb-2.5">
                   Bedrooms
-                </label>
+                </legend>
                 <div className="flex flex-wrap gap-2">
                   {BEDROOM_OPTIONS.map((opt) => (
-                    <label
+                    <ChoiceChip
                       key={opt.label}
-                      className={`px-3 py-1.5 rounded-button border text-sm font-body cursor-pointer ${
-                        draft.bedrooms === opt.value
-                          ? 'bg-navy text-white border-navy'
-                          : 'border-border text-charcoal'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="bedrooms"
-                        value={opt.value}
-                        checked={draft.bedrooms === opt.value}
-                        onChange={(e) => setDraft((prev) => ({ ...prev, bedrooms: e.target.value }))}
-                        className="hidden"
-                      />
-                      {opt.label}
-                    </label>
+                      name="bedrooms"
+                      value={opt.value}
+                      checked={draft.bedrooms === opt.value}
+                      onChange={(e) => setDraft((prev) => ({ ...prev, bedrooms: e.target.value }))}
+                      label={opt.label}
+                    />
                   ))}
                 </div>
-              </div>
+              </fieldset>
 
               <div className="flex flex-col gap-2">
-                <Button variant="primary" onClick={applyFilters} className="w-full">
-                  Apply Filters
+                <Button onClick={applyFilters} fullWidth>
+                  Apply filters
                 </Button>
-                <Button variant="ghost" onClick={clearFilters} className="w-full">
-                  Clear Filters
+                <Button variant="ghost" onClick={clearFilters} fullWidth>
+                  Clear filters
                 </Button>
               </div>
             </Card>
           </aside>
 
           <div className="flex-1 min-w-0">
-            <div className="relative mb-4">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
-              <input
-                type="text"
-                placeholder="Search by address or area..."
+            <div className="mb-4">
+              <Input
+                label="Search listings"
+                hideLabel
+                type="search"
+                placeholder="Search by address or area…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
-                className="w-full pl-11 pr-4 py-3 font-body border border-border rounded-button focus:outline-none focus:ring-2 focus:ring-forest"
+                leadingIcon={<Search size={17} />}
               />
             </div>
 
             {!loading && !error && (
-              <p className="font-body text-sm text-muted mb-4">
+              <p className="font-mono text-label uppercase text-ink-400 mb-4" aria-live="polite">
                 {properties.length} {properties.length === 1 ? 'property' : 'properties'} found
               </p>
             )}
 
             {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <Card key={i}>
-                    <Skeleton height="1.25rem" className="mb-3" width="60%" />
-                    <Skeleton height="1rem" className="mb-2" />
-                    <Skeleton height="1rem" className="mb-4" width="50%" />
-                    <Skeleton height="2rem" width="70%" />
-                  </Card>
+                  <SkeletonCard key={i} lines={3} />
                 ))}
               </div>
             ) : error ? (
@@ -269,75 +262,32 @@ function BrowsePropertiesContent() {
                 action={
                   hasActiveFilters ? (
                     <Button variant="secondary" onClick={clearFilters}>
-                      Clear Filters
+                      Clear filters
                     </Button>
                   ) : undefined
                 }
               />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {properties.map((property) => (
-                  <Card key={property.id} className="flex flex-col h-full p-0 overflow-hidden">
-                    <div className="relative w-full aspect-[4/3] bg-cream">
-                      {property.images?.[0] ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={property.images[0]}
-                          alt={property.address}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted">
-                          <Home size={32} />
-                        </div>
-                      )}
-                      <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
-                        <Badge variant="success">Available</Badge>
-                        {property.requires_insurance && (
-                          <Badge variant="info">Insured Tenancy</Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="p-6 flex flex-col flex-1">
-                      <h3 className="font-display text-lg font-semibold text-navy mb-2">
-                        {propertyLabel(property)}
-                      </h3>
-                      <p className="font-body text-sm text-charcoal mb-1">{property.address}</p>
-                      <p className="font-body text-sm text-muted mb-4">
-                        {property.city}, {property.state}
-                      </p>
-
-                      <div className="flex items-center gap-4 font-body text-sm text-muted mb-4">
-                        <span className="flex items-center gap-1">
-                          <Bed size={14} />
-                          {property.bedrooms}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Bath size={14} />
-                          {property.bathrooms}
-                        </span>
-                      </div>
-
-                      <div className="mb-4">
-                        <p className="font-display text-xl font-bold text-forest">
-                          {formatNaira(property.annual_rent)}
-                          <span className="text-sm font-body text-muted">/year</span>
-                        </p>
-                        <p className="font-body text-sm text-muted">
-                          {formatNaira(property.monthly_rent)}/month
-                        </p>
-                      </div>
-
-                      <div className="mt-auto">
-                        <Link href={`/properties/browse/${property.id}`}>
-                          <Button variant="secondary" className="w-full">
-                            View Details
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </Card>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {properties.map((property, i) => (
+                  <PropertyCard
+                    key={property.id}
+                    href={`/properties/browse/${property.id}`}
+                    address={property.address}
+                    city={property.city}
+                    state={property.state}
+                    propertyType={property.property_type}
+                    annualRent={property.annual_rent}
+                    bedrooms={property.bedrooms}
+                    bathrooms={property.bathrooms}
+                    imageUrl={property.images?.[0]}
+                    priority={i < 3}
+                    status={
+                      property.requires_insurance
+                        ? { label: 'Insured tenancy', tone: 'info' }
+                        : { label: 'Available', tone: 'success' }
+                    }
+                  />
                 ))}
               </div>
             )}

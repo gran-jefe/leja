@@ -1,17 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { DashboardShell } from '@/components/layout/DashboardShell';
-import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
+import { useState } from 'react';
+import { Users } from 'lucide-react';
 import { AdminGate } from '@/components/admin/AdminGate';
-import { Card } from '@/components/ui/Card';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { EmptyState } from '@/components/layout/EmptyState';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Spinner } from '@/components/ui/Spinner';
+import { DataTable, type Column } from '@/components/ui/DataTable';
+import { Pagination } from '@/components/ui/Pagination';
+import { SkeletonList } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
-import api from '@/lib/api';
-import { formatDate, getErrorMessage } from '@/lib/utils';
+import { ADMIN_PAGE_SIZE, useAdminList } from '@/hooks/useAdminList';
+import { formatDate } from '@/lib/utils';
+import type { StatusTone } from '@/lib/status';
 
 interface AdminUser {
   id: string;
@@ -23,58 +26,59 @@ interface AdminUser {
   created_at: string;
 }
 
-const roleVariant: Record<AdminUser['role'], 'default' | 'success' | 'info'> = {
+const roleTone: Record<AdminUser['role'], StatusTone> = {
   LANDLORD: 'info',
-  TENANT: 'default',
-  PROVIDER: 'success',
+  TENANT: 'neutral',
+  PROVIDER: 'brand',
 };
 
-const PAGE_SIZE = 50;
+const columns: Column<AdminUser>[] = [
+  { header: 'Name', primary: true, cell: (u) => u.name },
+  { header: 'Email', cell: (u) => <span className="font-mono text-body-sm">{u.email}</span> },
+  { header: 'Phone', secondary: true, cell: (u) => u.phone || '—' },
+  {
+    header: 'Role',
+    cell: (u) => (
+      <span className="inline-flex gap-1.5">
+        <Badge tone={roleTone[u.role]}>{u.role}</Badge>
+        {u.is_verified && <Badge tone="success">Verified</Badge>}
+      </span>
+    ),
+  },
+  {
+    header: 'Joined',
+    align: 'right',
+    cell: (u) => <span className="font-mono whitespace-nowrap">{formatDate(u.created_at)}</span>,
+  },
+];
 
 function UsersContent() {
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [total, setTotal] = useState(0);
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
-  const [offset, setOffset] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
-  const fetchUsers = async (searchValue: string, offsetValue: number) => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await api.get('/admin/users', {
-        params: { search: searchValue || undefined, limit: PAGE_SIZE, offset: offsetValue },
-      });
-      setUsers(res.data.data.users || []);
-      setTotal(res.data.data.total || 0);
-    } catch (err) {
-      setError(getErrorMessage(err, 'Failed to load users'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers(search, offset);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offset]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setOffset(0);
-    fetchUsers(search, 0);
-  };
+  const { items, total, page, setPage, loading, error, refetch } = useAdminList<AdminUser>(
+    '/admin/users',
+    'users',
+    { search: search || undefined }
+  );
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <h1 className="font-display text-2xl font-bold text-navy">Users</h1>
+    <div className="max-w-wide mx-auto space-y-6">
+      <PageHeader title="Users" subtitle={`${total} registered`} icon={Users} />
 
-      <form onSubmit={handleSearch} className="flex gap-2 max-w-md">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          setSearch(searchInput);
+        }}
+        className="flex gap-2 max-w-md"
+      >
         <Input
+          label="Search"
+          hideLabel
           placeholder="Search by name or email"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
         />
         <Button type="submit" variant="secondary">
           Search
@@ -82,59 +86,15 @@ function UsersContent() {
       </form>
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Spinner size="lg" />
-        </div>
+        <SkeletonList count={5} lines={1} />
       ) : error ? (
-        <ErrorState message={error} onRetry={() => fetchUsers(search, offset)} />
-      ) : users.length === 0 ? (
-        <Card>
-          <p className="font-body text-sm text-muted text-center py-6">No users found.</p>
-        </Card>
+        <ErrorState message={error} onRetry={refetch} size="page" />
+      ) : items.length === 0 ? (
+        <EmptyState icon={Users} title="No users found" description="Try a different search." />
       ) : (
         <>
-          <div className="space-y-2">
-            {users.map((u) => (
-              <Card key={u.id}>
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div>
-                    <p className="font-body font-semibold text-charcoal">{u.name}</p>
-                    <p className="text-xs text-muted font-body">
-                      {u.email} {u.phone ? `· ${u.phone}` : ''} · Joined {formatDate(u.created_at)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {u.is_verified && <Badge variant="success">Verified</Badge>}
-                    <Badge variant={roleVariant[u.role]}>{u.role}</Badge>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-between font-body text-sm text-muted">
-            <span>
-              Showing {offset + 1}–{Math.min(offset + PAGE_SIZE, total)} of {total}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={offset === 0}
-                onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={offset + PAGE_SIZE >= total}
-                onClick={() => setOffset(offset + PAGE_SIZE)}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+          <DataTable columns={columns} rows={items} rowKey={(u) => u.id} caption="Registered users" />
+          <Pagination page={page} pageSize={ADMIN_PAGE_SIZE} total={total} onPageChange={setPage} />
         </>
       )}
     </div>
@@ -143,12 +103,8 @@ function UsersContent() {
 
 export default function AdminUsersPage() {
   return (
-    <ProtectedPageWrapper>
-      <DashboardShell>
-        <AdminGate>
-          <UsersContent />
-        </AdminGate>
-      </DashboardShell>
-    </ProtectedPageWrapper>
+    <AdminGate>
+      <UsersContent />
+    </AdminGate>
   );
 }
