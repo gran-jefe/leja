@@ -23,6 +23,7 @@ import { Container } from '@/components/layout/Container';
 import { Reveal, RevealGroup } from '@/components/motion/Reveal';
 import { AnimatedNumber } from '@/components/motion/AnimatedNumber';
 import { HeroBackdrop } from '@/components/marketing/HeroBackdrop';
+import { SafeImage } from '@/components/ui/SafeImage';
 import { AgreementArtifact } from '@/components/marketing/AgreementArtifact';
 import { DemoContactForm } from '@/components/marketing/DemoContactForm';
 import { SiteFooter } from '@/components/marketing/SiteFooter';
@@ -160,7 +161,9 @@ export default function Home() {
 
       {/* ---------------------------------------------------------- Hero -- */}
       <section className="relative min-h-[92vh] flex items-center pt-28 pb-20 overflow-hidden">
-        <HeroBackdrop />
+        {/* Decorative: it sits behind a heavy scrim and the headline carries
+            the meaning, so it takes an empty alt rather than a description. */}
+        <HeroBackdrop src="/hero-lagos-residence.jpg" alt="" />
 
         <Container className="relative">
           <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
@@ -287,6 +290,15 @@ export default function Home() {
         <div className="grid md:grid-cols-2 gap-14 md:gap-0 relative">
           <div className="md:pr-14">
             <Reveal>
+              <div className="relative aspect-[4/5] sm:aspect-[5/4] md:aspect-[4/5] rounded-card overflow-hidden mb-7 bg-ink-100 shadow-md">
+                <SafeImage
+                  src="/letting-interior.jpg"
+                  alt="An empty, light-filled apartment living room ready to let"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 45vw"
+                  className="object-cover"
+                />
+              </div>
               <IconTile icon={Building2} tone="navy" size="lg" className="mb-5" />
               <h3 className="font-display text-display-sm font-semibold text-navy-900 mb-2">
                 When you&apos;re letting
@@ -318,6 +330,15 @@ export default function Home() {
 
           <div id="for-tenants" className="md:pl-14">
             <Reveal delay={0.08}>
+              <div className="relative aspect-[4/5] sm:aspect-[5/4] md:aspect-[4/5] rounded-card overflow-hidden mb-7 bg-ink-100 shadow-md">
+                <SafeImage
+                  src="/renting-moving-in.jpg"
+                  alt="A tenant carrying a box into her new apartment"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 45vw"
+                  className="object-cover"
+                />
+              </div>
               <IconTile icon={HomeIcon} tone="brass" size="lg" className="mb-5" />
               <h3 className="font-display text-display-sm font-semibold text-navy-900 mb-2">
                 When you&apos;re renting
@@ -406,9 +427,26 @@ export default function Home() {
       <Section tone="white">
         <Reveal>
           <Eyebrow className="text-center mb-4">Why trust the platform</Eyebrow>
-          <h2 className="text-center font-display text-display-md font-semibold text-navy-900 mb-16">
+          <h2 className="text-center font-display text-display-md font-semibold text-navy-900 mb-12">
             Trust, built in — not bolted on.
           </h2>
+        </Reveal>
+
+        <Reveal delay={0.05}>
+          <div className="relative aspect-[16/9] sm:aspect-[21/9] rounded-xl overflow-hidden mb-16 bg-ink-100 shadow-lg">
+            <SafeImage
+              src="/trust-handover.jpg"
+              alt="A landlord handing keys to a tenant across a table, beside a signed tenancy agreement"
+              fill
+              sizes="(max-width: 1280px) 100vw, 1200px"
+              className="object-cover object-center"
+            />
+            {/* Keeps the caption legible over the warm highlights on the right. */}
+            <div className="absolute inset-0 bg-gradient-to-t from-navy-950/70 via-transparent to-transparent" />
+            <p className="absolute bottom-5 left-6 right-6 font-mono text-label uppercase text-on-dark">
+              Keys and a signed agreement — no agent in the room
+            </p>
+          </div>
         </Reveal>
         <RevealGroup className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
           {trustPoints.map((point) => (
