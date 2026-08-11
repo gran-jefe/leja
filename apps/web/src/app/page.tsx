@@ -7,10 +7,8 @@ import {
   Calendar,
   CheckCircle2,
   CreditCard,
-  FileText,
   Home as HomeIcon,
   Landmark,
-  Link2,
   Scale,
   Shield,
   ShieldCheck,
@@ -24,6 +22,7 @@ import { Reveal, RevealGroup } from '@/components/motion/Reveal';
 import { AnimatedNumber } from '@/components/motion/AnimatedNumber';
 import { HeroBackdrop } from '@/components/marketing/HeroBackdrop';
 import { SafeImage } from '@/components/ui/SafeImage';
+import { StepIllustration } from '@/components/marketing/StepIllustration';
 import { AgreementArtifact } from '@/components/marketing/AgreementArtifact';
 import { DemoContactForm } from '@/components/marketing/DemoContactForm';
 import { SiteFooter } from '@/components/marketing/SiteFooter';
@@ -50,19 +49,19 @@ const tenantBenefits = [
 const steps = [
   {
     number: '01',
-    icon: Link2,
+    kind: 'connect' as const,
     title: 'Connect',
     body: 'Browse verified listings and connect directly with a landlord or tenant. No agent stands between you, and no agent takes a cut.',
   },
   {
     number: '02',
-    icon: FileText,
+    kind: 'agree' as const,
     title: 'Agree',
     body: 'Fill in the tenancy terms together. We generate a standardized, state-compliant agreement instantly — at no charge.',
   },
   {
     number: '03',
-    icon: ShieldCheck,
+    kind: 'protect' as const,
     title: 'Protect',
     body: 'Your agreement is on record from the moment it’s accepted. Add a lawyer’s review or rent-protection cover only if you want them.',
   },
@@ -381,7 +380,7 @@ export default function Home() {
               <span className="font-display text-display-md font-semibold text-brass-500 leading-none">
                 {step.number}
               </span>
-              <IconTile icon={step.icon} tone="navy" className="my-5" />
+              <StepIllustration kind={step.kind} className="my-4 -ml-3" size={128} />
               <h3 className="font-display text-title font-semibold text-navy-900 mb-2">
                 {step.title}
               </h3>
