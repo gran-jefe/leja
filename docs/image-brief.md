@@ -50,6 +50,30 @@ carry most of the visual lift.
 
 Save every file into `apps/web/public/`.
 
+### ⚠️ Read this before pasting anything
+
+**One prompt per request. Never paste several together** — every generator
+will answer a multi-prompt request with a single contact sheet, and a
+composite is unusable: each panel lands at roughly a seventh of the resolution
+and gets cropped to fit the grid rather than to the ratio the slot needs.
+
+**The `--ar` and `Negative:` lines are Midjourney syntax.** They are ignored by
+ChatGPT / DALL·E / gpt-image-1, which is why ratios come back wrong there.
+
+| Tool | What to send |
+|---|---|
+| **Midjourney / Flux** | The prompt exactly as written, `--ar` and all |
+| **ChatGPT / gpt-image-1** | Prompt body only. Delete the `--ar` and `Negative:` lines and instead end with e.g. *"Landscape 16:9 orientation. Do not include any text, letters or logos."* Ask for **one** image. |
+
+**Resolution is the usual failure.** The hero must be at least 2400px wide —
+it is the page's LCP element and renders full-bleed. If your generator caps
+below that, generate at its maximum and upscale *once*, or use Midjourney's
+upscale rather than accepting a small file.
+
+**No text, ever.** Not in the seal, not a tagline, not an "EST." date. Anything
+with baked-in words can't be localised, ages badly, and invents claims. All
+type on the site is live HTML.
+
 ### 01 · `hero-lagos-residence.jpg` · 2400×1600 (16:9) · **ESSENTIAL**
 
 ```
