@@ -16,7 +16,7 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 import { PropertyCard } from '@/components/ui/PropertyCard';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useProperties } from '@/hooks/useProperties';
-import { UserRole, PropertyType } from '@beyond/shared';
+import { PropertyType } from '@beyond/shared';
 import { cn } from '@/lib/utils';
 import { PROPERTY_TYPE_LABELS } from '@/lib/constants';
 
@@ -298,9 +298,11 @@ function BrowsePropertiesContent() {
   );
 }
 
+// Open to any signed-in user — browsing listings is how someone with no
+// capabilities yet finds a home and becomes a tenant.
 export default function BrowsePropertiesPage() {
   return (
-    <ProtectedPageWrapper requiredRole={UserRole.TENANT} redirectTo="/properties">
+    <ProtectedPageWrapper>
       <BrowsePropertiesContent />
     </ProtectedPageWrapper>
   );

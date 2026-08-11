@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticateToken, optionalAuth, requireRole } from '../middleware/auth';
-import { UserRole } from '@beyond/shared';
+import { authenticateToken, optionalAuth, requireCapability } from '../middleware/auth';
+import { Capability } from '@beyond/shared';
+import { grantCapability } from '../db/queries/capabilities';
 import {
   createProperty,
   findPropertiesByLandlord,
@@ -12,10 +13,11 @@ import {
 
 const router = Router();
 
+// GRANT POINT — no LANDLORD gate here. Listing your first property is what
+// makes you a landlord; requiring the capability would make it unreachable.
 router.post(
   '/',
   authenticateToken,
-  requireRole(UserRole.LANDLORD),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const {
@@ -53,6 +55,14 @@ router.post(
           : undefined,
       });
 
+      // Listing a property is what makes you a landlord. Idempotent, and
+      // non-fatal: a capability hiccup must never lose the listing itself.
+      try {
+        await grantCapability(req.user!.id, Capability.LANDLORD, 'listed_property');
+      } catch (err) {
+        console.error('[CAPABILITY] Failed to grant LANDLORD to', req.user!.id, err);
+      }
+
       return res.status(201).json({
         success: true,
         data: property,
@@ -66,7 +76,10 @@ router.post(
 
 router.get('/', optionalAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (req.user?.role === UserRole.LANDLORD) {
+    // A landlord asking for "/properties" means their own listings. Someone
+    // who is also a tenant still browses via /properties?browse=1 or the
+    // dedicated browse screen.
+    if (req.user?.capabilities?.includes(Capability.LANDLORD) && req.query.browse !== '1') {
       const properties = await findPropertiesByLandlord(req.user.id);
 
       return res.json({
@@ -139,7 +152,7 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response, next: 
 router.patch(
   '/:id',
   authenticateToken,
-  requireRole(UserRole.LANDLORD),
+  requireCapability(Capability.LANDLORD),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
@@ -203,7 +216,7 @@ router.patch(
 router.delete(
   '/:id',
   authenticateToken,
-  requireRole(UserRole.LANDLORD),
+  requireCapability(Capability.LANDLORD),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;

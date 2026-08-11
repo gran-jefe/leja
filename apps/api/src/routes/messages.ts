@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticateToken, requireRole } from '../middleware/auth';
+import { authenticateToken, requireCapability } from '../middleware/auth';
 import { agreementRateLimit } from '../middleware/rateLimit';
-import { UserRole } from '@beyond/shared';
+import { Capability } from '@beyond/shared';
 import { startConversationSchema, sendMessageSchema } from '../lib/schemas';
 import {
   startOrGetConversation,
@@ -34,7 +34,7 @@ const notifyAsync = (params: Parameters<typeof notifyNewMessage>[0]) => {
 router.post(
   '/conversations',
   authenticateToken,
-  requireRole(UserRole.TENANT),
+  requireCapability(Capability.TENANT),
   agreementRateLimit,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -76,11 +76,10 @@ router.post(
 
 router.get('/conversations', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (req.user!.role !== UserRole.LANDLORD && req.user!.role !== UserRole.TENANT) {
-      return res.json({ success: true, data: [], message: 'Conversations retrieved' });
-    }
-
-    const conversations = await listConversationsForUser(req.user!.id, req.user!.role);
+    // No capability gate: the query itself scopes to conversations this user
+    // is a party to, on either side. A user with no capabilities yet simply
+    // has none.
+    const conversations = await listConversationsForUser(req.user!.id);
 
     return res.json({
       success: true,
@@ -107,8 +106,7 @@ router.get(
 
       const messages = await listMessages(conversation.id);
 
-      const role = conversation.landlord_id === req.user!.id ? 'LANDLORD' : 'TENANT';
-      await markConversationRead(conversation.id, role);
+      await markConversationRead(conversation.id, req.user!.id);
 
       return res.json({
         success: true,

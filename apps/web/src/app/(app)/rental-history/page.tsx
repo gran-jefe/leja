@@ -12,7 +12,7 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Button } from '@/components/ui/Button';
 import { useRentalHistory } from '@/hooks/useRentalHistory';
-import { UserRole, BEYOND_PRICING } from '@beyond/shared';
+import { Capability, BEYOND_PRICING } from '@beyond/shared';
 import { cn, formatDate, formatNaira } from '@/lib/utils';
 import { getStatus } from '@/lib/status';
 
@@ -109,7 +109,7 @@ function RentalHistoryContent() {
 
 export default function RentalHistoryPage() {
   return (
-    <ProtectedPageWrapper requiredRole={UserRole.TENANT}>
+    <ProtectedPageWrapper requiredCapability={Capability.TENANT}>
       <RentalHistoryContent />
     </ProtectedPageWrapper>
   );

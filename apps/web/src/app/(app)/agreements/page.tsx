@@ -11,14 +11,12 @@ import { SkeletonList } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgreements } from '@/hooks/useAgreements';
-import { UserRole } from '@beyond/shared';
 import { formatDate } from '@/lib/utils';
 import { getStatus } from '@/lib/status';
 
 export default function AgreementsPage() {
-  const { user } = useAuth();
+  const { user, isLandlord } = useAuth();
   const { agreements, loading, error, refetch } = useAgreements();
-  const isLandlord = user?.role === UserRole.LANDLORD;
 
   const newAgreementButton = isLandlord ? (
     <Link href="/agreement/new">
@@ -61,7 +59,10 @@ export default function AgreementsPage() {
                 icon={FileText}
                 title={agreement.property?.address || 'Unknown property'}
                 meta={`${
-                  isLandlord
+                  // Which side you're on is a fact about this agreement, not
+                  // about your account — you may be landlord on one row and
+                  // tenant on the next.
+                  agreement.landlord_id === user?.id
                     ? agreement.tenant?.name || 'Unknown tenant'
                     : agreement.landlord?.name || 'Unknown landlord'
                 } · ${formatDate(agreement.start_date)} – ${formatDate(agreement.end_date)}`}

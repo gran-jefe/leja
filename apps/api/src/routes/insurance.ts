@@ -7,9 +7,9 @@
 // delete the file — safe to delete this file, db/queries/insurance.ts, and
 // lib/schemas/insurance.ts entirely whenever convenient.
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticateToken, requireRole } from '../middleware/auth';
+import { authenticateToken, requireCapability } from '../middleware/auth';
 import { agreementRateLimit } from '../middleware/rateLimit';
-import { UserRole } from '@beyond/shared';
+import { Capability } from '@beyond/shared';
 import { insuranceInterestSchema } from '../lib/schemas';
 import { createInsuranceInterest, findInsuranceInterestsByTenant } from '../db/queries/insurance';
 import { findAgreementById } from '../db/queries/agreements';
@@ -20,7 +20,7 @@ const router = Router();
 router.post(
   '/interest',
   authenticateToken,
-  requireRole(UserRole.TENANT),
+  requireCapability(Capability.TENANT),
   agreementRateLimit,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -78,7 +78,7 @@ router.post(
 router.get(
   '/interest',
   authenticateToken,
-  requireRole(UserRole.TENANT),
+  requireCapability(Capability.TENANT),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const interests = await findInsuranceInterestsByTenant(req.user!.id);

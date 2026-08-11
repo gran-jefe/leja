@@ -16,7 +16,9 @@ export interface SessionUser {
   id?: string;
   name?: string;
   email?: string;
-  role?: string;
+  capabilities?: string[];
+  /** @deprecated Only on sessions predating capabilities. */
+  role?: string | null;
   isAdmin?: boolean;
 }
 
@@ -25,9 +27,22 @@ export function persistSession(token: string, user: SessionUser) {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
-/** Where a user lands after authenticating, by role. */
+/** Where a user lands after authenticating. */
 export function landingRouteFor(user: SessionUser): string {
   if (user?.isAdmin) return '/admin';
-  if (user?.role === 'PROVIDER') return '/provider/dashboard';
-  return '/dashboard';
+
+  const capabilities = user?.capabilities?.length
+    ? user.capabilities
+    : user?.role
+      ? [user.role]
+      : [];
+
+  // A provider who is *only* a provider goes to their own dashboard; one who
+  // also lets or rents belongs on the shared dashboard with everything else.
+  const providerOnly =
+    capabilities.includes('PROVIDER') &&
+    !capabilities.includes('LANDLORD') &&
+    !capabilities.includes('TENANT');
+
+  return providerOnly ? '/provider/dashboard' : '/dashboard';
 }

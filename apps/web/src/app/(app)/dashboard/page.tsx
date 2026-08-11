@@ -33,7 +33,7 @@ import { getStatus } from '@/lib/status';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isLandlord, isTenant } = useAuth();
+  const { user, isLandlord, isTenant, isProvider, isNewUser } = useAuth();
 
   const {
     agreements,
@@ -56,15 +56,15 @@ export default function DashboardPage() {
     refetch: refetchHistory,
   } = useRentalHistory();
 
-  // Providers previously landed on a page containing only a heading and an
-  // empty "Recent Activity" card — this route branched on isLandlord/isTenant
-  // only. Their real home is /provider/dashboard.
-  const isProvider = user?.role === 'PROVIDER';
+  // A provider with no other capability belongs on their own dashboard. One
+  // who is *also* a landlord or tenant stays here and simply sees a provider
+  // card alongside the rest — capabilities are additive now.
+  const providerOnly = isProvider && !isLandlord && !isTenant;
   useEffect(() => {
-    if (isProvider) router.replace('/provider/dashboard');
-  }, [isProvider, router]);
+    if (providerOnly) router.replace('/provider/dashboard');
+  }, [providerOnly, router]);
 
-  if (isProvider) {
+  if (providerOnly) {
     return (
       <div className="flex justify-center py-20">
         <Spinner size="lg" label="Redirecting to your provider dashboard" />
@@ -78,7 +78,45 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-wide mx-auto">
-      <PageHeader eyebrow="Your overview" title={`Welcome back, ${user?.name ?? ''}`.trim()} />
+      <PageHeader eyebrow="Your overview" title={`${isNewUser ? 'Welcome' : 'Welcome back'}, ${user?.name ?? ''}`.trim()}
+        subtitle={isNewUser ? 'One account. Rent a home, list a property, or both.' : undefined} />
+
+      {/* Nothing earned yet. Rather than making someone declare a role at
+          signup, the two starting points are simply offered here — and taking
+          either one grants the matching capability. */}
+      {isNewUser && (
+        <div className="grid sm:grid-cols-2 gap-5 mb-8">
+          <Card tone="dark" className="grain-overlay" padding="lg">
+            <IconTile icon={Search} tone="onDark" className="mb-4" />
+            <h2 className="font-display text-title font-semibold text-on-dark mb-2">
+              Find a home
+            </h2>
+            <p className="font-body text-body-sm text-on-dark-muted mb-5">
+              Browse verified listings and deal directly with the landlord — no agent, no agent
+              fee.
+            </p>
+            <Link href="/properties/browse">
+              <Button trailingIcon={<ArrowRight size={17} />}>Browse properties</Button>
+            </Link>
+          </Card>
+
+          <Card tone="accent" padding="lg">
+            <IconTile icon={Building2} tone="brass" className="mb-4" />
+            <h2 className="font-display text-title font-semibold text-navy-900 mb-2">
+              List a property
+            </h2>
+            <p className="font-body text-body-sm text-ink-600 mb-5">
+              Put your property in front of verified tenants and generate a proper tenancy
+              agreement — free.
+            </p>
+            <Link href="/properties/new">
+              <Button variant="tertiary" trailingIcon={<ArrowRight size={17} />}>
+                Add a property
+              </Button>
+            </Link>
+          </Card>
+        </div>
+      )}
 
       {/* Tenant: agreements waiting on them — the highest-priority thing on
           the page, so it sits above the stats. */}
@@ -111,7 +149,7 @@ export default function DashboardPage() {
       )}
 
       {isTenant && (
-        <Card tone="dark" className="mb-6 bg-grain overflow-hidden">
+        <Card tone="dark" className="mb-6 grain-overlay overflow-hidden">
           <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <IconTile icon={Home} tone="onDark" />

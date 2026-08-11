@@ -1,14 +1,21 @@
 import { supabase } from '../index';
-import { IUser, UserRole } from '@beyond/shared';
+import { Capability, IUser } from '@beyond/shared';
+import { getUserCapabilities, grantCapability } from './capabilities';
 
-type SafeUser = Omit<IUser, 'password_hash'> & { id: string };
+type SafeUser = Omit<IUser, 'password_hash' | 'capabilities'> & {
+  id: string;
+  capabilities?: Capability[];
+};
 
+// New accounts start with NO capabilities. A user becomes a landlord by
+// listing a property and a tenant by accepting an agreement — signup no
+// longer asks them to pick a lane. `role` is left null; the column survives
+// only for rolling-deploy compatibility.
 export async function createUser(data: {
   email: string;
   passwordHash: string;
   name: string;
   phone?: string;
-  role: UserRole;
 }): Promise<SafeUser> {
   const { data: user, error } = await supabase
     .from('users')
@@ -17,13 +24,19 @@ export async function createUser(data: {
       password_hash: data.passwordHash,
       name: data.name,
       phone: data.phone || null,
-      role: data.role,
+      role: null,
     })
     .select('id, email, name, phone, role, is_verified, created_at, updated_at')
     .single();
 
   if (error) throw new Error(`Failed to create user: ${error.message}`);
-  return user as unknown as SafeUser;
+  return { ...(user as unknown as SafeUser), capabilities: [] };
+}
+
+/** Attaches capabilities to a user record loaded from the users table. */
+export async function withCapabilities<T extends { id: string }>(user: T): Promise<T & { capabilities: Capability[] }> {
+  const capabilities = await getUserCapabilities(user.id);
+  return { ...user, capabilities };
 }
 
 export async function findUserByEmail(
@@ -67,20 +80,14 @@ export async function updateUser(
   return user as unknown as SafeUser;
 }
 
-// A user signs up as LANDLORD or TENANT (registerSchema only allows those
-// two) and later separately applies to the service-bid marketplace as a
-// provider. Every /marketplace/providers/* dashboard route requires
-// role === PROVIDER, so without this the account would pass verification
-// and then hit a permanent 403 wall — there'd be no path that ever
-// changes their stored role. Called the moment a provider becomes ACTIVE
-// (on verification, or immediately for admin-onboarded internal staff).
-// Note: an already-issued JWT still carries the old role until the user
-// logs in again — this updates the DB, not any live token.
+// Granted the moment a provider becomes ACTIVE (on verification, or
+// immediately for admin-onboarded internal staff). Previously this
+// *overwrote* users.role, which silently destroyed the account's landlord or
+// tenant status — an insurer who was also a tenant lost access to their own
+// tenancy. Granting is additive, so that can no longer happen.
+//
+// Note: an already-issued JWT still carries the old capability list until the
+// user logs in again — this updates the database, not any live token.
 export async function promoteToProviderRole(userId: string): Promise<void> {
-  const { error } = await supabase
-    .from('users')
-    .update({ role: UserRole.PROVIDER, updated_at: new Date().toISOString() })
-    .eq('id', userId);
-
-  if (error) throw new Error(`Failed to promote user to PROVIDER role: ${error.message}`);
+  await grantCapability(userId, Capability.PROVIDER, 'provider_approved');
 }

@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useProperty, useUpdateProperty } from '@/hooks/useProperties';
 import { COMMON_AMENITIES } from '@/lib/constants';
-import { UserRole } from '@beyond/shared';
+import { Capability } from '@beyond/shared';
 
 const editSchema = z.object({
   address: z.string().min(1, 'Address is required'),
@@ -133,7 +133,7 @@ function EditPropertyForm() {
   return (
     <>
       {saveError && (
-        <div className="mb-4 p-3 bg-ember bg-opacity-10 text-ember rounded-button text-sm font-body">
+        <div className="mb-4 p-3 bg-danger-50 border border-danger-100 text-danger-700 rounded-button text-body-sm font-body">
           {saveError}
         </div>
       )}
@@ -231,7 +231,7 @@ function EditPropertyForm() {
                 key={amenity}
                 className={`flex items-center gap-2 px-3 py-2 rounded-button border text-sm font-body cursor-pointer ${
                   amenities.includes(amenity)
-                    ? 'border-forest bg-forest bg-opacity-5 text-forest font-semibold'
+                    ? 'border-brass-500 bg-brass-50 text-brass-700 font-semibold'
                     : 'border-border text-charcoal'
                 }`}
               >
@@ -346,11 +346,11 @@ function EditPropertyForm() {
 
 export default function EditPropertyPage() {
   return (
-    <ProtectedPageWrapper requiredRole={UserRole.LANDLORD}>
+    <ProtectedPageWrapper requiredCapability={Capability.LANDLORD}>
       <DashboardShell>
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded-button bg-navy bg-opacity-5 flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 rounded-button bg-navy-900/5 text-navy-900 flex items-center justify-center flex-shrink-0">
               <Building2 className="text-navy" size={24} />
             </div>
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-navy">Edit Property</h1>

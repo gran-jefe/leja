@@ -13,8 +13,8 @@ export type SectionTone = 'paper' | 'white' | 'dark' | 'darker' | 'accent';
 const tones: Record<SectionTone, string> = {
   paper: 'bg-paper text-ink-700',
   white: 'bg-white text-ink-700',
-  dark: 'bg-navy-900 text-on-dark bg-grain',
-  darker: 'bg-navy-950 text-on-dark bg-grain',
+  dark: 'bg-navy-900 text-on-dark grain-overlay',
+  darker: 'bg-navy-950 text-on-dark grain-overlay',
   accent: 'bg-brass-50 text-ink-800',
 };
 

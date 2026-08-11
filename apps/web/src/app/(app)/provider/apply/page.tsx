@@ -40,7 +40,7 @@ function ProviderApplyContent() {
     return (
       <div className="max-w-lg mx-auto">
         <Card className="text-center">
-          <div className="w-14 h-14 rounded-full bg-forest bg-opacity-10 flex items-center justify-center mx-auto mb-4">
+          <div className="w-14 h-14 rounded-full bg-brass-50 text-brass-700 flex items-center justify-center mx-auto mb-4">
             <Briefcase className="text-forest" size={28} />
           </div>
           <h2 className="font-display text-xl font-bold text-navy mb-2">Application submitted</h2>

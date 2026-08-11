@@ -1,15 +1,19 @@
 'use client';
 
 import Cookies from 'js-cookie';
+import { Capability, resolveCapabilities } from '@beyond/shared';
 
 interface User {
   id: string;
   email: string;
   name: string;
-  role: 'LANDLORD' | 'TENANT' | 'PROVIDER';
-  // No ADMIN role exists in the schema — this is a deploy-time email
+  /** What this user can do. Empty for a brand-new account. */
+  capabilities?: Capability[];
+  /** @deprecated Present only on sessions created before capabilities. */
+  role?: 'LANDLORD' | 'TENANT' | 'PROVIDER' | null;
+  // No ADMIN capability exists in the schema — this is a deploy-time email
   // allowlist check (ADMIN_EMAILS) computed server-side on every auth
-  // response, not stored. A user can be e.g. TENANT *and* isAdmin at once.
+  // response, not stored. A user can hold capabilities *and* be an admin.
   isAdmin?: boolean;
 }
 
@@ -31,6 +35,12 @@ export function useAuth() {
 
   const user = getUser();
 
+  // `resolveCapabilities` falls back to the deprecated single `role` field, so
+  // a session created before this change keeps working until it expires
+  // rather than silently losing every permission.
+  const capabilities = user ? resolveCapabilities(user) : [];
+  const can = (capability: Capability) => capabilities.includes(capability);
+
   const logout = () => {
     Cookies.remove('leja_token');
     localStorage.removeItem('leja_user');
@@ -40,9 +50,14 @@ export function useAuth() {
   return {
     user,
     isAuthenticated: !!user,
-    isLandlord: user?.role === 'LANDLORD',
-    isTenant: user?.role === 'TENANT',
-    isProvider: user?.role === 'PROVIDER',
+    capabilities,
+    can,
+    // A user may hold several at once — these are no longer mutually exclusive.
+    isLandlord: can(Capability.LANDLORD),
+    isTenant: can(Capability.TENANT),
+    isProvider: can(Capability.PROVIDER),
+    /** True until they've listed a property or accepted an agreement. */
+    isNewUser: capabilities.length === 0,
     isAdmin: !!user?.isAdmin,
     logout,
   };

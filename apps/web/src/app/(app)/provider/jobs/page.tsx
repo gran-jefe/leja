@@ -1,15 +1,19 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { DashboardShell } from '@/components/layout/DashboardShell';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { EmptyState } from '@/components/layout/EmptyState';
+import { Alert } from '@/components/ui/Alert';
+import { Select } from '@/components/ui/Select';
+import { Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
-import { Spinner } from '@/components/ui/Spinner';
+import { SkeletonList } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { UserRole } from '@beyond/shared';
+import { Capability } from '@beyond/shared';
 import api from '@/lib/api';
 import { formatNaira, getErrorMessage } from '@/lib/utils';
 
@@ -52,7 +56,7 @@ function BidForm({ job, onBid }: { job: ServiceJob; onBid: () => void }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3 mt-3">
+    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row sm:items-end gap-3 mt-4 pt-4 border-t border-ink-200">
       <Input
         label="Your price (₦)"
         type="number"
@@ -70,10 +74,14 @@ function BidForm({ job, onBid }: { job: ServiceJob; onBid: () => void }) {
         min={1}
         required
       />
-      <Button type="submit" variant="primary" loading={submitting}>
+      <Button type="submit" loading={submitting} className="flex-shrink-0">
         Submit bid
       </Button>
-      {error && <p className="text-sm text-ember font-body w-full">{error}</p>}
+      {error && (
+        <Alert tone="error" size="sm" className="w-full">
+          {error}
+        </Alert>
+      )}
     </form>
   );
 }
@@ -105,45 +113,51 @@ function ProviderJobsContent() {
   }, [fetchJobs]);
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h1 className="font-display text-2xl font-bold text-navy">Open jobs</h1>
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value as 'LEGAL' | 'INSURANCE')}
-          className="px-4 py-2 font-body border border-border rounded-button focus:outline-none focus:ring-2 focus:ring-forest"
-        >
-          <option value="LEGAL">Legal</option>
-          <option value="INSURANCE">Insurance</option>
-        </select>
-      </div>
+    <div className="max-w-wide mx-auto">
+      <PageHeader
+        title="Open jobs"
+        subtitle="Bid on work posted by tenants and landlords."
+        icon={Briefcase}
+        action={
+          <Select
+            label="Category"
+            hideLabel
+            value={category}
+            onChange={(e) => setCategory(e.target.value as 'LEGAL' | 'INSURANCE')}
+            options={[
+              { value: 'INSURANCE', label: 'Insurance' },
+              { value: 'LEGAL', label: 'Legal' },
+            ]}
+          />
+        }
+      />
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Spinner size="lg" />
-        </div>
+        <SkeletonList count={3} lines={2} />
       ) : error ? (
-        <ErrorState message={error} onRetry={fetchJobs} />
+        <ErrorState message={error} onRetry={fetchJobs} size="page" />
       ) : jobs.length === 0 ? (
-        <Card>
-          <p className="font-body text-sm text-muted text-center py-6">
-            No open jobs right now. Check back soon, or verify your provider status hasn't been
-            suspended.
-          </p>
-        </Card>
+        <EmptyState
+          icon={Briefcase}
+          title="No open jobs right now"
+          description="Check back shortly. If this persists, confirm your provider status hasn't been suspended."
+        />
       ) : (
         <div className="space-y-4">
           {jobs.map((job) => (
             <Card key={job.id}>
-              <div className="flex items-center justify-between mb-2">
-                <Badge variant="info">{job.category}</Badge>
-                <span className="text-xs text-muted font-body">
-                  Bidding closes {new Date(job.bid_window_closes_at).toLocaleString()}
+              <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                <Badge tone="info">{job.category}</Badge>
+                <span className="font-mono text-body-sm text-ink-400">
+                  Closes {new Date(job.bid_window_closes_at).toLocaleString()}
                 </span>
               </div>
-              <p className="font-body text-sm text-charcoal">
-                Allowed range: {job.min_price ? formatNaira(job.min_price) : '—'} –{' '}
-                {job.max_price ? formatNaira(job.max_price) : '—'}
+              <p className="font-body text-body-sm text-ink-600">
+                Allowed range{' '}
+                <span className="font-mono text-ink-800">
+                  {job.min_price ? formatNaira(job.min_price) : '—'} –{' '}
+                  {job.max_price ? formatNaira(job.max_price) : '—'}
+                </span>
               </p>
               <BidForm job={job} onBid={fetchJobs} />
             </Card>
@@ -156,10 +170,8 @@ function ProviderJobsContent() {
 
 export default function ProviderJobsPage() {
   return (
-    <ProtectedPageWrapper requiredRole={UserRole.PROVIDER}>
-      <DashboardShell>
-        <ProviderJobsContent />
-      </DashboardShell>
+    <ProtectedPageWrapper requiredCapability={Capability.PROVIDER}>
+      <ProviderJobsContent />
     </ProtectedPageWrapper>
   );
 }

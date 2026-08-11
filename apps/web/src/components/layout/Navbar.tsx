@@ -19,24 +19,19 @@ const marketingLinks = [
 ];
 
 const landlordLinks = [
-  { href: '/dashboard', label: 'Dashboard' },
   { href: '/properties', label: 'My Properties' },
   { href: '/agreements', label: 'Agreements' },
-  { href: '/profile', label: 'Profile' },
 ];
 
 const tenantLinks = [
-  { href: '/dashboard', label: 'Dashboard' },
   { href: '/properties/browse', label: 'Browse Properties' },
-  { href: '/agreements', label: 'My Agreements' },
+  { href: '/agreements', label: 'Agreements' },
   { href: '/rental-history', label: 'Rental History' },
-  { href: '/profile', label: 'Profile' },
 ];
 
 const providerLinks = [
-  { href: '/provider/dashboard', label: 'Dashboard' },
+  { href: '/provider/dashboard', label: 'Provider' },
   { href: '/provider/jobs', label: 'Open Jobs' },
-  { href: '/profile', label: 'Profile' },
 ];
 
 /**
@@ -46,7 +41,7 @@ const providerLinks = [
  * no links at all on small screens (`hidden md:flex` with no mobile fallback).
  */
 export const Navbar = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isLandlord, isTenant, isProvider, logout } = useAuth();
   const pathname = usePathname();
   const isLanding = pathname === '/';
 
@@ -55,16 +50,17 @@ export const Navbar = () => {
   const panelRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
 
-  const roleLinks =
-    user?.role === 'LANDLORD'
-      ? landlordLinks
-      : user?.role === 'TENANT'
-        ? tenantLinks
-        : user?.role === 'PROVIDER'
-          ? providerLinks
-          : [];
+  // Union of everything this user can do, de-duplicated by href.
+  const seen = new Set<string>();
+  const capabilityLinks = [
+    { href: '/dashboard', label: 'Dashboard' },
+    ...(isLandlord ? landlordLinks : []),
+    ...(isTenant ? tenantLinks : []),
+    ...(isProvider ? providerLinks : []),
+    { href: '/profile', label: 'Profile' },
+  ].filter((l) => (seen.has(l.href) ? false : (seen.add(l.href), true)));
 
-  const links = isAuthenticated ? roleLinks : marketingLinks;
+  const links = isAuthenticated ? capabilityLinks : marketingLinks;
 
   // Transparent over the hero, solid once past it. Only meaningful on `/`.
   useEffect(() => {

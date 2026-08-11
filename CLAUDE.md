@@ -46,11 +46,25 @@ Tokens are defined once as RGB channels in `apps/web/src/app/globals.css` (`@lay
 
 **Texture:** `.bg-grain` (inline `feTurbulence` SVG at 3.5%) — applied automatically by `<Section tone="dark">`. This is what keeps dark bands from reading as flat fill.
 
-## Roles
+## Capabilities (formerly Roles)
 
-- **LANDLORD:** Can create properties, initiate agreements, view tenant rental history
-- **TENANT:** Can view and accept agreements, build rental history, request rental history export
-- **PROVIDER:** Licensed lawyer or insurer who bids on optional jobs in the service-bid marketplace
+**There is no role chosen at signup.** Signup collects name, email, phone and password — nothing else. A user earns capabilities by doing the thing, and **one account can hold several**: a landlord who rents a flat elsewhere holds both `LANDLORD` and `TENANT`. The old exclusive `users.role` column forced a second account under a second email, and a three-value enum could never extend to Phase 2's buyer/seller or Phase 3's SME/lender.
+
+| Capability | Granted when | Unlocks |
+|---|---|---|
+| `LANDLORD` | First property listed (`POST /properties`) | My Properties, create agreements |
+| `TENANT` | First agreement accepted (`POST /agreements/:id/accept`) | Rental history, insurance requests |
+| `PROVIDER` | Provider application approved / internal staff onboarded | Provider dashboard, job pool, bidding |
+
+**Storage:** `user_capabilities` (user_id, capability, granted_reason, granted_at), unique on (user_id, capability). See `supabase/migrations/20260811000000_user_capabilities.sql`. `users.role` is **deprecated but retained nullable** for rolling-deploy compatibility — do not read it in new code.
+
+**⚠️ Never gate a route or screen on a capability it grants.** Capabilities are earned by action, so `POST /properties` must not require `LANDLORD` and the agreement-accept flow must not require `TENANT` — doing so makes them permanently unreachable for a first-time user. Authorise those endpoints by ownership instead (e.g. `agreement.tenant_id === req.user.id`). `requireCapability()` in `apps/api/src/middleware/auth.ts` carries this warning; `/properties/new`, `/properties/browse*` and `/agreement/[id]/review` are deliberately ungated on the web side for the same reason.
+
+**Which side am I on** is a fact about the *record*, not the account. `findAgreementsForUser` and `listConversationsForUser` match either column and resolve the counterparty per row; UI derives `isLandlordView` from `agreement.landlord_id === user.id`, never from a global role.
+
+**Backward compatibility:** `resolveCapabilities()` in `@beyond/shared` falls back to the deprecated single `role` field, so JWTs issued before this change keep working until they expire. Grants are additive — becoming a provider no longer overwrites (and destroys) an existing landlord or tenant status, which the old `promoteToProviderRole` did.
+
+**Admin** remains separate: there is no ADMIN capability. It's a deploy-time `ADMIN_EMAILS` allowlist computed server-side on every auth response.
 
 ## Key Business Rules
 

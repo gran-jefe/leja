@@ -56,9 +56,13 @@
     --ink-800: 42 37 33;
     --ink-700: 58 52 45; /* body text — 11.4:1 on paper */
     --ink-600: 78 70 60;
-    --ink-500: 110 101 90; /* secondary text — 5.3:1 on paper */
-    --ink-400: 138 128 115; /* placeholder / disabled */
-    --ink-300: 176 166 151; /* on-dark muted — 7.6:1 on navy-900 */
+    /* The light end of this ramp is contrast-tuned, not picked by eye.
+       Body 11.4:1 / secondary 6.6:1 / meta 4.5:1 on paper — all AA. */
+    --ink-500: 95 87 76; /* secondary text — 6.6:1 on paper */
+    --ink-400: 120 112 97; /* meta, timestamps, placeholders — 4.5:1 on paper */
+    /* DECORATIVE + ON-DARK ONLY. 2.2:1 on paper, so never use for text on a
+       light surface — icons and dividers only. 8.2:1 on navy-950. */
+    --ink-300: 176 166 151;
     --ink-200: 227 220 208; /* hairline / border */
     --ink-100: 239 233 222;
     --ink-50: 245 241 232;
@@ -103,8 +107,15 @@
 
 @layer utilities {
   /* Film grain. Applied by <Section tone="dark"> — the single largest
-     "not a flat template" delta in the system, for ~400 bytes. */
-  .bg-grain::after {
+     "not a flat template" delta in the system, for ~400 bytes.
+
+     ⚠️ DO NOT rename this to `bg-grain` or anything starting with `bg-`.
+     `cn()` runs tailwind-merge, which classifies any `bg-*` class as a
+     background utility and drops the earlier one in the same group. As
+     `bg-grain` this silently stripped `bg-navy-900` from every dark section,
+     leaving white-on-dark text sitting on the cream page background. Custom
+     utilities must not borrow a Tailwind group prefix. */
+  .grain-overlay::after {
     content: '';
     position: absolute;
     inset: 0;

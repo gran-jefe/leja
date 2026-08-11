@@ -13,7 +13,6 @@ import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { Card } from '@/components/ui/Card';
 import { useCreateProperty } from '@/hooks/useProperties';
 import { PROPERTY_TYPE_LABELS, COMMON_AMENITIES } from '@/lib/constants';
-import { UserRole } from '@beyond/shared';
 
 const propertySchema = z.object({
   address: z.string().min(1, 'Address is required'),
@@ -33,6 +32,9 @@ type PropertyFormData = z.infer<typeof propertySchema>;
 
 const propertyTypeLabel = PROPERTY_TYPE_LABELS;
 
+// GRANT POINT — no capability gate. Listing your first property is what
+// makes you a landlord, so requiring LANDLORD here would make it
+// impossible to ever become one.
 export default function NewPropertyPage() {
   const { createProperty, loading, error } = useCreateProperty();
   const [amenities, setAmenities] = useState<string[]>([]);
@@ -91,18 +93,18 @@ export default function NewPropertyPage() {
   };
 
   return (
-    <ProtectedPageWrapper requiredRole={UserRole.LANDLORD}>
+    <ProtectedPageWrapper>
       <DashboardShell>
         <div className="max-w-2xl mx-auto">
             <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-button bg-navy bg-opacity-5 flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 rounded-button bg-navy-900/5 text-navy-900 flex items-center justify-center flex-shrink-0">
                 <Building2 className="text-navy" size={24} />
               </div>
               <h1 className="font-display text-2xl sm:text-3xl font-bold text-navy">Add Property</h1>
             </div>
 
             {error && (
-              <div className="mb-4 p-3 bg-ember bg-opacity-10 text-ember rounded-button text-sm font-body">
+              <div className="mb-4 p-3 bg-danger-50 border border-danger-100 text-danger-700 rounded-button text-body-sm font-body">
                 {error}
               </div>
             )}
@@ -222,7 +224,7 @@ export default function NewPropertyPage() {
                       key={amenity}
                       className={`flex items-center gap-2 px-3 py-2 rounded-button border text-sm font-body cursor-pointer ${
                         amenities.includes(amenity)
-                          ? 'border-forest bg-forest bg-opacity-5 text-forest font-semibold'
+                          ? 'border-brass-500 bg-brass-50 text-brass-700 font-semibold'
                           : 'border-border text-charcoal'
                       }`}
                     >

@@ -131,24 +131,26 @@ export const listMessages = async (conversationId: string) => {
 // that side's last-read marker that they didn't send themselves — checked
 // in application code rather than a DB view since it's only evaluated
 // against the (small) set of conversations being listed for one user.
-export const listConversationsForUser = async (userId: string, role: 'LANDLORD' | 'TENANT') => {
-  const column = role === 'LANDLORD' ? 'landlord_id' : 'tenant_id';
-  const readColumn = role === 'LANDLORD' ? 'landlord_last_read_at' : 'tenant_last_read_at';
-
+// Side-agnostic: a user who is both a landlord and a tenant has conversations
+// on both sides of the table, so this matches either column and works out which
+// side they're on per row rather than once for the whole query.
+export const listConversationsForUser = async (userId: string) => {
   const { data: conversations, error } = await supabase
     .from('conversations')
     .select('*')
-    .eq(column, userId)
+    .or(`landlord_id.eq.${userId},tenant_id.eq.${userId}`)
     .eq('is_deleted', false)
     .order('last_message_at', { ascending: false });
 
   if (error) throw new Error(`Failed to list conversations: ${error.message}`);
   if (!conversations || conversations.length === 0) return [];
 
+  const otherIdFor = (c: any) => (c.landlord_id === userId ? c.tenant_id : c.landlord_id);
+  const readColumnFor = (c: any) =>
+    c.landlord_id === userId ? 'landlord_last_read_at' : 'tenant_last_read_at';
+
   const propertyIds = [...new Set(conversations.map((c: any) => c.property_id).filter(Boolean))];
-  const otherUserIds = [
-    ...new Set(conversations.map((c: any) => (role === 'LANDLORD' ? c.tenant_id : c.landlord_id))),
-  ];
+  const otherUserIds = [...new Set(conversations.map(otherIdFor))];
   const conversationIds = conversations.map((c: any) => c.id);
 
   const [{ data: properties }, { data: otherUsers }, { data: lastMessages }] = await Promise.all([
@@ -172,6 +174,7 @@ export const listConversationsForUser = async (userId: string, role: 'LANDLORD' 
 
   return conversations.map((c: any) => {
     const lastMessage = lastMessageMap.get(c.id) || null;
+    const readColumn = readColumnFor(c);
     const readAt = c[readColumn] ? new Date(c[readColumn]) : null;
     const unread =
       !!lastMessage &&
@@ -181,15 +184,28 @@ export const listConversationsForUser = async (userId: string, role: 'LANDLORD' 
     return {
       ...c,
       property: c.property_id ? propertyMap.get(c.property_id) || null : null,
-      otherUser: userMap.get(role === 'LANDLORD' ? c.tenant_id : c.landlord_id) || null,
+      otherUser: userMap.get(otherIdFor(c)) || null,
       lastMessage,
       unread,
     };
   });
 };
 
-export const markConversationRead = async (id: string, role: 'LANDLORD' | 'TENANT') => {
-  const column = role === 'LANDLORD' ? 'landlord_last_read_at' : 'tenant_last_read_at';
+// Derives the side from the conversation row rather than a passed-in role, so
+// a user who is both landlord and tenant marks the correct column.
+export const markConversationRead = async (id: string, userId: string) => {
+  const { data: conversation, error: findError } = await supabase
+    .from('conversations')
+    .select('landlord_id, tenant_id')
+    .eq('id', id)
+    .single();
+
+  if (findError) throw new Error(`Failed to mark conversation read: ${findError.message}`);
+  if (!conversation) return;
+
+  const column =
+    conversation.landlord_id === userId ? 'landlord_last_read_at' : 'tenant_last_read_at';
+
   const { error } = await supabase
     .from('conversations')
     .update({ [column]: new Date().toISOString() })

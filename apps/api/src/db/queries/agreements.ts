@@ -126,14 +126,22 @@ const enrichAgreements = async (agreements: any[]) => {
   }));
 };
 
+// Side-agnostic by default: someone who lets one flat and rents another has
+// agreements on both sides, and "my agreements" means all of them. Pass `side`
+// only where one side is genuinely meant.
 export const findAgreementsForUser = async (
   userId: string,
-  role: 'LANDLORD' | 'TENANT',
-  status?: string
+  status?: string,
+  side?: 'LANDLORD' | 'TENANT'
 ) => {
-  const column = role === 'LANDLORD' ? 'landlord_id' : 'tenant_id';
+  let query = supabase.from('agreements').select('*');
 
-  let query = supabase.from('agreements').select('*').eq(column, userId);
+  if (side) {
+    query = query.eq(side === 'LANDLORD' ? 'landlord_id' : 'tenant_id', userId);
+  } else {
+    query = query.or(`landlord_id.eq.${userId},tenant_id.eq.${userId}`);
+  }
+
   if (status) query = query.eq('status', status);
 
   const { data: agreements, error } = await query.order('created_at', { ascending: false });
@@ -143,10 +151,10 @@ export const findAgreementsForUser = async (
 };
 
 export const getAgreementsByTenantId = async (tenantId: string, status?: string) =>
-  findAgreementsForUser(tenantId, 'TENANT', status);
+  findAgreementsForUser(tenantId, status, 'TENANT');
 
 export const getAgreementsByLandlordId = async (landlordId: string, status?: string) =>
-  findAgreementsForUser(landlordId, 'LANDLORD', status);
+  findAgreementsForUser(landlordId, status, 'LANDLORD');
 
 export const findAgreementById = async (id: string) => {
   const { data: agreement, error } = await supabase

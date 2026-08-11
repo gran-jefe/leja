@@ -6,6 +6,7 @@ import { DashboardShell } from '@/components/layout/DashboardShell';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { SafeImage } from '@/components/ui/SafeImage';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -31,7 +32,7 @@ export default function PropertyDetailPage() {
       <DashboardShell>
         <div className="max-w-2xl mx-auto">
             <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-button bg-navy bg-opacity-5 flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 rounded-button bg-navy-900/5 text-navy-900 flex items-center justify-center flex-shrink-0">
                 <Building2 className="text-navy" size={24} />
               </div>
               <h1 className="font-display text-2xl sm:text-3xl font-bold text-navy">Property Details</h1>
@@ -126,16 +127,15 @@ export default function PropertyDetailPage() {
                     )}
                     {property.images?.length > 0 && (
                       <div>
-                        <label className="text-sm text-muted font-body mb-2 block">Photos</label>
-                        <div className="grid grid-cols-3 gap-2">
+                        <p className="text-body-sm text-ink-500 font-body mb-2">Photos</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           {property.images.map((img: string, i: number) => (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
+                            <div
                               key={img + i}
-                              src={img}
-                              alt=""
-                              className="w-full aspect-square object-cover rounded-button"
-                            />
+                              className="relative w-full aspect-square rounded-button overflow-hidden bg-ink-100"
+                            >
+                              <SafeImage src={img} alt="" fill sizes="(max-width: 640px) 50vw, 33vw" />
+                            </div>
                           ))}
                         </div>
                       </div>

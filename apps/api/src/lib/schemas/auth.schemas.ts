@@ -5,9 +5,9 @@ export const registerSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
   name: z.string().min(2, 'Name must be at least 2 characters').trim(),
   phone: z.string().optional(),
-  role: z.enum(['LANDLORD', 'TENANT'], {
-    errorMap: () => ({ message: 'Role must be LANDLORD or TENANT' }),
-  }),
+  // No role at signup. Capabilities are earned by action — listing a property
+  // makes you a landlord, accepting an agreement makes you a tenant, and one
+  // account can be both. See supabase/migrations/*_user_capabilities.sql.
 });
 
 export const loginSchema = z.object({

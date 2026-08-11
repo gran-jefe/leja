@@ -4,21 +4,30 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Spinner } from '@/components/ui/Spinner';
-import { UserRole } from '@beyond/shared';
+import { Capability } from '@beyond/shared';
 
 interface ProtectedPageWrapperProps {
   children: React.ReactNode;
-  requiredRole?: UserRole;
+  /**
+   * Gate on holding a capability. Do not use this on a screen that *earns*
+   * the capability — listing a first property or accepting a first agreement
+   * must stay reachable by someone who holds nothing yet.
+   */
+  requiredCapability?: Capability;
   redirectTo?: string;
+  /** @deprecated Use `requiredCapability`. */
+  requiredRole?: Capability;
 }
 
 export const ProtectedPageWrapper: React.FC<ProtectedPageWrapperProps> = ({
   children,
+  requiredCapability,
   requiredRole,
   redirectTo = '/dashboard',
 }) => {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, can } = useAuth();
+  const required = requiredCapability ?? requiredRole;
   // useAuth reads localStorage/cookies synchronously, which isn't available
   // during SSR — wait for the client mount before trusting its result so the
   // first client render matches the server render instead of flash-redirecting.
@@ -32,10 +41,10 @@ export const ProtectedPageWrapper: React.FC<ProtectedPageWrapperProps> = ({
     if (!mounted) return;
     if (!isAuthenticated) {
       router.push('/login');
-    } else if (requiredRole && user?.role !== requiredRole) {
+    } else if (required && !can(required)) {
       router.push(redirectTo);
     }
-  }, [mounted, isAuthenticated, requiredRole, user?.role, router, redirectTo]);
+  }, [mounted, isAuthenticated, required, can, router, redirectTo]);
 
   if (!mounted) {
     return (
@@ -49,7 +58,7 @@ export const ProtectedPageWrapper: React.FC<ProtectedPageWrapperProps> = ({
     return null;
   }
 
-  if (requiredRole && user?.role !== requiredRole) {
+  if (required && !can(required)) {
     return null;
   }
 

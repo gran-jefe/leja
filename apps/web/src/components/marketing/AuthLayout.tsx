@@ -28,7 +28,7 @@ export function AuthLayout({ eyebrow, title, subtitle, children, footer }: AuthL
     <div className="min-h-screen lg:grid lg:grid-cols-2">
       {/* Brand panel — hidden on mobile, where it would push the form below
           the fold for no benefit. */}
-      <aside className="relative hidden lg:flex flex-col justify-between bg-navy-950 bg-grain p-12 overflow-hidden">
+      <aside className="relative hidden lg:flex flex-col justify-between bg-navy-950 grain-overlay p-12 overflow-hidden">
         <svg
           aria-hidden
           className="absolute -left-32 top-1/2 -translate-y-1/2 h-[130%] w-auto text-brass-500"

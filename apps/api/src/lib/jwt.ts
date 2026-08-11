@@ -1,12 +1,15 @@
 import jwt from 'jsonwebtoken';
-import { UserRole } from '@beyond/shared';
+import { Capability, UserRole } from '@beyond/shared';
 import { config } from '../config';
 
 export interface TokenPayload {
   id: string;
   email: string;
   name: string;
-  role: UserRole;
+  /** What this user can do. Absent on tokens issued before capabilities. */
+  capabilities?: Capability[];
+  /** @deprecated Only present on pre-capability tokens, until they expire. */
+  role?: UserRole | null;
 }
 
 export const signToken = (payload: TokenPayload): string => {

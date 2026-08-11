@@ -35,7 +35,7 @@ const socials = [
 
 export function SiteFooter() {
   return (
-    <footer className="relative bg-navy-950 bg-grain py-16 overflow-hidden">
+    <footer className="relative bg-navy-950 grain-overlay py-16 overflow-hidden">
       <Container className="relative">
         <div className="grid md:grid-cols-4 gap-10 mb-12">
           <div>
@@ -43,7 +43,7 @@ export function SiteFooter() {
             <p className="font-body text-body-sm text-on-dark-muted mb-4">
               Bridging Trust. Simplifying Deals.
             </p>
-            <p className="font-mono text-body-sm text-ink-400">
+            <p className="font-mono text-body-sm text-on-dark-muted">
               © 2026 Gran Jefe Technical Solutions
               <br />
               RC 9529101
@@ -86,7 +86,7 @@ export function SiteFooter() {
                   aria-label={label}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-ink-400 hover:text-brass-300 transition-colors duration-fast"
+                  className="text-on-dark-muted hover:text-brass-300 transition-colors duration-fast"
                 >
                   <Icon size={19} />
                 </a>
@@ -96,8 +96,8 @@ export function SiteFooter() {
         </div>
 
         <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="font-mono text-body-sm text-ink-400">Built in Nigeria</p>
-          <p className="font-body text-body-sm text-ink-400">
+          <p className="font-mono text-body-sm text-on-dark-muted">Built in Nigeria</p>
+          <p className="font-body text-body-sm text-on-dark-muted">
             Payments processed via eTranzact. Funds never held by BeyondAgency.
           </p>
         </div>

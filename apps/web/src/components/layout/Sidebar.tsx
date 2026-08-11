@@ -27,7 +27,7 @@ import { cn } from '@/lib/utils';
 
 export const Sidebar = () => {
   const pathname = usePathname();
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, isLandlord, isTenant, isProvider, isNewUser, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const isActive = (href: string) => pathname === href;
@@ -64,39 +64,49 @@ export const Sidebar = () => {
   ];
 
   const tenantLinks = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/properties/browse', label: 'Browse Properties', icon: Search },
-    { href: '/agreements', label: 'My Agreements', icon: FileText },
-    { href: '/messages', label: 'Messages', icon: MessageCircle },
+    { href: '/agreements', label: 'Agreements', icon: FileText },
     { href: '/rental-history', label: 'Rental History', icon: History },
-    { href: '/profile', label: 'Profile', icon: User },
   ];
 
   // PROVIDER had no branch at all, so providers were shown landlord nav
   // ("My Properties", "Agreements") that isn't theirs, with no route to the
   // job pool they actually work from.
   const providerLinks = [
-    { href: '/provider/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/provider/dashboard', label: 'Provider', icon: Briefcase },
     { href: '/provider/jobs', label: 'Open Jobs', icon: Briefcase },
-    { href: '/messages', label: 'Messages', icon: MessageCircle },
-    { href: '/profile', label: 'Profile', icon: User },
+  ];
+
+  // Nothing earned yet — surface both ways in.
+  const newUserLinks = [
+    { href: '/properties/browse', label: 'Find a home', icon: Search },
+    { href: '/properties/new', label: 'List a property', icon: Building2 },
   ];
 
   const landlordLinks = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/properties', label: 'My Properties', icon: Building2 },
     { href: '/agreements', label: 'Agreements', icon: FileText },
-    { href: '/messages', label: 'Messages', icon: MessageCircle },
-    { href: '/profile', label: 'Profile', icon: User },
   ];
+
+  // Capabilities are additive, so nav is a union rather than a branch: a user
+  // who lets one flat and rents another sees both sides in one sidebar,
+  // de-duplicated. Someone brand new sees the two starting points.
+  const dedupe = (items: typeof landlordLinks) => {
+    const seen = new Set<string>();
+    return items.filter((l) => (seen.has(l.href) ? false : (seen.add(l.href), true)));
+  };
 
   const links = inAdminSection
     ? adminLinks
-    : user?.role === 'TENANT'
-      ? tenantLinks
-      : user?.role === 'PROVIDER'
-        ? providerLinks
-        : landlordLinks;
+    : dedupe([
+        { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        ...(isLandlord ? landlordLinks : []),
+        ...(isTenant ? tenantLinks : []),
+        ...(isProvider ? providerLinks : []),
+        ...(isNewUser ? newUserLinks : []),
+        { href: '/messages', label: 'Messages', icon: MessageCircle },
+        { href: '/profile', label: 'Profile', icon: User },
+      ]);
 
   const renderLinks = (onNavigate?: () => void) => (
     <nav className="flex-1 px-4 space-y-1">
@@ -129,8 +139,12 @@ export const Sidebar = () => {
         </div>
         <div className="min-w-0">
           <p className="font-body text-sm text-white truncate">{user?.name}</p>
-          <p className="font-body text-xs text-white text-opacity-50 capitalize">
-            {inAdminSection ? 'Admin' : user?.role?.toLowerCase()}
+          <p className="font-body text-body-sm text-ink-300 capitalize">
+            {inAdminSection
+              ? 'Admin'
+              : [isLandlord && 'Landlord', isTenant && 'Tenant', isProvider && 'Provider']
+                  .filter(Boolean)
+                  .join(' · ') || 'Member'}
           </p>
         </div>
       </div>
@@ -138,7 +152,7 @@ export const Sidebar = () => {
         <Link
           href={inAdminSection ? '/dashboard' : '/admin'}
           onClick={onNavigate}
-          className="w-full flex items-center gap-3 px-4 py-2 rounded-button font-body text-sm text-white text-opacity-70 hover:text-opacity-100 hover:bg-white hover:bg-opacity-5 transition-colors"
+          className="w-full flex items-center gap-3 px-4 py-2 rounded-button font-body text-body-sm text-on-dark-muted hover:text-on-dark hover:bg-white/5 transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass-500"
         >
           <ArrowLeftRight size={18} />
           {inAdminSection ? 'Back to my dashboard' : 'Go to admin'}
@@ -146,7 +160,7 @@ export const Sidebar = () => {
       )}
       <button
         onClick={logout}
-        className="w-full flex items-center gap-3 px-4 py-2 rounded-button font-body text-sm text-white text-opacity-70 hover:text-opacity-100 hover:bg-white hover:bg-opacity-5 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-2 rounded-button font-body text-body-sm text-on-dark-muted hover:text-on-dark hover:bg-white/5 transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass-500"
       >
         <LogOut size={18} />
         Logout

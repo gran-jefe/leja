@@ -12,16 +12,17 @@ import { AuthLayout } from '@/components/marketing/AuthLayout';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Alert } from '@/components/ui/Alert';
-import { ChoiceCard } from '@/components/ui/Choice';
 import { getErrorMessage } from '@/lib/utils';
 import { landingRouteFor, persistSession } from '@/lib/session';
 
+// No role is chosen here. Capabilities are earned by action — listing a
+// property makes you a landlord, accepting an agreement makes you a tenant,
+// and one account can be both.
 const signupSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Enter a valid email address'),
   phone: z.string().min(11, 'Phone number must be at least 11 digits'),
   password: z.string().min(8, 'Use at least 8 characters'),
-  role: z.enum(['LANDLORD', 'TENANT']),
 });
 
 type SignupFormData = z.infer<typeof signupSchema>;
@@ -35,10 +36,7 @@ export default function SignupPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<SignupFormData>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: { role: 'TENANT' },
-  });
+  } = useForm<SignupFormData>({ resolver: zodResolver(signupSchema) });
 
   const onSubmit = async (data: SignupFormData) => {
     NProgress.start();
@@ -61,7 +59,7 @@ export default function SignupPage() {
     <AuthLayout
       eyebrow="Get started — free"
       title="Create your account"
-      subtitle="No agent, no fee on the deal itself."
+      subtitle="One account. Rent a home, list a property, or both."
       footer={
         <>
           Already have an account?{' '}
@@ -73,34 +71,6 @@ export default function SignupPage() {
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
         {error && <Alert tone="error">{error}</Alert>}
-
-        {/* Role is the most consequential choice on this page; it was two bare
-            radios. ChoiceCard also keeps the input in the tab order. */}
-        <fieldset>
-          <legend className="font-body text-body-sm font-semibold text-ink-800 mb-2">
-            I am a
-            <span className="text-danger-600 ml-0.5" aria-hidden>
-              *
-            </span>
-          </legend>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <ChoiceCard
-              value="TENANT"
-              label="Tenant"
-              description="Looking for a home"
-              {...register('role')}
-            />
-            <ChoiceCard
-              value="LANDLORD"
-              label="Landlord"
-              description="Listing a property"
-              {...register('role')}
-            />
-          </div>
-          {errors.role?.message && (
-            <p className="mt-1.5 font-body text-body-sm text-danger-600">{errors.role.message}</p>
-          )}
-        </fieldset>
 
         <Input
           label="Full name"

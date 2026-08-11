@@ -8,12 +8,13 @@ import { DashboardShell } from '@/components/layout/DashboardShell';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { SafeImage } from '@/components/ui/SafeImage';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Badge } from '@/components/ui/Badge';
 import { useProperty } from '@/hooks/useProperties';
-import { UserRole, PropertyType } from '@beyond/shared';
-import { formatNaira, getErrorMessage } from '@/lib/utils';
+import { PropertyType } from '@beyond/shared';
+import { cn, formatNaira, getErrorMessage } from '@/lib/utils';
 import { PROPERTY_TYPE_LABELS } from '@/lib/constants';
 import api from '@/lib/api';
 
@@ -45,30 +46,33 @@ function ImageGallery({ images, alt }: { images: string[]; alt: string }) {
 
   if (!images || images.length === 0) {
     return (
-      <div className="w-full aspect-video bg-cream rounded-card flex items-center justify-center text-muted">
-        <Home size={40} />
+      <div className="w-full aspect-video bg-ink-100 rounded-card flex items-center justify-center text-ink-300">
+        <Home size={40} aria-hidden />
       </div>
     );
   }
 
   return (
     <div>
-      <div className="w-full aspect-video bg-cream rounded-card overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={images[active]} alt={alt} className="w-full h-full object-cover" />
+      <div className="relative w-full aspect-video bg-ink-100 rounded-card overflow-hidden">
+        <SafeImage src={images[active]} alt={alt} fill priority sizes="(max-width: 1024px) 100vw, 60vw" />
       </div>
       {images.length > 1 && (
-        <div className="flex gap-2 mt-2 overflow-x-auto">
+        <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
           {images.map((img, i) => (
             <button
               key={img + i}
+              type="button"
               onClick={() => setActive(i)}
-              className={`flex-shrink-0 w-16 h-16 rounded-button overflow-hidden border-2 ${
-                active === i ? 'border-forest' : 'border-transparent'
-              }`}
+              aria-label={`View image ${i + 1} of ${images.length}`}
+              aria-current={active === i}
+              className={cn(
+                'relative flex-shrink-0 w-16 h-16 rounded-button overflow-hidden border-2 bg-ink-100',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass-500',
+                active === i ? 'border-brass-500' : 'border-transparent hover:border-ink-300'
+              )}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img} alt="" className="w-full h-full object-cover" />
+              <SafeImage src={img} alt="" fill sizes="64px" />
             </button>
           ))}
         </div>
@@ -156,7 +160,7 @@ function PropertyDetailContent() {
               <ImageGallery images={property.images || []} alt={property.address} />
 
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-button bg-navy bg-opacity-5 flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 rounded-button bg-navy-900/5 text-navy-900 flex items-center justify-center flex-shrink-0">
                   <Home className="text-navy" size={24} />
                 </div>
                 <div>
@@ -229,13 +233,13 @@ function PropertyDetailContent() {
 
               <div className="bg-navy rounded-card p-6 flex flex-col sm:flex-row gap-6 sm:gap-12">
                 <div>
-                  <p className="text-white text-opacity-70 text-sm font-body mb-1">Annual Rent</p>
+                  <p className="text-on-dark-muted text-body-sm font-body mb-1">Annual Rent</p>
                   <p className="font-display text-2xl font-bold text-white">
                     {formatNaira(property.annual_rent)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-white text-opacity-70 text-sm font-body mb-1">Monthly Rent</p>
+                  <p className="text-on-dark-muted text-body-sm font-body mb-1">Monthly Rent</p>
                   <p className="font-display text-2xl font-bold text-white">
                     {formatNaira(property.monthly_rent)}
                   </p>
@@ -312,9 +316,10 @@ function PropertyDetailContent() {
   );
 }
 
+// Open to any signed-in user, same reason as the browse index.
 export default function BrowsePropertyDetailPage() {
   return (
-    <ProtectedPageWrapper requiredRole={UserRole.TENANT} redirectTo="/properties">
+    <ProtectedPageWrapper>
       <PropertyDetailContent />
     </ProtectedPageWrapper>
   );

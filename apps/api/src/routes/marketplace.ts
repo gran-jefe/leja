@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticateToken, requireRole } from '../middleware/auth';
+import { authenticateToken, requireCapability } from '../middleware/auth';
 import { agreementRateLimit } from '../middleware/rateLimit';
-import { UserRole } from '@beyond/shared';
+import { Capability } from '@beyond/shared';
 import { providerApplySchema, internalProviderSchema, submitBidSchema } from '../lib/schemas';
 import {
   applyAsProvider,
@@ -185,7 +185,7 @@ router.post(
 router.get(
   '/jobs/open',
   authenticateToken,
-  requireRole(UserRole.PROVIDER),
+  requireCapability(Capability.PROVIDER),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { category } = req.query as { category?: string };
@@ -217,7 +217,7 @@ router.get(
 router.post(
   '/jobs/:id/bids',
   authenticateToken,
-  requireRole(UserRole.PROVIDER),
+  requireCapability(Capability.PROVIDER),
   agreementRateLimit,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -280,7 +280,7 @@ router.post(
 router.get(
   '/providers/me',
   authenticateToken,
-  requireRole(UserRole.PROVIDER),
+  requireCapability(Capability.PROVIDER),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const provider =
@@ -308,7 +308,7 @@ router.get(
 router.post(
   '/providers/subscribe',
   authenticateToken,
-  requireRole(UserRole.PROVIDER),
+  requireCapability(Capability.PROVIDER),
   agreementRateLimit,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -363,7 +363,7 @@ router.post(
 router.get(
   '/providers/me/bids',
   authenticateToken,
-  requireRole(UserRole.PROVIDER),
+  requireCapability(Capability.PROVIDER),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const provider =

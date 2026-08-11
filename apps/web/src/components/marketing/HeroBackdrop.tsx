@@ -73,6 +73,6 @@ export const HeroBackdrop: React.FC<HeroBackdropProps> = ({ src, alt = '', class
     <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-navy-950 to-transparent" />
 
     {/* Grain, last so it sits over everything. */}
-    <div className="absolute inset-0 bg-grain" />
+    <div className="absolute inset-0 grain-overlay" />
   </div>
 );

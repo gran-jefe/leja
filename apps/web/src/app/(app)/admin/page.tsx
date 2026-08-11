@@ -86,7 +86,7 @@ function OverviewContent() {
             <StatCard label="Active providers" value={stats.activeProviders} icon={ShieldCheck} />
           </div>
 
-          <Card tone="dark" className="bg-grain">
+          <Card tone="dark" className="grain-overlay">
             <div className="relative flex flex-wrap items-end justify-between gap-6">
               <div>
                 <p className="font-mono text-label uppercase text-on-dark-muted mb-2">

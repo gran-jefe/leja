@@ -5,14 +5,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { User as UserIcon } from 'lucide-react';
-import { DashboardShell } from '@/components/layout/DashboardShell';
-import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Card } from '@/components/ui/Card';
+import { Alert } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/Badge';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
+import { useAuth } from '@/hooks/useAuth';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
 
 const profileSchema = z.object({
@@ -24,6 +25,7 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function ProfilePage() {
   const { user, loading, error, refetch } = useProfile();
+  const { capabilities } = useAuth();
   const { updateProfile, loading: updating, error: updateError } = useUpdateProfile();
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -47,72 +49,79 @@ export default function ProfilePage() {
   };
 
   return (
-    <ProtectedPageWrapper>
-      <DashboardShell>
-        <div className="max-w-2xl mx-auto">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-button bg-navy bg-opacity-5 flex items-center justify-center flex-shrink-0">
-                <UserIcon className="text-navy" size={24} />
-              </div>
-              <h1 className="font-display text-2xl sm:text-3xl font-bold text-navy">My Profile</h1>
+    <div className="max-w-content mx-auto">
+      <PageHeader
+        title="My profile"
+        subtitle="Your account details."
+        icon={UserIcon}
+      />
+
+      {loading ? (
+        <SkeletonCard lines={4} />
+      ) : error ? (
+        <ErrorState message={error} onRetry={refetch} size="page" />
+      ) : (
+        <Card>
+          {successMessage && (
+            <Alert tone="success" className="mb-5">
+              {successMessage}
+            </Alert>
+          )}
+          {updateError && (
+            <Alert tone="error" className="mb-5">
+              {updateError}
+            </Alert>
+          )}
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+            <Input
+              label="Name"
+              placeholder="Your name"
+              required
+              autoComplete="name"
+              {...register('name')}
+              error={errors.name?.message}
+            />
+            <Input
+              label="Email"
+              type="email"
+              value={user?.email || ''}
+              readOnly
+              disabled
+              helperText="Contact support to change the email on your account."
+            />
+            <Input
+              label="Phone"
+              type="tel"
+              autoComplete="tel"
+              placeholder="+234 801 234 5678"
+              {...register('phone')}
+              error={errors.phone?.message}
+            />
+            <div>
+              <p className="font-body text-body-sm font-semibold text-ink-800 mb-2">
+                What you can do
+              </p>
+              {capabilities.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {capabilities.map((c) => (
+                    <Badge key={c} tone="info">
+                      {c.charAt(0) + c.slice(1).toLowerCase()}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="font-body text-body-sm text-ink-500">
+                  Nothing yet — list a property or accept an agreement to get started.
+                </p>
+              )}
             </div>
-
-            {loading ? (
-              <Card>
-                <Skeleton height="1rem" className="mb-4" />
-                <Skeleton height="1rem" className="mb-4" />
-                <Skeleton height="1rem" width="40%" />
-              </Card>
-            ) : error ? (
-              <ErrorState message={error} onRetry={refetch} />
-            ) : (
-              <Card>
-                {successMessage && (
-                  <div className="mb-4 p-3 bg-forest bg-opacity-10 text-forest rounded-button text-sm font-body">
-                    {successMessage}
-                  </div>
-                )}
-                {updateError && (
-                  <div className="mb-4 p-3 bg-ember bg-opacity-10 text-ember rounded-button text-sm font-body">
-                    {updateError}
-                  </div>
-                )}
-
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                  <Input
-                    label="Name"
-                    placeholder="Your name"
-                    {...register('name')}
-                    error={errors.name?.message}
-                  />
-                  <Input
-                    label="Email"
-                    type="email"
-                    value={user?.email || ''}
-                    readOnly
-                    disabled
-                  />
-                  <Input
-                    label="Phone"
-                    type="tel"
-                    placeholder="+234..."
-                    {...register('phone')}
-                    error={errors.phone?.message}
-                  />
-                  <div>
-                    <label className="block text-sm font-semibold text-charcoal mb-2 font-body">
-                      Role
-                    </label>
-                    <Badge variant="info">{user?.role}</Badge>
-                  </div>
-                  <Button variant="primary" className="w-full" loading={updating}>
-                    Save Changes
-                  </Button>
-                </form>
-              </Card>
-            )}
-        </div>
-      </DashboardShell>
-    </ProtectedPageWrapper>
+            <Button type="submit" fullWidth size="lg" loading={updating}>
+              Save changes
+            </Button>
+          </form>
+        </Card>
+      )}
+    </div>
   );
 }

@@ -1,9 +1,9 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticateToken, requireRole } from '../middleware/auth';
+import { authenticateToken, requireCapability } from '../middleware/auth';
 import { agreementRateLimit } from '../middleware/rateLimit';
 import { initializePayment, generateReference } from '../lib/payments';
 import { createPendingPayment } from '../db/queries/payments';
-import { UserRole, PaymentType, BEYOND_PRICING } from '@beyond/shared';
+import { Capability, PaymentType, BEYOND_PRICING } from '@beyond/shared';
 import { config } from '../config';
 import { createAgreementDraftSchema } from '../lib/schemas';
 import { generateAndSaveAgreementPDF } from '../lib/pdf';
@@ -17,6 +17,7 @@ import {
   updateAgreementStatus,
   updateAgreementLawyerReview,
 } from '../db/queries/agreements';
+import { grantCapability } from '../db/queries/capabilities';
 
 // Don't await — let it run in the background so the accept endpoint responds
 // fast. Mirrors the webhook's own PDF trigger in routes/payments.ts.
@@ -40,7 +41,7 @@ const router = Router();
 router.post(
   '/',
   authenticateToken,
-  requireRole(UserRole.LANDLORD),
+  requireCapability(Capability.LANDLORD),
   agreementRateLimit,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -91,9 +92,10 @@ router.post(
 
 router.get('/', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const role = req.user!.role === UserRole.LANDLORD ? 'LANDLORD' : 'TENANT';
+    // Returns both sides — someone letting one flat while renting another
+    // sees all their agreements, not just the half matching a single role.
     const status = req.query.status as string | undefined;
-    const agreements = await findAgreementsForUser(req.user!.id, role, status);
+    const agreements = await findAgreementsForUser(req.user!.id, status);
 
     return res.json({
       success: true,
@@ -191,7 +193,6 @@ router.get(
 router.post(
   '/:id/accept',
   authenticateToken,
-  requireRole(UserRole.TENANT),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
@@ -219,6 +220,15 @@ router.post(
 
       const activated = await updateAgreementStatus(id, 'ACTIVE');
       triggerAgreementPDF(id);
+
+      // Accepting an agreement is what makes you a tenant. Authorisation for
+      // this route is the tenant_id check above, not a capability — gating it
+      // on TENANT would make a first-time tenant unable to ever accept.
+      try {
+        await grantCapability(req.user!.id, Capability.TENANT, 'accepted_agreement');
+      } catch (err) {
+        console.error('[CAPABILITY] Failed to grant TENANT to', req.user!.id, err);
+      }
 
       // Landlord-required insurance is a condition of tenancy the landlord
       // set on the property (not a tenant opt-in) — post the job the
@@ -292,7 +302,6 @@ router.post(
 router.post(
   '/:id/decline',
   authenticateToken,
-  requireRole(UserRole.TENANT),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;

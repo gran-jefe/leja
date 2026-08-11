@@ -3,16 +3,22 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { DashboardShell } from '@/components/layout/DashboardShell';
+import { ArrowRight, Briefcase, Trophy } from 'lucide-react';
 import { ProtectedPageWrapper } from '@/components/layout/ProtectedPageWrapper';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { EmptyState } from '@/components/layout/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { Spinner } from '@/components/ui/Spinner';
+import { Alert } from '@/components/ui/Alert';
+import { StatCard } from '@/components/ui/StatCard';
+import { ListRow } from '@/components/ui/ListRow';
+import { SkeletonList } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { UserRole, BEYOND_PRICING } from '@beyond/shared';
+import { Capability, BEYOND_PRICING } from '@beyond/shared';
 import api from '@/lib/api';
-import { formatNaira, getErrorMessage } from '@/lib/utils';
+import { formatDate, formatNaira, getErrorMessage } from '@/lib/utils';
+import type { StatusTone } from '@/lib/status';
 
 interface ServiceBid {
   id: string;
@@ -23,8 +29,8 @@ interface ServiceBid {
   created_at: string;
 }
 
-const statusVariant: Record<ServiceBid['status'], 'default' | 'success' | 'warning' | 'danger'> = {
-  SUBMITTED: 'default',
+const statusVariant: Record<ServiceBid['status'], StatusTone> = {
+  SUBMITTED: 'neutral',
   WON: 'success',
   LOST: 'danger',
   WITHDRAWN: 'warning',
@@ -100,80 +106,90 @@ function ProviderDashboardContent() {
   const isPriority = profile?.effective_subscription_tier === 'PRIORITY';
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h1 className="font-display text-2xl font-bold text-navy">Your bids</h1>
-        <Link href="/provider/jobs">
-          <Button variant="primary">Browse open jobs</Button>
-        </Link>
+    <div className="max-w-wide mx-auto">
+      <PageHeader
+        title="Your bids"
+        subtitle="Track what you've bid on and what you've won."
+        icon={Briefcase}
+        action={
+          <Link href="/provider/jobs">
+            <Button trailingIcon={<ArrowRight size={17} />}>Browse open jobs</Button>
+          </Link>
+        }
+      />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6 max-w-lg">
+        <StatCard icon={Briefcase} label="Total bids" value={bids.length} loading={loading} />
+        <StatCard
+          icon={Trophy}
+          label="Jobs won"
+          value={won}
+          loading={loading}
+          iconTone="success"
+        />
       </div>
 
-      {!loading && !error && (
-        <div className="grid grid-cols-2 gap-4 mb-6 max-w-md">
-          <Card>
-            <p className="text-sm text-muted font-body">Total bids</p>
-            <p className="font-display text-2xl font-bold text-navy">{bids.length}</p>
-          </Card>
-          <Card>
-            <p className="text-sm text-muted font-body">Jobs won</p>
-            <p className="font-display text-2xl font-bold text-forest">{won}</p>
-          </Card>
-        </div>
-      )}
-
       {!loading && !error && profile && profile.employment_type === 'EXTERNAL' && (
-        <Card className={isPriority ? 'mb-6 border-2 border-forest' : 'mb-6 border-2 border-ember'}>
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <p className="font-body font-semibold text-charcoal">
-                {isPriority ? 'Priority tier active' : 'Standard tier'}
-              </p>
-              <p className="font-body text-sm text-muted">
+        <Card tone={isPriority ? 'accent' : 'paper'} className="mb-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="font-body font-semibold text-ink-800">
+                  {isPriority ? 'Priority tier' : 'Standard tier'}
+                </p>
+                <Badge tone={isPriority ? 'brand' : 'neutral'} size="sm">
+                  {isPriority ? 'Active' : 'Free'}
+                </Badge>
+              </div>
+              <p className="font-body text-body-sm text-ink-500">
                 {isPriority
                   ? `You see jobs immediately, before standard-tier providers. Renews ${profile.subscription_expires_at ? new Date(profile.subscription_expires_at).toLocaleDateString() : ''}.`
                   : 'You see jobs after a short delay. Upgrade for immediate visibility on every new job.'}
               </p>
             </div>
             {!isPriority && (
-              <Button variant="primary" loading={subscribing} onClick={handleSubscribe}>
+              <Button loading={subscribing} onClick={handleSubscribe} className="flex-shrink-0">
                 Upgrade — {formatNaira(BEYOND_PRICING.PROVIDER_PRIORITY_SUBSCRIPTION)}/mo
               </Button>
             )}
           </div>
           {subscribeError && (
-            <p className="text-sm text-ember font-body mt-2">{subscribeError}</p>
+            <Alert tone="error" size="sm" className="mt-3">
+              {subscribeError}
+            </Alert>
           )}
         </Card>
       )}
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Spinner size="lg" />
-        </div>
+        <SkeletonList count={3} lines={1} />
       ) : error ? (
-        <ErrorState message={error} onRetry={fetchBids} />
+        <ErrorState message={error} onRetry={fetchBids} size="page" />
       ) : bids.length === 0 ? (
-        <Card>
-          <p className="font-body text-sm text-muted text-center py-6">
-            You haven't bid on any jobs yet.
-          </p>
-        </Card>
+        <EmptyState
+          icon={Briefcase}
+          title="No bids yet"
+          description="Bids you place on open jobs will be tracked here."
+          action={
+            <Link href="/provider/jobs">
+              <Button>Browse open jobs</Button>
+            </Link>
+          }
+        />
       ) : (
         <div className="space-y-3">
           {bids.map((bid) => (
-            <Card key={bid.id}>
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div>
-                  <p className="font-body font-semibold text-charcoal">
-                    {formatNaira(bid.price)} · {bid.turnaround_hours}h turnaround
-                  </p>
-                  <p className="text-xs text-muted font-body">
-                    Submitted {new Date(bid.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <Badge variant={statusVariant[bid.status]}>{bid.status}</Badge>
-              </div>
-            </Card>
+            <ListRow
+              key={bid.id}
+              icon={Briefcase}
+              title={`${formatNaira(bid.price)} · ${bid.turnaround_hours}h turnaround`}
+              meta={`Submitted ${formatDate(bid.created_at)}`}
+              trailing={
+                <Badge tone={statusVariant[bid.status]} dot>
+                  {bid.status}
+                </Badge>
+              }
+            />
           ))}
         </div>
       )}
@@ -183,10 +199,8 @@ function ProviderDashboardContent() {
 
 export default function ProviderDashboardPage() {
   return (
-    <ProtectedPageWrapper requiredRole={UserRole.PROVIDER}>
-      <DashboardShell>
-        <ProviderDashboardContent />
-      </DashboardShell>
+    <ProtectedPageWrapper requiredCapability={Capability.PROVIDER}>
+      <ProviderDashboardContent />
     </ProtectedPageWrapper>
   );
 }

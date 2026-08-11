@@ -21,7 +21,7 @@ import { Alert } from '@/components/ui/Alert';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useProperties } from '@/hooks/useProperties';
 import { useCreateAgreement } from '@/hooks/useAgreements';
-import { UserRole, BEYOND_PRICING } from '@beyond/shared';
+import { Capability, BEYOND_PRICING } from '@beyond/shared';
 import { formatNaira } from '@/lib/utils';
 import { PROPERTY_TYPE_LABELS } from '@/lib/constants';
 
@@ -289,7 +289,7 @@ function NewAgreementForm() {
               </FieldGroup>
             </Card>
 
-            <Card tone="dark" className="bg-grain">
+            <Card tone="dark" className="grain-overlay">
               <p className="font-mono text-label uppercase text-on-dark-muted mb-2">
                 Your tenant will pay
               </p>
@@ -322,7 +322,7 @@ function NewAgreementForm() {
 
 export default function NewAgreementPage() {
   return (
-    <ProtectedPageWrapper requiredRole={UserRole.LANDLORD} redirectTo="/properties/browse">
+    <ProtectedPageWrapper requiredCapability={Capability.LANDLORD} redirectTo="/properties/browse">
       <NewAgreementForm />
     </ProtectedPageWrapper>
   );

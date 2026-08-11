@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgreementPreview, useAcceptAgreement, useDeclineAgreement } from '@/hooks/useAgreements';
-import { UserRole } from '@beyond/shared';
+
 import { formatNaira, formatDate } from '@/lib/utils';
 
 function monthsBetween(start?: string, end?: string) {
@@ -136,7 +136,7 @@ function ReviewContent() {
         </FieldGroup>
       </Card>
 
-      <Card tone="dark" className="bg-grain">
+      <Card tone="dark" className="grain-overlay">
         <p className="font-mono text-label uppercase text-on-dark-muted mb-4">
           What you&apos;ll pay today
         </p>
@@ -259,9 +259,12 @@ function ReviewContent() {
   );
 }
 
+// GRANT POINT — no capability gate. Accepting your first agreement is
+// what makes you a tenant. Authorisation is the tenant_id check on the
+// agreement itself, enforced server-side.
 export default function AgreementReviewPage() {
   return (
-    <ProtectedPageWrapper requiredRole={UserRole.TENANT}>
+    <ProtectedPageWrapper>
       <DashboardShell>
         <ReviewContent />
       </DashboardShell>

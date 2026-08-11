@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
-import { UserRole } from '@beyond/shared';
 import { createUser, findUserByEmail, findUserById } from '../db/queries/users';
+import { getUserCapabilities } from '../db/queries/capabilities';
 import { signToken } from '../lib/jwt';
 import { registerSchema, loginSchema } from '../lib/schemas';
 import { authenticateToken } from '../middleware/auth';
@@ -22,7 +22,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
       });
     }
 
-    const { password, name, phone, role } = parsed.data;
+    const { password, name, phone } = parsed.data;
     const email = parsed.data.email.toLowerCase().trim();
 
     const existing = await findUserByEmail(email);
@@ -35,13 +35,14 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
 
     const passwordHash = await bcrypt.hash(password, 12);
 
-    const user = await createUser({ email, passwordHash, name, phone, role: role as UserRole });
+    // No role is chosen at signup — capabilities are earned by action.
+    const user = await createUser({ email, passwordHash, name, phone });
 
     const token = signToken({
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role,
+      capabilities: [],
     });
 
     return res.status(201).json({
@@ -53,7 +54,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
           email: user.email,
           name: user.name,
           phone: user.phone,
-          role: user.role,
+          capabilities: [],
           isVerified: (user as any).is_verified,
           // No ADMIN role exists in the schema — this is a deploy-time
           // email allowlist check (ADMIN_EMAILS), computed fresh on every
@@ -98,11 +99,13 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
       });
     }
 
+    const capabilities = await getUserCapabilities(user.id);
+
     const token = signToken({
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role,
+      capabilities,
     });
 
     return res.status(200).json({
@@ -114,7 +117,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
           email: user.email,
           name: user.name,
           phone: user.phone,
-          role: user.role,
+          capabilities,
           isVerified: (user as any).is_verified,
           isAdmin: isAdmin(user.email),
         },
@@ -136,9 +139,14 @@ router.get('/me', authenticateToken, async (req: Request, res: Response, next: N
       });
     }
 
+    // /me is the endpoint the client re-reads after earning a capability
+    // (listing a first property, accepting a first agreement), so it must
+    // return live capabilities rather than whatever the JWT was minted with.
+    const capabilities = await getUserCapabilities(user.id);
+
     return res.status(200).json({
       success: true,
-      data: { user: { ...user, isAdmin: isAdmin(user.email) } },
+      data: { user: { ...user, capabilities, isAdmin: isAdmin(user.email) } },
     });
   } catch (error) {
     next(error);

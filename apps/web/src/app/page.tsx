@@ -268,9 +268,20 @@ export default function Home() {
       </Section>
 
       {/* ------------------------------------------- Landlords / Tenants -- */}
+      {/* These two columns describe what each side gets — not two products,
+          and no longer two kinds of account. Signup asks for no role at all;
+          you become a landlord by listing and a tenant by accepting, and one
+          account can be both. See CLAUDE.md § Capabilities. */}
       <Section id="for-landlords" tone="paper">
         <Reveal>
-          <Eyebrow className="text-center mb-14">Built for both sides of the deal</Eyebrow>
+          <Eyebrow className="text-center mb-4">Built for both sides of the deal</Eyebrow>
+          <h2 className="text-center font-display text-display-md font-semibold text-navy-900 mb-4 max-w-2xl mx-auto">
+            One account. Either side. Often both.
+          </h2>
+          <p className="text-center font-body text-ink-500 mb-14 max-w-xl mx-auto">
+            You don&apos;t pick a lane when you sign up. Let a flat, rent one, or do both from the
+            same account — most people eventually do.
+          </p>
         </Reveal>
 
         <div className="grid md:grid-cols-2 gap-14 md:gap-0 relative">
@@ -295,7 +306,7 @@ export default function Home() {
                 ))}
               </ul>
               <Link href="/signup">
-                <Button trailingIcon={<ArrowRight size={17} />}>List a property</Button>
+                <Button trailingIcon={<ArrowRight size={17} />}>Start listing</Button>
               </Link>
             </Reveal>
           </div>
@@ -327,7 +338,7 @@ export default function Home() {
                 ))}
               </ul>
               <Link href="/signup">
-                <Button trailingIcon={<ArrowRight size={17} />}>Find a home</Button>
+                <Button trailingIcon={<ArrowRight size={17} />}>Start searching</Button>
               </Link>
             </Reveal>
           </div>
@@ -419,8 +430,9 @@ export default function Home() {
             Free to connect. Free to agree.
           </h2>
           <p className="text-center font-body text-ink-500 mb-16 max-w-xl mx-auto">
-            No agent fee and no platform fee on the deal itself. You pay only if you choose an
-            optional extra.
+            No agent fee and no platform fee on the deal itself — you pay only for an optional
+            extra. These are priced per activity, not per account: if you both let and rent, the
+            first two columns are simply both yours.
           </p>
         </Reveal>
 
@@ -457,7 +469,7 @@ export default function Home() {
 
           {/* Tenant — the emphasised tier */}
           <Reveal delay={0.08}>
-            <div className="relative bg-navy-900 bg-grain rounded-card p-8 shadow-xl overflow-hidden">
+            <div className="relative bg-navy-900 grain-overlay rounded-card p-8 shadow-xl overflow-hidden">
               <span className="absolute top-0 right-0 bg-brass-500 text-ink-950 font-mono text-label uppercase px-4 py-1.5 rounded-bl-card">
                 Replaces your agency fee
               </span>

@@ -10,7 +10,7 @@ import { PropertyCard } from '@/components/ui/PropertyCard';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useProperties } from '@/hooks/useProperties';
-import { UserRole } from '@beyond/shared';
+import { Capability } from '@beyond/shared';
 
 function PropertiesContent() {
   const { properties, loading, error, refetch } = useProperties();
@@ -75,7 +75,7 @@ function PropertiesContent() {
 
 export default function PropertiesPage() {
   return (
-    <ProtectedPageWrapper requiredRole={UserRole.LANDLORD}>
+    <ProtectedPageWrapper requiredCapability={Capability.LANDLORD}>
       <PropertiesContent />
     </ProtectedPageWrapper>
   );

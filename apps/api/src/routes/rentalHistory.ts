@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticateToken, requireRole } from '../middleware/auth';
-import { UserRole, BEYOND_PRICING } from '@beyond/shared';
+import { authenticateToken, requireCapability } from '../middleware/auth';
+import { Capability, BEYOND_PRICING } from '@beyond/shared';
 import { findRentalHistoryByTenant } from '../db/queries/rentalHistory';
 
 const router = Router();
@@ -8,7 +8,7 @@ const router = Router();
 router.get(
   '/mine',
   authenticateToken,
-  requireRole(UserRole.TENANT),
+  requireCapability(Capability.TENANT),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const history = await findRentalHistoryByTenant(req.user!.id);
@@ -27,7 +27,7 @@ router.get(
 router.get(
   '/export',
   authenticateToken,
-  requireRole(UserRole.TENANT),
+  requireCapability(Capability.TENANT),
   (req: Request, res: Response) => {
     console.log('Export rental history - placeholder', { userId: req.user?.id });
 
