@@ -9,18 +9,36 @@ import { ProgressBar } from '@/components/layout/ProgressBar';
  * Fraunces must declare its axes explicitly — loading it without them (as the
  * previous Google Fonts @import did) leaves the weight axis unavailable, so
  * every bold heading gets synthesised by the browser instead of rendered.
+ *
+ * ⚠️ `adjustFontFallback: false` is load-bearing on a Naira-denominated site.
+ * Google serves these faces as `U+0-FF` + `U+100-2BA` subsets, and the Naira
+ * sign is **U+20A6 — outside both**. Every ₦ therefore renders from the
+ * fallback face, and Next's generated fallback carries `size-adjust` /
+ * `ascent-override` tuned to the primary font's metrics. Applied to a
+ * substituted glyph those overrides squash it, so ₦ visibly collided with the
+ * following digit on every price on the site. Disabling the override lets the
+ * substituted glyph render at its natural advance.
+ *
+ * The explicit `fallback` stacks name faces that actually carry U+20A6, so the
+ * substitution is a deliberate choice rather than whatever the OS picks.
  */
+// next/font is analysed at build time and only accepts literals here — no
+// spreads, no shared consts. The duplication is required, not accidental.
 const fraunces = Fraunces({
   subsets: ['latin'],
   axes: ['SOFT', 'WONK', 'opsz'],
   variable: '--font-display',
   display: 'swap',
+  adjustFontFallback: false,
+  fallback: ['Georgia', 'Times New Roman', 'Arial Unicode MS', 'serif'],
 });
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
   variable: '--font-body',
   display: 'swap',
+  adjustFontFallback: false,
+  fallback: ['Helvetica Neue', 'Arial Unicode MS', 'Segoe UI', 'system-ui', 'sans-serif'],
 });
 
 const dmMono = DM_Mono({
@@ -28,6 +46,8 @@ const dmMono = DM_Mono({
   weight: ['400', '500'],
   variable: '--font-mono',
   display: 'swap',
+  adjustFontFallback: false,
+  fallback: ['SF Mono', 'Menlo', 'Consolas', 'DejaVu Sans Mono', 'monospace'],
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://beyondagency.ng';

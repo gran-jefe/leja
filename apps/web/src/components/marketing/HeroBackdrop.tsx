@@ -23,7 +23,10 @@ export const HeroBackdrop: React.FC<HeroBackdropProps> = ({ src, alt = '', class
         fill
         priority
         sizes="100vw"
-        className="object-cover object-right opacity-70"
+        // Full opacity. Legibility is the scrim's job — dimming the photograph
+        // as well meant only ~45% of it survived at the right edge, which made
+        // the shot effectively invisible.
+        className="object-cover object-right"
       />
     )}
 
@@ -69,7 +72,10 @@ export const HeroBackdrop: React.FC<HeroBackdropProps> = ({ src, alt = '', class
 
     {/* Legibility scrim. Keeps the left third readable whether the slot holds a
         photograph or the geometry. */}
-    <div className="absolute inset-0 bg-gradient-to-r from-navy-950 via-navy-950/85 to-navy-950/35" />
+    {/* Weighted to the left, where the headline sits, and cleared on the right
+        so the photograph is actually visible. The old ramp bottomed out at
+        /35 across the whole right side and buried the shot. */}
+    <div className="absolute inset-0 bg-gradient-to-r from-navy-950 from-20% via-navy-950/75 via-55% to-navy-950/10" />
     <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-navy-950 to-transparent" />
 
     {/* Grain, last so it sits over everything. */}
