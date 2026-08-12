@@ -133,6 +133,7 @@ const config: Config = {
         xl: '0 24px 64px rgba(33,28,22,.14)',
         ring: 'inset 0 0 0 1px rgba(33,28,22,.06)',
         brass: '0 2px 12px rgba(184,134,43,.22)',
+        navy: '0 2px 12px rgba(11,22,32,.22)',
       },
 
       transitionDuration: {

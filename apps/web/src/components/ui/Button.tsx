@@ -22,7 +22,14 @@ const button = cva(
       variant: {
         primary: 'bg-brass-500 text-ink-950 shadow-xs hover:bg-brass-600 hover:shadow-brass',
         secondary: 'border border-ink-300 text-ink-800 bg-transparent hover:bg-ink-100 hover:border-ink-400',
-        tertiary: 'bg-navy-900 !text-white hover:bg-navy-800 shadow-xs hover:shadow-navy-900',
+        // Tertiary sits on brass-50 surfaces (Card/Section tone="accent"), so a
+        // pure-white label made it the one cold element on warm cream. brass-100
+        // is 14.5:1 here and keeps the button in the palette. `shadow-navy` is a
+        // box-shadow token mirroring primary's `shadow-brass` — not
+        // `shadow-navy-900`, which is a shadow *colour* and would strip the .06
+        // alpha off shadow-xs, painting an opaque hairline instead of a lift.
+        tertiary:
+          'bg-navy-900 text-brass-100 shadow-xs hover:bg-navy-800 hover:text-brass-50 hover:shadow-navy',
         danger: 'bg-danger-600 text-white shadow-xs hover:bg-danger-700',
         ghost: 'bg-transparent text-current hover:bg-ink-900/5',
         link: 'bg-transparent text-brass-700 underline underline-offset-4 hover:text-brass-600 px-0 py-0 h-auto',
@@ -43,6 +50,15 @@ const button = cva(
         class: 'border-white/25 text-on-dark hover:bg-white/10 hover:border-white/40',
       },
       { onDark: true, variant: 'ghost', class: 'text-on-dark hover:bg-white/10' },
+      // Unqualified, tertiary is navy-900 on a navy-900 section — invisible.
+      // Lift it two stops and outline it with an inset ring rather than a
+      // border, so the button does not grow 1px relative to its siblings.
+      {
+        onDark: true,
+        variant: 'tertiary',
+        class:
+          'bg-navy-700 ring-1 ring-inset ring-white/15 hover:bg-navy-600 hover:ring-white/25 shadow-none',
+      },
       { onDark: true, variant: 'link', class: 'text-brass-300 hover:text-brass-100' },
       { onDark: true, class: 'focus-visible:ring-offset-navy-900' },
       { variant: 'link', size: 'sm', class: 'min-h-0 px-0' },

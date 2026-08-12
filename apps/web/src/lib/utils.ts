@@ -1,5 +1,60 @@
 import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { extendTailwindMerge } from 'tailwind-merge';
+
+/**
+ * tailwind-merge has to be taught our custom scales, or it silently deletes
+ * classes that are not in conflict.
+ *
+ * Its stock `font-size` matcher only accepts t-shirt sizes (xs/sm/lg/…), so our
+ * `text-body`, `text-title`, `text-display-md` etc. fell through to the
+ * *text-colour* group instead. Anything of the form `text-<colour>` earlier in
+ * the string was then dropped as a duplicate — which is why every Button
+ * variant lost its label colour to the size variant's `text-body` and quietly
+ * inherited the surrounding surface's colour. On cream that looked fine; on
+ * `tertiary` (navy) and `danger` (crimson) the label went invisible.
+ *
+ * Same trap for `shadow-brass` / `shadow-navy`, which are box-shadow *values*
+ * here, not shadow colours.
+ *
+ * `rounded-card`, `max-w-shell`, `duration-base` and `ease-standard` fail the
+ * other way: they match no group at all, so nothing dedupes them and a
+ * call-site override is not guaranteed to win — `cn('rounded-card',
+ * 'rounded-full')` keeps both and lets stylesheet order decide. Declaring them
+ * restores last-one-wins.
+ *
+ * Rule: any key added to `fontSize`, `boxShadow`, `borderRadius`, `maxWidth`,
+ * `transitionDuration` or `transitionTimingFunction` in tailwind.config.ts that
+ * is not already a Tailwind default (t-shirt sizes, `prose`, `ease-out`, …)
+ * must be mirrored here.
+ */
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      'font-size': [
+        {
+          text: [
+            'display-xl',
+            'display-lg',
+            'display-md',
+            'display-sm',
+            'title',
+            'body-lg',
+            'body',
+            'body-sm',
+            'label',
+          ],
+        },
+      ],
+      shadow: [{ shadow: ['ring', 'brass', 'navy'] }],
+      // Corner-specific forms (`rounded-bl-card`) are not covered — they only
+      // appear as one-off static classes, never alongside a competing radius.
+      rounded: [{ rounded: ['button', 'card', 'chat', 'chat-mine'] }],
+      'max-w': [{ 'max-w': ['form', 'content', 'wide', 'shell'] }],
+      duration: [{ duration: ['fast', 'base', 'slow', 'deliberate'] }],
+      ease: [{ ease: ['standard'] }],
+    },
+  },
+});
 
 export const cn = (...classes: ClassValue[]) => twMerge(clsx(classes));
 
